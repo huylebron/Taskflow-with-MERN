@@ -1,23 +1,36 @@
 import Box from '@mui/material/Box'
 import ModeSelect from '~/components/ModeSelect/ModeSelect'
-import AppsIcon from '@mui/icons-material/Apps'
-import { ReactComponent as TrelloIcon } from '~/assets/trello.svg'
-import SvgIcon from '@mui/material/SvgIcon'
+import TaskIcon from '@mui/icons-material/Task'
 import Typography from '@mui/material/Typography'
-import Workspaces from './Menus/Workspaces'
-import Recent from './Menus/Recent'
-import Starred from './Menus/Starred'
-import Templates from './Menus/Templates'
 import Profiles from './Menus/Profiles'
-import Button from '@mui/material/Button'
 import Tooltip from '@mui/material/Tooltip'
+import Button from '@mui/material/Button'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import { useState } from 'react'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
-import LibraryAddIcon from '@mui/icons-material/LibraryAdd'
 import { Link } from 'react-router-dom'
 import Notifications from './Notifications/Notifications'
 import AutoCompleteSearchBoard from './SearchBoards/AutoCompleteSearchBoard'
+import BarChartIcon from '@mui/icons-material/BarChart'
+import FilterListIcon from '@mui/icons-material/FilterList'
+import SettingsIcon from '@mui/icons-material/Settings'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
+import WallpaperIcon from '@mui/icons-material/Wallpaper'
+import GroupIcon from '@mui/icons-material/Group'
 
 function AppBar() {
+  const [anchorEl, setAnchorEl] = useState(null)
+  const open = Boolean(anchorEl)
+  
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget)
+  }
+  
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+
   return (
     <Box sx={{
       width: '100%',
@@ -31,55 +44,30 @@ function AppBar() {
       bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#2c3e50' : '#1565c0')
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Link to="/boards">
-          <Tooltip title="Board List">
-            <AppsIcon sx={{ color: 'white', verticalAlign: 'middle' }} />
-          </Tooltip>
-        </Link>
-
         <Link to="/">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <SvgIcon component={TrelloIcon} fontSize="small" inheritViewBox sx={{ color: 'white' }} />
-            <Typography variant="span" sx={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white' }}>Trello</Typography>
+            <TaskIcon sx={{ color: 'white', fontSize: '2rem' }} />
+            <Typography variant="span" sx={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white' }}>TaskFlow</Typography>
           </Box>
         </Link>
 
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
-          <Workspaces />
-          <Recent />
-          <Starred />
-          <Templates />
-          <Button
-            sx={{
-              color: 'white',
-              border: 'none',
-              '&:hover': { border: 'none' }
-            }}
-            variant="outlined"
-            startIcon={<LibraryAddIcon />}
-          >
-            Create
-          </Button>
-        </Box>
+      </Box>
 
+      <Box sx={{ 
+        display: 'flex', 
+        flex: 1,
+        justifyContent: 'center'
+      }}>
+        <AutoCompleteSearchBoard />
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        {/* Tìm kiếm nhanh một hoặc nhiều cái board */}
-        <AutoCompleteSearchBoard />
-
-        {/* Dark - Light - System modes */}
         <ModeSelect />
-
-        {/* Xử lý hiển thị các thông báo - notifications ở đây */}
         <Notifications />
-
         <Tooltip title="Help">
           <HelpOutlineIcon sx={{ cursor: 'pointer', color: 'white' }} />
         </Tooltip>
-
         <Profiles />
-
       </Box>
     </Box>
   )

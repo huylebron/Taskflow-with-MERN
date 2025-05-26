@@ -2,13 +2,19 @@ import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import VpnLockIcon from '@mui/icons-material/VpnLock'
-import AddToDriveIcon from '@mui/icons-material/AddToDrive'
-import BoltIcon from '@mui/icons-material/Bolt'
+import BarChartIcon from '@mui/icons-material/BarChart'
 import FilterListIcon from '@mui/icons-material/FilterList'
+import SettingsIcon from '@mui/icons-material/Settings'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
+import WallpaperIcon from '@mui/icons-material/Wallpaper'
+import GroupIcon from '@mui/icons-material/Group'
 import { Tooltip } from '@mui/material'
 import { capitalizeFirstLetter } from '~/utils/formatters'
 import BoardUserGroup from './BoardUserGroup'
 import InviteBoardUser from './InviteBoardUser'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import { useState } from 'react'
 
 const MENU_STYLES = {
   color: 'white',
@@ -25,6 +31,17 @@ const MENU_STYLES = {
 }
 
 function BoardBar({ board }) {
+  const [anchorEl, setAnchorEl] = useState(null)
+  const open = Boolean(anchorEl)
+  
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget)
+  }
+  
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+
   return (
     <Box sx={{
       width: '100%',
@@ -54,29 +71,54 @@ function BoardBar({ board }) {
         />
         <Chip
           sx={MENU_STYLES}
-          icon={<AddToDriveIcon />}
-          label="Add To Google Drive"
-          clickable
-        />
-        <Chip
-          sx={MENU_STYLES}
-          icon={<BoltIcon />}
-          label="Automation"
+          icon={<BarChartIcon />}
+          label="Thống kê"
           clickable
         />
         <Chip
           sx={MENU_STYLES}
           icon={<FilterListIcon />}
-          label="Filters"
+          label="Lọc tổng hợp"
+          clickable
+        />
+        <Chip
+          sx={MENU_STYLES}
+          icon={<SettingsIcon />}
+          label="Tùy chọn"
+          clickable
+          onClick={handleClick}
+        />
+        <Menu
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          PaperProps={{
+            sx: {
+              mt: 1,
+              '& .MuiMenuItem-root': {
+                gap: 1,
+                '&:hover': { bgcolor: 'primary.light' }
+              }
+            }
+          }}
+        >
+          <MenuItem onClick={handleClose}>
+            <WallpaperIcon /> Thay đổi hình nền
+          </MenuItem>
+          <MenuItem onClick={handleClose}>
+            <GroupIcon /> Thành viên
+          </MenuItem>
+        </Menu>
+        <Chip
+          sx={MENU_STYLES}
+          icon={<CalendarMonthIcon />}
+          label="Lịch biểu"
           clickable
         />
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        {/* Xử lý mời user vào làm thành viên của board */}
         <InviteBoardUser boardId={board._id} />
-
-        {/* Xử lý hiển thị danh sách thành viên của board */}
         <BoardUserGroup boardUsers={board?.FE_allUsers} />
       </Box>
     </Box>
