@@ -1,16 +1,13 @@
 // TrungQuanDev: https://youtube.com/@trungquandev
 import { useLocation, Navigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
-import LoginForm from './LoginForm'
-import RegisterForm from './RegisterForm'
+import AuthSlider from './AuthSlider'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 
 function Auth() {
   const location = useLocation()
-  // console.log(location)
   const isLogin = location.pathname === '/login'
-  const isRegister = location.pathname === '/register'
 
   const currentUser = useSelector(selectCurrentUser)
   if (currentUser) {
@@ -23,15 +20,11 @@ function Auth() {
       flexDirection: 'column',
       minHeight: '100vh',
       alignItems: 'center',
-      justifyContent: 'flex-start',
-      background: 'url("src/assets/auth/login-register-bg.jpg")',
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      boxShadow: 'inset 0 0 0 2000px rgba(0, 0, 0, 0.2)'
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+      padding: '20px'
     }}>
-      {isLogin && <LoginForm />}
-      {isRegister && <RegisterForm />}
+      <AuthSlider isLogin={isLogin} />
     </Box>
   )
 }
