@@ -5,7 +5,6 @@ import CreditCardIcon from '@mui/icons-material/CreditCard'
 import CancelIcon from '@mui/icons-material/Cancel'
 import Grid from '@mui/material/Unstable_Grid2'
 import Stack from '@mui/material/Stack'
-import Divider from '@mui/material/Divider'
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined'
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined'
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
@@ -13,14 +12,7 @@ import WatchLaterOutlinedIcon from '@mui/icons-material/WatchLaterOutlined'
 import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import AutoFixHighOutlinedIcon from '@mui/icons-material/AutoFixHighOutlined'
-import AspectRatioOutlinedIcon from '@mui/icons-material/AspectRatioOutlined'
-import AddToDriveOutlinedIcon from '@mui/icons-material/AddToDriveOutlined'
-import AddOutlinedIcon from '@mui/icons-material/AddOutlined'
-import ArrowForwardOutlinedIcon from '@mui/icons-material/ArrowForwardOutlined'
-import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined'
-import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined'
-import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined'
-import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined'
+
 import SubjectRoundedIcon from '@mui/icons-material/SubjectRounded'
 import DvrOutlinedIcon from '@mui/icons-material/DvrOutlined'
 
@@ -32,6 +24,7 @@ import CardUserGroup from './CardUserGroup'
 import CardDescriptionMdEditor from './CardDescriptionMdEditor'
 import CardActivitySection from './CardActivitySection'
 import { useDispatch, useSelector } from 'react-redux'
+import { useState } from 'react'
 import {
   clearAndHideCurrentActiveCard,
   selectCurrentActiveCard,
@@ -44,6 +37,8 @@ import { selectCurrentUser } from '~/redux/user/userSlice'
 import { CARD_MEMBER_ACTIONS } from '~/utils/constants'
 import ExitToAppIcon from '@mui/icons-material/ExitToApp'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
 
 import { styled } from '@mui/material/styles'
 const SidebarItem = styled(Box)(({ theme }) => ({
@@ -74,6 +69,16 @@ function ActiveCard() {
   const activeCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
   const currentUser = useSelector(selectCurrentUser)
+
+  // State for "Thêm" button dropdown menu
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openMoreMenu = Boolean(anchorEl);
+  const handleMoreMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMoreMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   // Không dùng biến State để check đóng mở Modal nữa vì chúng ta sẽ check theo cái biến isShowModalActiveCard trong redux
   // const [isOpen, setIsOpen] = useState(true)
@@ -138,15 +143,15 @@ function ActiveCard() {
       sx={{ overflowY: 'auto' }}>
       <Box sx={{
         position: 'relative',
-        width: 900,
-        maxWidth: 900,
+        width: 1100,
+        maxWidth: 1100,
         bgcolor: 'white',
         boxShadow: 24,
         borderRadius: '8px',
         border: 'none',
         outline: 0,
-        padding: '40px 20px 20px',
-        margin: '50px auto',
+        padding: '40px 32px 32px',
+        margin: '48px auto',
         backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#1A2027' : '#fff'
       }}>
         <Box sx={{
@@ -178,124 +183,249 @@ function ActiveCard() {
             onChangedValue={onUpdateCardTitle} />
         </Box>
 
+        {/* Members section - full width */}
+        <Box sx={{ mb: 3 }}>
+          <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Members</Typography>
+
+          {/* Feature 02: Xử lý các thành viên của Card */}
+          <CardUserGroup
+            cardMemberIds={activeCard?.memberIds}
+            onUpdateCardMembers={onUpdateCardMembers}
+          />
+        </Box>
+
+        {/* Add to card buttons - horizontal layout */}
+        <Box sx={{ mb: 3 }}>
+          <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Add To Card</Typography>
+          <Stack 
+            direction="row" 
+            spacing={1} 
+            sx={{ 
+              flexWrap: 'wrap', 
+              gap: 1,
+              '& .MuiBox-root': {
+                minWidth: '120px',
+                maxWidth: '150px',
+                flex: '1 1 auto',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  boxShadow: (theme) => theme.palette.mode === 'dark' 
+                    ? '0 2px 4px rgba(255, 255, 255, 0.1)' 
+                    : '0 2px 4px rgba(0, 0, 0, 0.1)',
+                }
+              }
+            }}
+          >
+            {/* Feature 05: Xử lý hành động bản thân user tự join vào card */}
+            {/* Nếu user hiện tại đang đăng nhập chưa thuộc mảng memberIds của card thì mới cho hiện nút Join và ngược lại */}
+            {activeCard?.memberIds?.includes(currentUser._id)
+              ? <SidebarItem
+                sx={{ color: 'error.light', '&:hover': { color: 'error.light' } }}
+                onClick={() => onUpdateCardMembers({
+                  userId: currentUser._id,
+                  action: CARD_MEMBER_ACTIONS.REMOVE
+                })}
+              >
+                <ExitToAppIcon fontSize="small" />
+                Leave
+              </SidebarItem>
+              : <SidebarItem
+                className="active"
+                onClick={() => onUpdateCardMembers({
+                  userId: currentUser._id,
+                  action: CARD_MEMBER_ACTIONS.ADD
+                })}
+              >
+                <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <PersonOutlineOutlinedIcon fontSize="small" />
+                    <span>Join</span>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <CheckCircleIcon fontSize="small" sx={{ color: '#27ae60' }} />
+                  </Box>
+                </Box>
+              </SidebarItem>
+            }
+
+            {/* Feature 06: Xử lý hành động cập nhật ảnh Cover của Card */}
+            <SidebarItem className="active" component="label">
+              <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ImageOutlinedIcon fontSize="small" />
+                  <span>Cover</span>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <CheckCircleIcon fontSize="small" sx={{ color: '#27ae60' }} />
+                </Box>
+              </Box>
+              <VisuallyHiddenInput type="file" onChange={onUploadCardCover} />
+            </SidebarItem>
+
+            <SidebarItem><AttachFileOutlinedIcon fontSize="small" />Attachment</SidebarItem>
+            <SidebarItem><LocalOfferOutlinedIcon fontSize="small" />Labels</SidebarItem>
+            <SidebarItem><TaskAltOutlinedIcon fontSize="small" />Checklist</SidebarItem>
+
+            {/* "Thêm" Button */}
+            <SidebarItem
+              id="more-actions-button"
+              aria-controls={openMoreMenu ? 'more-actions-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={openMoreMenu ? 'true' : undefined}
+              onClick={handleMoreMenuClick}
+            >
+              Thêm
+            </SidebarItem>
+            <Menu
+              id="more-actions-menu"
+              anchorEl={anchorEl}
+              open={openMoreMenu}
+              onClose={handleMoreMenuClose}
+              MenuListProps={{
+                'aria-labelledby': 'more-actions-button'
+              }}
+              sx={{
+                '& .MuiPaper-root': {
+                  borderRadius: '8px',
+                  boxShadow: (theme) => theme.palette.mode === 'dark' 
+                    ? '0 0 8px rgba(255, 255, 255, 0.1)' 
+                    : '0 0 8px rgba(0, 0, 0, 0.1)',
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2f3542' : '#fff',
+                },
+                '& .MuiList-root': {
+                  padding: '8px',
+                },
+                '& .MuiMenuItem-root': {
+                  borderRadius: '4px',
+                  padding: '8px 12px',
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#33485D' : theme.palette.grey[100],
+                  },
+                },
+              }}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              TransitionProps={{ timeout: 200 }}
+            >
+              <MenuItem 
+                onClick={() => { 
+                  toast.info('Tính năng Dates đang được phát triển');
+                  handleMoreMenuClose(); 
+                }}
+                sx={{
+                  color: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#172b4d',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                  <WatchLaterOutlinedIcon fontSize="small" />
+                  <span>Dates</span>
+                </Box>
+              </MenuItem>
+              <MenuItem 
+                onClick={() => { 
+                  toast.info('Tính năng Custom Fields đang được phát triển');
+                  handleMoreMenuClose(); 
+                }}
+                sx={{
+                  color: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#172b4d',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                  <AutoFixHighOutlinedIcon fontSize="small" />
+                  <span>Custom Fields</span>
+                </Box>
+              </MenuItem>
+            </Menu>
+          </Stack>
+        </Box>
+
+        {/* Description and Comments - side by side layout */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          {/* Left side */}
-          <Grid xs={12} sm={9}>
-            <Box sx={{ mb: 3 }}>
-              <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Members</Typography>
-
-              {/* Feature 02: Xử lý các thành viên của Card */}
-              <CardUserGroup
-                cardMemberIds={activeCard?.memberIds}
-                onUpdateCardMembers={onUpdateCardMembers}
-              />
-            </Box>
-
+          {/* Description - Left side */}
+          <Grid xs={12} sm={6}>
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <SubjectRoundedIcon />
                 <Typography variant="span" sx={{ fontWeight: '600', fontSize: '20px' }}>Description</Typography>
               </Box>
 
-              {/* Feature 03: Xử lý mô tả của Card */}
-              <CardDescriptionMdEditor
-                cardDescriptionProp={activeCard?.description}
-                handleUpdateCardDescription={onUpdateCardDescription}
-              />
+              {/* Feature 03: Xử lý mô tả của Card với scroll */}
+              <Box sx={{ 
+                maxHeight: '400px', 
+                overflowY: 'auto',
+                pr: 1,
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2f3542' : '#f1f1f1',
+                  borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#c1c1c1',
+                  borderRadius: '4px',
+                  '&:hover': {
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#64b5f6' : '#a8a8a8',
+                  },
+                },
+              }}>
+                <CardDescriptionMdEditor
+                  cardDescriptionProp={activeCard?.description}
+                  handleUpdateCardDescription={onUpdateCardDescription}
+                />
+              </Box>
             </Box>
+          </Grid>
 
+          {/* Comments - Right side */}
+          <Grid xs={12} sm={6}>
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <DvrOutlinedIcon />
                 <Typography variant="span" sx={{ fontWeight: '600', fontSize: '20px' }}>Activity</Typography>
               </Box>
 
-              {/* Feature 04: Xử lý các hành động, ví dụ comment vào Card */}
-              <CardActivitySection
-                cardComments={activeCard?.comments}
-                onAddCardComment={onAddCardComment}
-              />
+              {/* Feature 04: Xử lý các hành động, ví dụ comment vào Card với scroll */}
+              <Box sx={{ 
+                maxHeight: '400px', 
+                overflowY: 'auto',
+                pr: 1,
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2f3542' : '#f1f1f1',
+                  borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#c1c1c1',
+                  borderRadius: '4px',
+                  '&:hover': {
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#64b5f6' : '#a8a8a8',
+                  },
+                },
+              }}>
+                <CardActivitySection
+                  cardComments={activeCard?.comments}
+                  onAddCardComment={onAddCardComment}
+                />
+              </Box>
             </Box>
           </Grid>
-
-          {/* Right side */}
-          <Grid xs={12} sm={3}>
-            <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Add To Card</Typography>
-            <Stack direction="column" spacing={1}>
-              {/* Feature 05: Xử lý hành động bản thân user tự join vào card */}
-              {/* Nếu user hiện tại đang đăng nhập chưa thuộc mảng memberIds của card thì mới cho hiện nút Join và ngược lại */}
-              {activeCard?.memberIds?.includes(currentUser._id)
-                ? <SidebarItem
-                  sx={{ color: 'error.light', '&:hover': { color: 'error.light' } }}
-                  onClick={() => onUpdateCardMembers({
-                    userId: currentUser._id,
-                    action: CARD_MEMBER_ACTIONS.REMOVE
-                  })}
-                >
-                  <ExitToAppIcon fontSize="small" />
-                  Leave
-                </SidebarItem>
-                : <SidebarItem
-                  className="active"
-                  onClick={() => onUpdateCardMembers({
-                    userId: currentUser._id,
-                    action: CARD_MEMBER_ACTIONS.ADD
-                  })}
-                >
-                  <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <PersonOutlineOutlinedIcon fontSize="small" />
-                      <span>Join</span>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <CheckCircleIcon fontSize="small" sx={{ color: '#27ae60' }} />
-                    </Box>
-                  </Box>
-                </SidebarItem>
-              }
-
-              {/* Feature 06: Xử lý hành động cập nhật ảnh Cover của Card */}
-              <SidebarItem className="active" component="label">
-                <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ImageOutlinedIcon fontSize="small" />
-                    <span>Cover</span>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <CheckCircleIcon fontSize="small" sx={{ color: '#27ae60' }} />
-                  </Box>
-                </Box>
-                <VisuallyHiddenInput type="file" onChange={onUploadCardCover} />
-              </SidebarItem>
-
-              <SidebarItem><AttachFileOutlinedIcon fontSize="small" />Attachment</SidebarItem>
-              <SidebarItem><LocalOfferOutlinedIcon fontSize="small" />Labels</SidebarItem>
-              <SidebarItem><TaskAltOutlinedIcon fontSize="small" />Checklist</SidebarItem>
-              <SidebarItem><WatchLaterOutlinedIcon fontSize="small" />Dates</SidebarItem>
-              <SidebarItem><AutoFixHighOutlinedIcon fontSize="small" />Custom Fields</SidebarItem>
-            </Stack>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Power-Ups</Typography>
-            <Stack direction="column" spacing={1}>
-              <SidebarItem><AspectRatioOutlinedIcon fontSize="small" />Card Size</SidebarItem>
-              <SidebarItem><AddToDriveOutlinedIcon fontSize="small" />Google Drive</SidebarItem>
-              <SidebarItem><AddOutlinedIcon fontSize="small" />Add Power-Ups</SidebarItem>
-            </Stack>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Actions</Typography>
-            <Stack direction="column" spacing={1}>
-              <SidebarItem><ArrowForwardOutlinedIcon fontSize="small" />Move</SidebarItem>
-              <SidebarItem><ContentCopyOutlinedIcon fontSize="small" />Copy</SidebarItem>
-              <SidebarItem><AutoAwesomeOutlinedIcon fontSize="small" />Make Template</SidebarItem>
-              <SidebarItem><ArchiveOutlinedIcon fontSize="small" />Archive</SidebarItem>
-              <SidebarItem><ShareOutlinedIcon fontSize="small" />Share</SidebarItem>
-            </Stack>
-          </Grid>
         </Grid>
+
+        
       </Box>
     </Modal>
   )
