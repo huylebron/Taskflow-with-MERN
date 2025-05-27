@@ -5,6 +5,7 @@
  */
 import { StatusCodes } from 'http-status-codes'
 import { cardService } from '~/services/cardService'
+import { CARD_COVER_COLORS, CARD_COVER_GRADIENTS } from '~/utils/constants'
 
 const createNew = async (req, res, next) => {
   try {
@@ -24,7 +25,19 @@ const update = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+const getCoverOptions = async (req, res, next) => {
+  try {
+    const coverOptions = {
+      colors: CARD_COVER_COLORS,
+      gradients: CARD_COVER_GRADIENTS
+    }
+    
+    res.status(StatusCodes.OK).json(coverOptions)
+  } catch (error) { next(error) }
+}
+
 export const cardController = {
   createNew,
-  update
+  update,
+  getCoverOptions
 }

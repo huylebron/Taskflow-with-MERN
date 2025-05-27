@@ -27,7 +27,11 @@ const update = async (req, res, next) => {
   // Lưu ý không dùng hàm required() trong trường hợp Update
   const correctCondition = Joi.object({
     title: Joi.string().min(3).max(50).trim().strict(),
-    description: Joi.string().optional()
+    description: Joi.string().optional(),
+    deleteCardCover: Joi.boolean().optional(),
+    cloudinaryPublicId: Joi.string().optional(),
+    coverType: Joi.string().valid('image', 'color', 'gradient').optional(),
+    cover: Joi.string().optional()
   })
 
   try {

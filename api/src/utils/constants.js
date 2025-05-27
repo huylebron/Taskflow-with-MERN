@@ -36,3 +36,25 @@ export const CARD_MEMBER_ACTIONS = {
   ADD: 'ADD',
   REMOVE: 'REMOVE'
 }
+
+// Card cover colors và gradients
+export const CARD_COVER_COLORS = {
+  BLUE: '#0079bf',
+  ORANGE: '#d29034',
+  GREEN: '#519839',
+  RED: '#b04632',
+  PURPLE: '#89609e',
+  PINK: '#cd5a91',
+  LIME: '#4bbf6b',
+  SKY: '#00aecc',
+  GREY: '#838c91',
+  NAVY: '#172b4d'
+}
+
+export const CARD_COVER_GRADIENTS = {
+  GRADIENT_1: 'linear-gradient(to right, #00c6ff, #0072ff)',
+  GRADIENT_2: 'linear-gradient(to right, #f857a6, #ff5858)',
+  GRADIENT_3: 'linear-gradient(to right, #4facfe, #00f2fe)',
+  GRADIENT_4: 'linear-gradient(to right, #43e97b, #38f9d7)',
+  GRADIENT_5: 'linear-gradient(to right, #fa709a, #fee140)'
+}

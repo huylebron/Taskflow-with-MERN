@@ -14,6 +14,9 @@ const Router = express.Router()
 Router.route('/')
   .post(authMiddleware.isAuthorized, cardValidation.createNew, cardController.createNew)
 
+Router.route('/cover-options')
+  .get(authMiddleware.isAuthorized, cardController.getCoverOptions)
+
 Router.route('/:id')
   .put(
     authMiddleware.isAuthorized,

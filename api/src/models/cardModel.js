@@ -20,6 +20,7 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
   description: Joi.string().optional(),
 
   cover: Joi.string().default(null),
+  coverType: Joi.string().valid('image', 'color', 'gradient').default(null),
   memberIds: Joi.array().items(
     Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
   ).default([]),

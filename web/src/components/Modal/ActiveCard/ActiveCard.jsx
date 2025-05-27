@@ -12,6 +12,9 @@ import WatchLaterOutlinedIcon from '@mui/icons-material/WatchLaterOutlined'
 import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import AutoFixHighOutlinedIcon from '@mui/icons-material/AutoFixHighOutlined'
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
+import Tooltip from '@mui/material/Tooltip'
+import IconButton from '@mui/material/IconButton'
 
 import SubjectRoundedIcon from '@mui/icons-material/SubjectRounded'
 import DvrOutlinedIcon from '@mui/icons-material/DvrOutlined'
@@ -41,6 +44,9 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 
 import { styled } from '@mui/material/styles'
+import ImageLightbox from '../ImageLightbox/ImageLightbox'
+import CoverOptionsModal from './CoverOptionsModal'
+
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -69,6 +75,8 @@ function ActiveCard() {
   const activeCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
   const currentUser = useSelector(selectCurrentUser)
+  const [showCoverLightbox, setShowCoverLightbox] = useState(false)
+  const [showCoverOptions, setShowCoverOptions] = useState(false)
 
   // State for "Thêm" button dropdown menu
   const [anchorEl, setAnchorEl] = useState(null);
@@ -126,6 +134,18 @@ function ActiveCard() {
     )
   }
 
+  const onDeleteCardCover = async () => {
+    try {
+      // Gọi API để xóa cover
+      await callApiUpdateCard({ deleteCardCover: true })
+      
+      // Thông báo thành công
+      toast.success('Xóa ảnh cover thành công!', { position: 'bottom-right' })
+    } catch (error) {
+      toast.error('Xóa ảnh cover thất bại!', { position: 'bottom-right' })
+    }
+  }
+
   // Dùng async await ở đây để component con CardActivitySection chờ và nếu thành công thì mới clear thẻ input comment
   const onAddCardComment = async (commentToAdd) => {
     await callApiUpdateCard({ commentToAdd })
@@ -135,11 +155,53 @@ function ActiveCard() {
     callApiUpdateCard({ incomingMemberInfo })
   }
 
+  const handleCoverClick = (e) => {
+    setShowCoverLightbox(true)
+  }
+
+  const handleCloseCoverLightbox = () => {
+    setShowCoverLightbox(false)
+  }
+
+  const onShowCoverOptions = () => {
+    setShowCoverOptions(true)
+  }
+
+  const onCloseCoverOptions = () => {
+    setShowCoverOptions(false)
+  }
+
+  const onSelectCoverColor = async (coverValue, coverType) => {
+    try {
+      // Gọi API để cập nhật cover với màu hoặc gradient
+      await callApiUpdateCard({
+        cover: coverValue,
+        coverType: coverType
+      })
+      
+      // Thông báo thành công
+      toast.success('Cập nhật ảnh bìa thành công!', { position: 'bottom-right' })
+    } catch (error) {
+      toast.error('Cập nhật ảnh bìa thất bại!', { position: 'bottom-right' })
+    }
+  }
+
+  const onUploadCoverFromModal = (file) => {
+    let reqData = new FormData()
+    reqData.append('cardCover', file)
+
+    // Gọi API...
+    toast.promise(
+      callApiUpdateCard(reqData),
+      { pending: 'Đang tải lên...', success: 'Cập nhật ảnh bìa thành công!', error: 'Cập nhật ảnh bìa thất bại!' }
+    )
+  }
+
   return (
     <Modal
       disableScrollLock
       open={isShowModalActiveCard}
-      onClose={handleCloseModal} // Sử dụng onClose trong trường hợp muốn đóng Modal bằng nút ESC hoặc click ra ngoài Modal
+      onClose={handleCloseModal}
       sx={{ overflowY: 'auto' }}>
       <Box sx={{
         position: 'relative',
@@ -164,12 +226,51 @@ function ActiveCard() {
         </Box>
 
         {activeCard?.cover &&
-          <Box sx={{ mb: 4 }}>
+          <Box sx={{ mb: 4, position: 'relative' }}>
             <img
-              style={{ width: '100%', height: '320px', borderRadius: '6px', objectFit: 'cover' }}
+              style={{ 
+                width: '100%', 
+                height: '320px', 
+                borderRadius: '6px', 
+                objectFit: 'cover',
+                cursor: 'zoom-in',
+                ...(activeCard?.coverType === 'color' || activeCard?.coverType === 'gradient' ? { 
+                  display: 'none' 
+                } : {})
+              }}
               src={activeCard?.cover}
               alt="card-cover"
+              onClick={handleCoverClick}
             />
+            {(activeCard?.coverType === 'color' || activeCard?.coverType === 'gradient') && (
+              <Box 
+                sx={{ 
+                  width: '100%', 
+                  height: '160px', 
+                  borderRadius: '6px', 
+                  background: activeCard?.cover,
+                  mb: 2
+                }}
+              />
+            )}
+            <Tooltip title="Xóa ảnh cover">
+              <IconButton
+                onClick={onDeleteCardCover}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  }
+                }}
+                size="medium"
+              >
+                <DeleteOutlinedIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
         }
 
@@ -186,8 +287,6 @@ function ActiveCard() {
         {/* Members section - full width */}
         <Box sx={{ mb: 3 }}>
           <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Members</Typography>
-
-          {/* Feature 02: Xử lý các thành viên của Card */}
           <CardUserGroup
             cardMemberIds={activeCard?.memberIds}
             onUpdateCardMembers={onUpdateCardMembers}
@@ -254,7 +353,7 @@ function ActiveCard() {
             }
 
             {/* Feature 06: Xử lý hành động cập nhật ảnh Cover của Card */}
-            <SidebarItem className="active" component="label">
+            <SidebarItem className="active" onClick={onShowCoverOptions}>
               <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <ImageOutlinedIcon fontSize="small" />
@@ -264,7 +363,6 @@ function ActiveCard() {
                   <CheckCircleIcon fontSize="small" sx={{ color: '#27ae60' }} />
                 </Box>
               </Box>
-              <VisuallyHiddenInput type="file" onChange={onUploadCardCover} />
             </SidebarItem>
 
             <SidebarItem><AttachFileOutlinedIcon fontSize="small" />Attachment</SidebarItem>
@@ -425,7 +523,20 @@ function ActiveCard() {
           </Grid>
         </Grid>
 
+        {activeCard?.cover && activeCard?.coverType === 'image' && 
+          <ImageLightbox 
+            isOpen={showCoverLightbox} 
+            onClose={handleCloseCoverLightbox} 
+            imageSrc={activeCard?.cover} 
+          />
+        }
         
+        <CoverOptionsModal 
+          isOpen={showCoverOptions} 
+          onClose={onCloseCoverOptions} 
+          onSelectColor={onSelectCoverColor}
+          onUploadCover={onUploadCoverFromModal}
+        />
       </Box>
     </Modal>
   )

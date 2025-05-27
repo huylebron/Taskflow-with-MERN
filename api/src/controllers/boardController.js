@@ -29,7 +29,7 @@ const getDetails = async (req, res, next) => {
   try {
     const userId = req.jwtDecoded._id
     const boardId = req.params.id
-    // Sau này ở khóa MERN Stack Advance nâng cao học trực tiếp sẽ có thêm userId nữa để chỉ lấy board thuộc về user đó thôi chẳng hạn...vv
+
     const board = await boardService.getDetails(userId, boardId)
     res.status(StatusCodes.OK).json(board)
   } catch (error) { next(error) }

@@ -28,4 +28,17 @@ const streamUpload = (fileBuffer, folderName) => {
   })
 }
 
-export const CloudinaryProvider = { streamUpload }
+// Hàm xóa tài nguyên trên Cloudinary dựa trên public_id
+const deleteResource = (publicId) => {
+  return new Promise((resolve, reject) => {
+    cloudinaryV2.uploader.destroy(publicId, (err, result) => {
+      if (err) reject(err)
+      else resolve(result)
+    })
+  })
+}
+
+export const CloudinaryProvider = { 
+  streamUpload, 
+  deleteResource 
+}
