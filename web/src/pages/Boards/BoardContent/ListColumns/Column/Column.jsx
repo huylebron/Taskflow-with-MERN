@@ -34,6 +34,7 @@ import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
 import ColumnColorModal from '~/components/Modal/ColumnColorModal'
 import { getTextColorForBackground } from '~/utils/formatters'
 import { updateColumnInBoard } from '~/redux/activeBoard/activeBoardSlice'
+import CircularProgress from '@mui/material/CircularProgress'
 
 function Column({ column }) {
   const dispatch = useDispatch()
@@ -69,6 +70,7 @@ function Column({ column }) {
 
   // State để quản lý Column Color Modal
   const [showColumnColorModal, setShowColumnColorModal] = useState(false)
+  const [isUpdatingColor, setIsUpdatingColor] = useState(false)
 
   const addNewCard = async () => {
     if (!newCardTitle) {
@@ -169,21 +171,34 @@ function Column({ column }) {
     setShowColumnColorModal(false)
   }
 
-  const handleSelectColumnColor = (color, type) => {
-    // Cập nhật màu column trong state
-    const columnToUpdate = {
-      ...column,
-      color: type === 'default' ? null : color,
-      colorType: type === 'default' ? null : type
+  const handleSelectColumnColor = async (color, type) => {
+    try {
+      setIsUpdatingColor(true)
+      
+      // Cập nhật màu column trong state
+      const columnToUpdate = {
+        ...column,
+        color: type === 'default' ? null : color,
+        colorType: type === 'default' ? null : type
+      }
+      
+      // Dispatch action để cập nhật trực tiếp vào Redux
+      dispatch(updateColumnInBoard(columnToUpdate))
+
+      // Gọi API để cập nhật màu column thông qua updateColumnDetailsAPI
+      await updateColumnDetailsAPI(column._id, { 
+        color: columnToUpdate.color, 
+        colorType: columnToUpdate.colorType 
+      })
+
+      toast.success('Đã cập nhật màu cột!', { position: 'bottom-right' })
+    } catch (error) {
+      toast.error('Không thể cập nhật màu cột!', { position: 'bottom-right' })
+      console.error('Error updating column color:', error)
+    } finally {
+      setIsUpdatingColor(false)
+      handleCloseColumnColorModal()
     }
-    
-    // Dispatch action để cập nhật trực tiếp vào Redux
-    dispatch(updateColumnInBoard(columnToUpdate))
-
-    // TODO: Gọi API để cập nhật màu column (sẽ implement trong phase 2)
-    // updateColumnDetailsAPI(column._id, { color: columnToUpdate.color, colorType: columnToUpdate.colorType })
-
-    toast.success('Đã cập nhật màu cột!', { position: 'bottom-right' })
   }
 
   // Phải bọc div ở đây vì vấn đề chiều cao của column khi kéo thả sẽ có bug kiểu kiểu flickering (video 32)
@@ -219,16 +234,22 @@ function Column({ column }) {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {/* Icon đổi màu cột */}
             <Tooltip title="Change Column Color">
-              <ColorLensIcon
-                sx={{ 
-                  color: 'text.primary', 
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  '&:hover': { color: 'primary.main' }
-                }}
-                onClick={handleShowColumnColorModal}
-                data-no-dnd="true"
-              />
+              {isUpdatingColor ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>
+                  <CircularProgress size={16} />
+                </Box>
+              ) : (
+                <ColorLensIcon
+                  sx={{ 
+                    color: 'text.primary', 
+                    cursor: 'pointer',
+                    fontSize: '20px',
+                    '&:hover': { color: 'primary.main' }
+                  }}
+                  onClick={handleShowColumnColorModal}
+                  data-no-dnd="true"
+                />
+              )}
             </Tooltip>
 
             <Tooltip title="More options">

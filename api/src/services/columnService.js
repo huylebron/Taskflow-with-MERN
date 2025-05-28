@@ -9,6 +9,7 @@ import { boardModel } from '~/models/boardModel'
 import { cardModel } from '~/models/cardModel'
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
+import { COLUMN_COLORS, CARD_COVER_GRADIENTS } from '~/utils/constants'
 
 const createNew = async (reqBody) => {
   try {
@@ -64,8 +65,18 @@ const deleteItem = async (columnId) => {
   } catch (error) { throw error }
 }
 
+const getColumnColorOptions = async () => {
+  try {
+    return {
+      colors: COLUMN_COLORS,
+      gradients: CARD_COVER_GRADIENTS
+    }
+  } catch (error) { throw error }
+}
+
 export const columnService = {
   createNew,
   update,
-  deleteItem
+  deleteItem,
+  getColumnColorOptions
 }

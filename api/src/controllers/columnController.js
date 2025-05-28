@@ -31,8 +31,16 @@ const deleteItem = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+const getColumnColorOptions = async (req, res, next) => {
+  try {
+    const colorOptions = await columnService.getColumnColorOptions()
+    res.status(StatusCodes.OK).json(colorOptions)
+  } catch (error) { next(error) }
+}
+
 export const columnController = {
   createNew,
   update,
-  deleteItem
+  deleteItem,
+  getColumnColorOptions
 }

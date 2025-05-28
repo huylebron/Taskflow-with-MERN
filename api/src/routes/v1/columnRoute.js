@@ -13,6 +13,9 @@ const Router = express.Router()
 Router.route('/')
   .post(authMiddleware.isAuthorized, columnValidation.createNew, columnController.createNew)
 
+Router.route('/color-options')
+  .get(authMiddleware.isAuthorized, columnController.getColumnColorOptions)
+
 Router.route('/:id')
   .put(authMiddleware.isAuthorized, columnValidation.update, columnController.update)
   .delete(authMiddleware.isAuthorized, columnValidation.deleteItem, columnController.deleteItem)

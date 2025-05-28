@@ -28,6 +28,7 @@ const update = async (req, res, next) => {
     // Nếu cần làm tính năng di chuyển Column sang Board khác thì mới thêm validate boardId
     // boardId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
     title: Joi.string().min(3).max(50).trim().strict(),
+    color: Joi.string().allow(null),
     cardOrderIds: Joi.array().items(
       Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
     )
