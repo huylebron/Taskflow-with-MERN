@@ -58,3 +58,31 @@ export const CARD_COVER_GRADIENTS = {
   GRADIENT_4: 'linear-gradient(to right, #43e97b, #38f9d7)',
   GRADIENT_5: 'linear-gradient(to right, #fa709a, #fee140)'
 }
+
+// Column colors - 20 màu cố định hài hòa với UI
+export const COLUMN_COLORS = {
+  BLUE: '#0079bf',
+  LIGHT_BLUE: '#54a3ff',
+  OCEAN: '#026aa7',
+  ORANGE: '#d29034',
+  PEACH: '#ffab4a',
+  AMBER: '#ff8f00',
+  GREEN: '#519839',
+  LIME: '#4bbf6b',
+  FOREST: '#2d5016',
+  RED: '#b04632',
+  CRIMSON: '#eb5a46',
+  CHERRY: '#c9372c',
+  PURPLE: '#89609e',
+  VIOLET: '#9c27b0',
+  INDIGO: '#6366f1',
+  PINK: '#cd5a91',
+  ROSE: '#e91e63',
+  MAGENTA: '#e040fb',
+  GREY: '#838c91',
+  DARK_GREY: '#4f4f4f',
+  NAVY: '#172b4d',
+  TEAL: '#00897b',
+  CYAN: '#00bcd4',
+  YELLOW: '#f9c74f'
+}

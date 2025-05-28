@@ -45,3 +45,54 @@ export const interceptorLoadingElements = (calling) => {
     }
   }
 }
+
+/**
+ * Helper function để tính màu text contrast phù hợp với background color
+ * Input là hex color (không còn gradient)
+ */
+export const getTextColorForBackground = (backgroundColor) => {
+  if (!backgroundColor) return 'inherit'
+  
+  // Kiểm tra nếu backgroundColor không phải hex color hợp lệ
+  if (!backgroundColor.startsWith('#')) {
+    return '#000000' // Fallback
+  }
+  
+  try {
+    // Chuyển hex color thành RGB
+    const hex = backgroundColor.replace('#', '')
+    
+    // Kiểm tra độ dài hex hợp lệ
+    if (hex.length !== 3 && hex.length !== 6) {
+      return '#000000' // Fallback cho hex không hợp lệ
+    }
+    
+    let r, g, b
+    
+    if (hex.length === 3) {
+      // Xử lý hex 3 ký tự (ví dụ: #fff)
+      r = parseInt(hex.charAt(0) + hex.charAt(0), 16)
+      g = parseInt(hex.charAt(1) + hex.charAt(1), 16)
+      b = parseInt(hex.charAt(2) + hex.charAt(2), 16)
+    } else {
+      // Xử lý hex 6 ký tự (ví dụ: #ffffff)
+      r = parseInt(hex.substring(0, 2), 16)
+      g = parseInt(hex.substring(2, 4), 16)
+      b = parseInt(hex.substring(4, 6), 16)
+    }
+    
+    // Kiểm tra giá trị RGB hợp lệ
+    if (isNaN(r) || isNaN(g) || isNaN(b)) {
+      return '#000000' // Fallback
+    }
+    
+    // Tính luminance theo công thức W3C
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    
+    // Trả về màu text phù hợp
+    return luminance > 0.5 ? '#000000' : '#ffffff'
+  } catch (error) {
+    console.warn('Error calculating text color for background:', backgroundColor, error)
+    return '#000000' // Fallback cho mọi lỗi
+  }
+}

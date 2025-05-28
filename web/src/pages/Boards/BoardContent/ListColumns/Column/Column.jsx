@@ -16,6 +16,7 @@ import Tooltip from '@mui/material/Tooltip'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import AddCardIcon from '@mui/icons-material/AddCard'
 import DragHandleIcon from '@mui/icons-material/DragHandle'
+import ColorLensIcon from '@mui/icons-material/ColorLens'
 import ListCards from './ListCards/ListCards'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -30,6 +31,9 @@ import {
 import { useDispatch, useSelector } from 'react-redux'
 import { cloneDeep } from 'lodash'
 import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
+import ColumnColorModal from '~/components/Modal/ColumnColorModal'
+import { getTextColorForBackground } from '~/utils/formatters'
+import { updateColumnInBoard } from '~/redux/activeBoard/activeBoardSlice'
 
 function Column({ column }) {
   const dispatch = useDispatch()
@@ -62,6 +66,9 @@ function Column({ column }) {
   const toggleOpenNewCardForm = () => setOpenNewCardForm(!openNewCardForm)
 
   const [newCardTitle, setNewCardTitle] = useState('')
+
+  // State để quản lý Column Color Modal
+  const [showColumnColorModal, setShowColumnColorModal] = useState(false)
 
   const addNewCard = async () => {
     if (!newCardTitle) {
@@ -152,6 +159,33 @@ function Column({ column }) {
     })
   }
 
+  // Handle Column Color Modal
+  const handleShowColumnColorModal = (e) => {
+    e.stopPropagation() // Prevent event bubbling
+    setShowColumnColorModal(true)
+  }
+
+  const handleCloseColumnColorModal = () => {
+    setShowColumnColorModal(false)
+  }
+
+  const handleSelectColumnColor = (color, type) => {
+    // Cập nhật màu column trong state
+    const columnToUpdate = {
+      ...column,
+      color: type === 'default' ? null : color,
+      colorType: type === 'default' ? null : type
+    }
+    
+    // Dispatch action để cập nhật trực tiếp vào Redux
+    dispatch(updateColumnInBoard(columnToUpdate))
+
+    // TODO: Gọi API để cập nhật màu column (sẽ implement trong phase 2)
+    // updateColumnDetailsAPI(column._id, { color: columnToUpdate.color, colorType: columnToUpdate.colorType })
+
+    toast.success('Đã cập nhật màu cột!', { position: 'bottom-right' })
+  }
+
   // Phải bọc div ở đây vì vấn đề chiều cao của column khi kéo thả sẽ có bug kiểu kiểu flickering (video 32)
   return (
     <div ref={setNodeRef} style={dndKitColumnStyles} {...attributes}>
@@ -160,11 +194,12 @@ function Column({ column }) {
         sx={{
           minWidth: '300px',
           maxWidth: '300px',
-          bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#333643' : '#ebecf0'),
+          bgcolor: column?.color || ((theme) => (theme.palette.mode === 'dark' ? '#333643' : '#ebecf0')),
           ml: 2,
           borderRadius: '6px',
           height: 'fit-content',
-          maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`
+          maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
+          color: column?.color ? getTextColorForBackground(column.color) : 'inherit'
         }}
       >
         {/* Box Column Header */}
@@ -181,7 +216,21 @@ function Column({ column }) {
             data-no-dnd="true"
           />
 
-          <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Icon đổi màu cột */}
+            <Tooltip title="Change Column Color">
+              <ColorLensIcon
+                sx={{ 
+                  color: 'text.primary', 
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  '&:hover': { color: 'primary.main' }
+                }}
+                onClick={handleShowColumnColorModal}
+                data-no-dnd="true"
+              />
+            </Tooltip>
+
             <Tooltip title="More options">
               <ExpandMoreIcon
                 sx={{ color: 'text.primary', cursor: 'pointer' }}
@@ -192,58 +241,6 @@ function Column({ column }) {
                 onClick={handleClick}
               />
             </Tooltip>
-            <Menu
-              id="basic-menu-column-dropdown"
-              anchorEl={anchorEl}
-              open={open}
-              onClose={handleClose}
-              onClick={handleClose}
-              MenuListProps={{
-                'aria-labelledby': 'basic-column-dropdown'
-              }}
-            >
-              <MenuItem
-                onClick={toggleOpenNewCardForm}
-                sx={{
-                  '&:hover': {
-                    color: 'success.light',
-                    '& .add-card-icon': { color: 'success.light' }
-                  }
-                }}
-              >
-                <ListItemIcon><AddCardIcon className="add-card-icon" fontSize="small" /></ListItemIcon>
-                <ListItemText>Add new card</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon><ContentCut fontSize="small" /></ListItemIcon>
-                <ListItemText>Cut</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon><ContentCopy fontSize="small" /></ListItemIcon>
-                <ListItemText>Copy</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon><ContentPaste fontSize="small" /></ListItemIcon>
-                <ListItemText>Paste</ListItemText>
-              </MenuItem>
-              <Divider />
-              <MenuItem
-                onClick={handleDeleteColumn}
-                sx={{
-                  '&:hover': {
-                    color: 'warning.dark',
-                    '& .delete-forever-icon': { color: 'warning.dark' }
-                  }
-                }}
-              >
-                <ListItemIcon><DeleteForeverIcon className="delete-forever-icon" fontSize="small" /></ListItemIcon>
-                <ListItemText>Delete this column</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon><Cloud fontSize="small" /></ListItemIcon>
-                <ListItemText>Archive this column</ListItemText>
-              </MenuItem>
-            </Menu>
           </Box>
         </Box>
 
@@ -323,7 +320,67 @@ function Column({ column }) {
             </Box>
           }
         </Box>
+
+        <Menu
+          id="basic-menu-column-dropdown"
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          onClick={handleClose}
+          MenuListProps={{
+            'aria-labelledby': 'basic-column-dropdown'
+          }}
+        >
+          <MenuItem
+            onClick={toggleOpenNewCardForm}
+            sx={{
+              '&:hover': {
+                color: 'success.light',
+                '& .add-card-icon': { color: 'success.light' }
+              }
+            }}
+          >
+            <ListItemIcon><AddCardIcon className="add-card-icon" fontSize="small" /></ListItemIcon>
+            <ListItemText>Add new card</ListItemText>
+          </MenuItem>
+          <MenuItem>
+            <ListItemIcon><ContentCut fontSize="small" /></ListItemIcon>
+            <ListItemText>Cut</ListItemText>
+          </MenuItem>
+          <MenuItem>
+            <ListItemIcon><ContentCopy fontSize="small" /></ListItemIcon>
+            <ListItemText>Copy</ListItemText>
+          </MenuItem>
+          <MenuItem>
+            <ListItemIcon><ContentPaste fontSize="small" /></ListItemIcon>
+            <ListItemText>Paste</ListItemText>
+          </MenuItem>
+          <Divider />
+          <MenuItem
+            onClick={handleDeleteColumn}
+            sx={{
+              '&:hover': {
+                color: 'warning.dark',
+                '& .delete-forever-icon': { color: 'warning.dark' }
+              }
+            }}
+          >
+            <ListItemIcon><DeleteForeverIcon className="delete-forever-icon" fontSize="small" /></ListItemIcon>
+            <ListItemText>Delete this column</ListItemText>
+          </MenuItem>
+          <MenuItem>
+            <ListItemIcon><Cloud fontSize="small" /></ListItemIcon>
+            <ListItemText>Archive this column</ListItemText>
+          </MenuItem>
+        </Menu>
       </Box>
+
+      {/* Column Color Modal */}
+      <ColumnColorModal
+        isOpen={showColumnColorModal}
+        onClose={handleCloseColumnColorModal}
+        onSelectColor={handleSelectColumnColor}
+      />
     </div>
   )
 }
