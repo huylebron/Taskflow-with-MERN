@@ -15,6 +15,11 @@ import InviteBoardUser from './InviteBoardUser'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import { useState } from 'react'
+import BoardBackgroundModal from '~/components/Modal/BoardBackgroundModal/BoardBackgroundModal'
+import { updateBoardDetailsAPI } from '~/apis'
+import { toast } from 'react-toastify'
+import { useDispatch } from 'react-redux'
+import { updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 
 const MENU_STYLES = {
   color: 'white',
@@ -31,7 +36,9 @@ const MENU_STYLES = {
 }
 
 function BoardBar({ board }) {
+  const dispatch = useDispatch()
   const [anchorEl, setAnchorEl] = useState(null)
+  const [showBackgroundModal, setShowBackgroundModal] = useState(false)
   const open = Boolean(anchorEl)
   
   const handleClick = (event) => {
@@ -40,6 +47,38 @@ function BoardBar({ board }) {
   
   const handleClose = () => {
     setAnchorEl(null)
+  }
+
+  const handleShowBackgroundModal = () => {
+    handleClose()
+    setShowBackgroundModal(true)
+  }
+
+  const handleCloseBackgroundModal = () => {
+    setShowBackgroundModal(false)
+  }
+
+  const handleSelectBackground = async (value, type) => {
+    try {
+      let updatedBoard
+      if (type === 'image') {
+        // Handle image upload
+        let formData = new FormData()
+        formData.append('boardBackground', value)
+        updatedBoard = await updateBoardDetailsAPI(board._id, formData)
+      } else {
+        // Handle color or gradient
+        updatedBoard = await updateBoardDetailsAPI(board._id, {
+          background: value,
+          backgroundType: type
+        })
+      }
+      
+      dispatch(updateCurrentActiveBoard(updatedBoard))
+      toast.success('Board background updated successfully!')
+    } catch (error) {
+      toast.error('Failed to update board background!')
+    }
   }
 
   return (
@@ -52,7 +91,8 @@ function BoardBar({ board }) {
       gap: 2,
       paddingX: 2,
       overflowX: 'auto',
-      bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#34495e' : '#1976d2')
+      bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#34495e' : '#1976d2'),
+      borderBottom: '1px solid white'
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Tooltip title={board?.description}>
@@ -72,19 +112,19 @@ function BoardBar({ board }) {
         <Chip
           sx={MENU_STYLES}
           icon={<BarChartIcon />}
-          label="Thống kê"
+          label="Analytics"
           clickable
         />
         <Chip
           sx={MENU_STYLES}
           icon={<FilterListIcon />}
-          label="Lọc tổng hợp"
+          label="Filters"
           clickable
         />
         <Chip
           sx={MENU_STYLES}
           icon={<SettingsIcon />}
-          label="Tùy chọn"
+          label="Settings"
           clickable
           onClick={handleClick}
         />
@@ -102,17 +142,17 @@ function BoardBar({ board }) {
             }
           }}
         >
-          <MenuItem onClick={handleClose}>
-            <WallpaperIcon /> Thay đổi hình nền
+          <MenuItem onClick={handleShowBackgroundModal}>
+            <WallpaperIcon /> Change Background
           </MenuItem>
           <MenuItem onClick={handleClose}>
-            <GroupIcon /> Thành viên
+            <GroupIcon /> Members
           </MenuItem>
         </Menu>
         <Chip
           sx={MENU_STYLES}
           icon={<CalendarMonthIcon />}
-          label="Lịch biểu"
+          label="Calendar"
           clickable
         />
       </Box>
@@ -121,6 +161,12 @@ function BoardBar({ board }) {
         <InviteBoardUser boardId={board._id} />
         <BoardUserGroup boardUsers={board?.FE_allUsers} />
       </Box>
+
+      <BoardBackgroundModal 
+        isOpen={showBackgroundModal}
+        onClose={handleCloseBackgroundModal}
+        onSelectBackground={handleSelectBackground}
+      />
     </Box>
   )
 }
