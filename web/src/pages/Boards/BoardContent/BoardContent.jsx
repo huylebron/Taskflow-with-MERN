@@ -31,6 +31,17 @@ const ACTIVE_DRAG_ITEM_TYPE = {
   CARD: 'ACTIVE_DRAG_ITEM_TYPE_CARD'
 }
 
+// Custom Drop Animation cho DragOverlay
+const customDropAnimation = {
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: {
+      active: {
+        opacity: '0.5'
+      }
+    }
+  })
+}
+
 function BoardContent({
   board,
   moveColumns,
@@ -301,7 +312,6 @@ function BoardContent({
          * Gọi lên props function moveColumns nằm ở component cha cao nhất (boards/_id.jsx)
          * Lưu ý: Về sau ở học phần MERN Stack Advance nâng cao học trực tiếp mình sẽ với mình thì chúng ta sẽ đưa dữ liệu Board ra ngoài Redux Global Store,
          * và lúc này chúng ta có thể gọi luôn API ở đây là xong thay vì phải lần lượt gọi ngược lên những component cha phía bên trên. (Đối với component con nằm càng sâu thì càng khổ :D)
-         * - Với việc sử dụng Redux như vậy thì code sẽ Clean chuẩn chỉnh hơn rất nhiều.
         */
         moveColumns(dndOrderedColumns)
       }
@@ -312,13 +322,6 @@ function BoardContent({
     setActiveDragItemType(null)
     setActiveDragItemData(null)
     setOldColumnWhenDraggingCard(null)
-  }
-
-  /**
-   * Animation khi thả (Drop) phần tử - Test bằng cách kéo xong thả trực tiếp và nhìn phần giữ chỗ Overlay (video 32)
-   */
-  const customDropAnimation = {
-    sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } })
   }
 
   // Chúng ta sẽ custom lại chiến lược / thuật toán phát hiện va chạm tối ưu cho việc kéo thả card giữa nhiều columns (video 37 fix bug quan trọng)
@@ -370,27 +373,24 @@ function BoardContent({
 
   return (
     <DndContext
-      // Cảm biến (đã giải thích kỹ ở video số 30)
-      sensors={sensors}
-      // Thuật toán phát hiện va chạm (nếu không có nó thì card với cover lớn sẽ không kéo qua Column được vì lúc này nó đang bị conflict giữa card và column), chúng ta sẽ dùng closestCorners thay vì closestCenter
-      // https://docs.dndkit.com/api-documentation/context-provider/collision-detection-algorithms
-      // Update video 37: nếu chỉ dùng closestCorners sẽ có bug flickering + sai lệch dữ liệu (vui lòng xem video 37 sẽ rõ)
-      // collisionDetection={closestCorners}
-
-      // Tự custom nâng cao thuật toán phát hiện va chạm (video fix bug số 37)
+      // Sử dụng collisionDetectionStrategy thay vì closestCorners để tránh bug flickering
       collisionDetection={collisionDetectionStrategy}
-
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      sensors={sensors}
     >
       <Box sx={{
-        bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#34495e' : '#1976d2'),
+        bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'inherit' : 'inherit'),
         width: '100%',
         height: (theme) => theme.trello.boardContentHeight,
-        p: '10px 0'
+        p: '10px 0',
+        // Đảm bảo nội dung nằm trên overlay của background
+        position: 'relative',
+        zIndex: 1
       }}>
         <ListColumns columns={orderedColumns} />
+
         <DragOverlay dropAnimation={customDropAnimation}>
           {!activeDragItemType && null}
           {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) && <Column column={activeDragItemData} />}

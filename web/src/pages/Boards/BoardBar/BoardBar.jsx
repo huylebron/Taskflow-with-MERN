@@ -15,6 +15,7 @@ import InviteBoardUser from './InviteBoardUser'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import { useState } from 'react'
+import BoardBackgroundSwitcher from '~/components/Modal/BoardBackgroundSwitcher/BoardBackgroundSwitcher'
 
 const MENU_STYLES = {
   color: 'white',
@@ -30,9 +31,12 @@ const MENU_STYLES = {
   }
 }
 
-function BoardBar({ board }) {
+function BoardBar({ board, boardId }) {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
+  
+  // State để quản lý modal background switcher
+  const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false)
   
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
@@ -40,6 +44,16 @@ function BoardBar({ board }) {
   
   const handleClose = () => {
     setAnchorEl(null)
+  }
+
+  // Handler cho việc mở/đóng background switcher modal
+  const handleOpenBackgroundModal = () => {
+    setIsBackgroundModalOpen(true)
+    handleClose() // Đóng menu sau khi chọn
+  }
+
+  const handleCloseBackgroundModal = () => {
+    setIsBackgroundModalOpen(false)
   }
 
   return (
@@ -52,7 +66,10 @@ function BoardBar({ board }) {
       gap: 2,
       paddingX: 2,
       overflowX: 'auto',
-      bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#34495e' : '#1976d2')
+      bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#34495e' : '#1976d2'),
+      // Đảm bảo BoardBar nằm trên overlay
+      position: 'relative',
+      zIndex: 1
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Tooltip title={board?.description}>
@@ -102,7 +119,7 @@ function BoardBar({ board }) {
             }
           }}
         >
-          <MenuItem onClick={handleClose}>
+          <MenuItem onClick={handleOpenBackgroundModal}>
             <WallpaperIcon /> Thay đổi hình nền
           </MenuItem>
           <MenuItem onClick={handleClose}>
@@ -121,6 +138,13 @@ function BoardBar({ board }) {
         <InviteBoardUser boardId={board._id} />
         <BoardUserGroup boardUsers={board?.FE_allUsers} />
       </Box>
+
+      {/* BoardBackgroundSwitcher Modal */}
+      <BoardBackgroundSwitcher
+        isOpen={isBackgroundModalOpen}
+        onClose={handleCloseBackgroundModal}
+        boardId={boardId || board?._id}
+      />
     </Box>
   )
 }

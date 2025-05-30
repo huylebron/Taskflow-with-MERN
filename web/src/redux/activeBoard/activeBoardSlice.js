@@ -4,6 +4,7 @@ import { API_ROOT } from '~/utils/constants'
 import { mapOrder } from '~/utils/sorts'
 import { isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
+import { DEFAULT_BACKGROUND } from '~/utils/backgroundConstants'
 
 // Khởi tạo giá trị State của một cái Slice trong redux
 const initialState = {
@@ -70,6 +71,16 @@ export const activeBoardSlice = createSlice({
           column[key] = incomingColumn[key]
         })
       }
+    },
+    updateBoardBackground: (state, action) => {
+      // Nhận dữ liệu background từ action.payload
+      const backgroundData = action.payload
+
+      // Đảm bảo currentActiveBoard tồn tại
+      if (!state.currentActiveBoard) return
+
+      // Cập nhật background của board hiện tại
+      state.currentActiveBoard.background = backgroundData
     }
   },
   // ExtraReducers: Nơi xử lý dữ liệu bất đồng bộ
@@ -83,6 +94,11 @@ export const activeBoardSlice = createSlice({
 
       // Sắp xếp thứ tự các column luôn ở đây trước khi đưa dữ liệu xuống bên dưới các component con (video 71 đã giải thích lý do ở phần Fix bug quan trọng)
       board.columns = mapOrder(board.columns, board.columnOrderIds, '_id')
+
+      // Đảm bảo board có background, nếu không thì set default
+      if (!board.background) {
+        board.background = DEFAULT_BACKGROUND
+      }
 
       board.columns.forEach(column => {
         // Khi f5 trang web thì cần xử lý vấn đề kéo thả vào một column rỗng (Nhớ lại video 37.2, code hiện tại là video 69)
@@ -104,11 +120,21 @@ export const activeBoardSlice = createSlice({
 // Action creators are generated for each case reducer function
 // Actions: Là nơi dành cho các components bên dưới gọi bằng dispatch() tới nó để cập nhật lại dữ liệu thông qua reducer (chạy đồng bộ)
 // Để ý ở trên thì không thấy properties actions đâu cả, bởi vì những cái actions này đơn giản là được thằng redux tạo tự động theo tên của reducer nhé.
-export const { updateCurrentActiveBoard, updateCardInBoard, updateColumnInBoard } = activeBoardSlice.actions
+export const { 
+  updateCurrentActiveBoard, 
+  updateCardInBoard, 
+  updateColumnInBoard,
+  updateBoardBackground 
+} = activeBoardSlice.actions
 
 // Selectors: Là nơi dành cho các components bên dưới gọi bằng hook useSelector() để lấy dữ liệu từ trong kho redux store ra sử dụng
 export const selectCurrentActiveBoard = (state) => {
   return state.activeBoard.currentActiveBoard
+}
+
+// Selector để lấy background của board hiện tại
+export const selectBoardBackground = (state) => {
+  return state.activeBoard.currentActiveBoard?.background || DEFAULT_BACKGROUND
 }
 
 // Cái file này tên là activeBoardSlice NHƯNG chúng ta sẽ export một thứ tên là Reducer, mọi người lưu ý :D

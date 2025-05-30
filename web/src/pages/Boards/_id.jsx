@@ -14,18 +14,22 @@ import { cloneDeep } from 'lodash'
 import {
   fetchBoardDetailsAPI,
   updateCurrentActiveBoard,
-  selectCurrentActiveBoard
+  selectCurrentActiveBoard,
+  selectBoardBackground
 } from '~/redux/activeBoard/activeBoardSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
 import ActiveCard from '~/components/Modal/ActiveCard/ActiveCard'
+import { BACKGROUND_TYPES } from '~/utils/backgroundConstants'
 
 function Board() {
   const dispatch = useDispatch()
   // Không dùng State của component nữa mà chuyển qua dùng State của Redux
   // const [board, setBoard] = useState(null)
   const board = useSelector(selectCurrentActiveBoard)
+  // Get board background từ Redux
+  const boardBackground = useSelector(selectBoardBackground)
 
   const { boardId } = useParams()
 
@@ -112,18 +116,61 @@ function Board() {
     })
   }
 
+  // Lấy background style dựa trên boardBackground từ Redux
+  const getBackgroundStyles = () => {
+    if (!boardBackground) return {}
+    
+    if (boardBackground.type === BACKGROUND_TYPES.COLOR) {
+      return { backgroundColor: boardBackground.value }
+    }
+    
+    if (boardBackground.type === BACKGROUND_TYPES.IMAGE) {
+      return { 
+        backgroundImage: `url(${boardBackground.value})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }
+    }
+
+    // Nếu là gradient (phần mở rộng)
+    if (boardBackground.type === BACKGROUND_TYPES.GRADIENT) {
+      return { background: boardBackground.value }
+    }
+    
+    return {}
+  }
+
   if (!board) {
     return <PageLoadingSpinner caption="Loading Board..." />
   }
 
   return (
-    <Container disableGutters maxWidth={false} sx={{ height: '100vh' }}>
+    <Container 
+      disableGutters 
+      maxWidth={false} 
+      sx={{ 
+        height: '100vh',
+        // Apply background từ Redux store
+        ...getBackgroundStyles(),
+        // Đảm bảo content bên trong vẫn đọc được dễ dàng
+        '&::before': boardBackground?.type === BACKGROUND_TYPES.IMAGE ? {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.3)', // Overlay tối cho hình ảnh
+          zIndex: 0
+        } : {}
+      }}
+    >
       {/* Modal Active Card, check đóng/mở dựa theo cái State isShowModalActiveCard lưu trong Redux */}
       <ActiveCard />
 
       {/* Các thành phần còn lại của Board Details */}
       <AppBar />
-      <BoardBar board={board} />
+      <BoardBar board={board} boardId={boardId} />
       <BoardContent
         board={board}
         // 3 cái trường hợp move dưới đây thì giữ nguyên để code xử lý kéo thả ở phần BoardContent không bị quá dài mất kiểm soát khi đọc code, maintain.

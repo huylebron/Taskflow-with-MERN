@@ -24,6 +24,68 @@ export const updateBoardDetailsAPI = async (boardId, updateData) => {
   return response.data
 }
 
+// Mock API function để cập nhật background của board
+export const updateBoardBackgroundAPI = async (boardId, backgroundData) => {
+  // Simulate random network errors (1 in 10 calls)
+  const shouldFail = Math.random() < 0.1;
+  const slowNetwork = Math.random() < 0.2;
+  
+  // Giả lập delay để tạo cảm giác gọi API thực tế
+  // Thêm thời gian delay ngẫu nhiên để giả lập mạng chậm
+  const networkDelay = slowNetwork ? 3000 : 1500;
+  await new Promise(resolve => setTimeout(resolve, networkDelay))
+
+  // Giả lập lỗi network
+  if (shouldFail) {
+    const errors = [
+      { code: 'NETWORK_ERROR', message: 'Network connection error' },
+      { code: 'SERVER_ERROR', message: 'Server is temporarily unavailable' },
+      { code: 'TIMEOUT', message: 'Request timed out' }
+    ];
+    const randomError = errors[Math.floor(Math.random() * errors.length)];
+    
+    const mockErrorResponse = {
+      success: false,
+      code: randomError.code,
+      message: randomError.message
+    };
+    
+    throw mockErrorResponse;
+  }
+
+  try {
+    // Validate data before "sending" to server
+    if (!backgroundData || !backgroundData.type) {
+      throw new Error('Invalid background data');
+    }
+    
+    // Thực tế sẽ gọi API thực để cập nhật, ở đây chỉ mock và return success
+    // const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/boards/${boardId}/background`, { background: backgroundData })
+    
+    // Giả lập response thành công
+    const mockSuccessResponse = {
+      success: true,
+      message: 'Board background updated successfully',
+      board: {
+        _id: boardId,
+        background: backgroundData,
+        updatedAt: new Date().toISOString()
+      }
+    }
+    
+    return mockSuccessResponse
+  } catch (error) {
+    // Mặc dù interceptor đã xử lý lỗi, vẫn cần xử lý để giả lập API call
+    const mockErrorResponse = {
+      success: false,
+      code: 'DATA_ERROR',
+      message: error.message || 'Failed to update board background'
+    }
+    
+    throw mockErrorResponse
+  }
+}
+
 export const moveCardToDifferentColumnAPI = async (updateData) => {
   const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/boards/supports/moving_card`, updateData)
   return response.data
