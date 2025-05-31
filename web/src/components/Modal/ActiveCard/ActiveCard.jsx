@@ -35,7 +35,13 @@ import {
   selectIsShowModalActiveCard
 } from '~/redux/activeCard/activeCardSlice'
 import { updateCardDetailsAPI } from '~/apis'
-import { updateCardInBoard } from '~/redux/activeBoard/activeBoardSlice'
+import { 
+  updateCardInBoard, 
+  selectCurrentActiveBoard,
+  addLabelToBoard,
+  deleteLabelFromBoard,
+  updateCardLabels
+} from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { CARD_MEMBER_ACTIONS } from '~/utils/constants'
 import ExitToAppIcon from '@mui/icons-material/ExitToApp'
@@ -47,6 +53,13 @@ import { styled } from '@mui/material/styles'
 import ImageLightbox from '../ImageLightbox/ImageLightbox'
 import CoverOptionsModal from './CoverOptionsModal'
 import AttachmentModal, { MOCK_ATTACHMENTS } from './AttachmentModal'
+import LabelDialog from '../LabelDialog/LabelDialog'
+import { generateLabelId } from '~/utils/labelConstants'
+import { toggleLabel } from '~/utils/labelHelpers'
+import Chip from '@mui/material/Chip'
+import LabelChip from '~/components/LabelChip/LabelChip'
+import ChecklistDialog from '../ChecklistDialog/ChecklistDialog'
+import { MOCK_CHECKLISTS } from '~/utils/checklistConstants'
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -76,14 +89,20 @@ function ActiveCard() {
   const activeCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
   const currentUser = useSelector(selectCurrentUser)
+  const activeBoard = useSelector(selectCurrentActiveBoard)
   const [showCoverLightbox, setShowCoverLightbox] = useState(false)
   const [showCoverOptions, setShowCoverOptions] = useState(false)
+  const [showLabelDialog, setShowLabelDialog] = useState(false)
 
   // State for Attachment feature
   const [showAttachmentModal, setShowAttachmentModal] = useState(false)
   const [attachments, setAttachments] = useState(MOCK_ATTACHMENTS)
   const [showAttachmentLightbox, setShowAttachmentLightbox] = useState(false)
   const [selectedAttachment, setSelectedAttachment] = useState(null)
+
+  // State for Checklist feature
+  const [showChecklistDialog, setShowChecklistDialog] = useState(false)
+  const [checklists, setChecklists] = useState(activeCard?.checklists || MOCK_CHECKLISTS)
 
   // State for "Thêm" button dropdown menu
   const [anchorEl, setAnchorEl] = useState(null);
@@ -238,6 +257,102 @@ function ActiveCard() {
     setSelectedAttachment(null)
   }
 
+  // Label features
+  const onShowLabelDialog = () => {
+    setShowLabelDialog(true)
+  }
+
+  const onCloseLabelDialog = () => {
+    setShowLabelDialog(false)
+  }
+
+  const onToggleLabel = (labelId) => {
+    // Lấy danh sách labelIds hiện tại, nếu không có thì tạo mảng rỗng
+    const currentLabelIds = activeCard?.labelIds || []
+    
+    // Toggle label (thêm hoặc xóa label khỏi card)
+    const updatedLabelIds = toggleLabel(labelId, currentLabelIds)
+    
+    // Cập nhật local state trước (optimistic update)
+    const updatedCard = { ...activeCard, labelIds: updatedLabelIds }
+    dispatch(updateCurrentActiveCard(updatedCard))
+    
+    // Cập nhật vào store
+    dispatch(updateCardLabels({
+      cardId: activeCard._id,
+      labelIds: updatedLabelIds
+    }))
+    
+    // Gọi API để cập nhật card
+    callApiUpdateCard({ labelIds: updatedLabelIds })
+  }
+
+  const onCreateLabel = (newLabel) => {
+    // Tạo ID cho label mới
+    const labelWithId = {
+      ...newLabel,
+      id: generateLabelId()
+    }
+    
+    // Thêm label mới vào danh sách predefined labels của board
+    dispatch(addLabelToBoard(labelWithId))
+    
+    // Tự động gán label mới vào card hiện tại
+    onToggleLabel(labelWithId.id)
+    
+    toast.success('Tạo label mới thành công!', { position: 'bottom-right' })
+  }
+
+  const onDeleteLabel = (labelId) => {
+    // Hiển thị confirm trước khi xóa
+    if (window.confirm('Bạn có chắc chắn muốn xóa label này? Label sẽ bị xóa khỏi tất cả các card.')) {
+      // Xóa label khỏi board và tất cả các card
+      dispatch(deleteLabelFromBoard(labelId))
+      
+      // Thông báo thành công
+      toast.success('Xóa label thành công!', { position: 'bottom-right' })
+    }
+  }
+
+  // Handlers for Checklist feature
+  const onShowChecklistDialog = () => {
+    setShowChecklistDialog(true)
+  }
+
+  const onCloseChecklistDialog = () => {
+    setShowChecklistDialog(false)
+  }
+
+  const onUpdateChecklists = async (updatedChecklists) => {
+    // Cập nhật state local
+    setChecklists(updatedChecklists)
+    
+    // Khi tích hợp API thực sự, chúng ta sẽ gọi API ở đây
+    // Hiện tại chỉ cập nhật state local
+    try {
+      // Mock API call with setTimeout to simulate network delay
+      // await callApiUpdateCard({ checklists: updatedChecklists })
+      
+      // Để MOCK, không gọi API thật - chỉ cập nhật state local
+      // Khi backend ready, bỏ comment dòng trên để gọi API thật
+      
+      // Cập nhật lại UI
+      const updatedCard = {
+        ...activeCard,
+        checklists: updatedChecklists
+      }
+      
+      // Cập nhật lại store với dữ liệu mới
+      dispatch(updateCurrentActiveCard(updatedCard))
+      dispatch(updateCardInBoard(updatedCard))
+      
+    } catch (error) {
+      toast.error('Cập nhật checklist thất bại!', { position: 'bottom-right' })
+      // Revert state if API fails
+      setChecklists(activeCard?.checklists || [])
+    }
+  }
+
   return (
     <Modal
       disableScrollLock
@@ -325,6 +440,25 @@ function ActiveCard() {
             onChangedValue={onUpdateCardTitle} />
         </Box>
 
+        {/* Labels display section */}
+        {activeCard?.labelIds?.length > 0 && (
+          <Box sx={{ mb: 3, mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+            {activeCard.labelIds.map(labelId => {
+              const label = activeBoard?.labels?.find(l => l.id === labelId)
+              if (!label) return null
+              
+              return (
+                <LabelChip
+                  key={label.id}
+                  label={label}
+                  onClick={onShowLabelDialog}
+                  sx={{ cursor: 'pointer' }}
+                />
+              )
+            })}
+          </Box>
+        )}
+
         {/* Members section - full width */}
         <Box sx={{ mb: 3 }}>
           <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Members</Typography>
@@ -409,8 +543,12 @@ function ActiveCard() {
             <SidebarItem onClick={onShowAttachmentModal}>
               <AttachFileOutlinedIcon fontSize="small" />Attachment
             </SidebarItem>
-            <SidebarItem><LocalOfferOutlinedIcon fontSize="small" />Labels</SidebarItem>
-            <SidebarItem><TaskAltOutlinedIcon fontSize="small" />Checklist</SidebarItem>
+            <SidebarItem onClick={onShowLabelDialog}>
+              <LocalOfferOutlinedIcon fontSize="small" />Labels
+            </SidebarItem>
+            <SidebarItem onClick={onShowChecklistDialog}>
+              <TaskAltOutlinedIcon fontSize="small" />Checklist
+            </SidebarItem>
 
             {/* "Thêm" Button */}
             <SidebarItem
@@ -597,6 +735,25 @@ function ActiveCard() {
             imageSrc={selectedAttachment.url}
           />
         )}
+
+        {/* Label Dialog */}
+        <LabelDialog
+          isOpen={showLabelDialog}
+          onClose={onCloseLabelDialog}
+          predefinedLabels={activeBoard?.labels || []}
+          cardLabelIds={activeCard?.labelIds || []}
+          onToggleLabel={onToggleLabel}
+          onCreateLabel={onCreateLabel}
+          onDeleteLabel={onDeleteLabel}
+        />
+
+        {/* Checklist Dialog */}
+        <ChecklistDialog
+          isOpen={showChecklistDialog}
+          onClose={onCloseChecklistDialog}
+          checklists={checklists}
+          onUpdateChecklists={onUpdateChecklists}
+        />
       </Box>
     </Modal>
   )

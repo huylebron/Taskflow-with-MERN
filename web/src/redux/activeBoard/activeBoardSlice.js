@@ -5,6 +5,7 @@ import { mapOrder } from '~/utils/sorts'
 import { isEmpty } from 'lodash'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import { DEFAULT_BACKGROUND } from '~/utils/backgroundConstants'
+import { PREDEFINED_LABELS } from '~/utils/labelConstants'
 
 // Khởi tạo giá trị State của một cái Slice trong redux
 const initialState = {
@@ -81,6 +82,54 @@ export const activeBoardSlice = createSlice({
 
       // Cập nhật background của board hiện tại
       state.currentActiveBoard.background = backgroundData
+    },
+    // Action để thêm label mới vào board
+    addLabelToBoard: (state, action) => {
+      const newLabel = action.payload
+      
+      // Đảm bảo currentActiveBoard và labels tồn tại
+      if (!state.currentActiveBoard) return
+      if (!state.currentActiveBoard.labels) {
+        state.currentActiveBoard.labels = []
+      }
+      
+      // Thêm label mới vào đầu mảng
+      state.currentActiveBoard.labels.unshift(newLabel)
+    },
+    // Action để xóa label khỏi board
+    deleteLabelFromBoard: (state, action) => {
+      const labelId = action.payload
+      
+      // Đảm bảo currentActiveBoard và labels tồn tại
+      if (!state.currentActiveBoard || !state.currentActiveBoard.labels) return
+      
+      // Xóa label khỏi danh sách labels của board
+      state.currentActiveBoard.labels = state.currentActiveBoard.labels.filter(
+        label => label.id !== labelId
+      )
+      
+      // Xóa label khỏi tất cả các card
+      state.currentActiveBoard.columns.forEach(column => {
+        column.cards.forEach(card => {
+          if (card.labelIds && card.labelIds.includes(labelId)) {
+            card.labelIds = card.labelIds.filter(id => id !== labelId)
+          }
+        })
+      })
+    },
+    // Action để cập nhật card khi thêm/xóa label
+    updateCardLabels: (state, action) => {
+      const { cardId, labelIds } = action.payload
+      
+      // Tìm card trong board
+      for (const column of state.currentActiveBoard.columns) {
+        const card = column.cards.find(c => c._id === cardId)
+        if (card) {
+          // Cập nhật labels cho card
+          card.labelIds = labelIds
+          break
+        }
+      }
     }
   },
   // ExtraReducers: Nơi xử lý dữ liệu bất đồng bộ
@@ -100,6 +149,11 @@ export const activeBoardSlice = createSlice({
         board.background = DEFAULT_BACKGROUND
       }
 
+      // Đảm bảo board có trường labels, nếu không thì khởi tạo với mock data
+      if (!board.labels) {
+        board.labels = PREDEFINED_LABELS
+      }
+
       board.columns.forEach(column => {
         // Khi f5 trang web thì cần xử lý vấn đề kéo thả vào một column rỗng (Nhớ lại video 37.2, code hiện tại là video 69)
         if (isEmpty(column.cards)) {
@@ -108,6 +162,13 @@ export const activeBoardSlice = createSlice({
         } else {
           // Sắp xếp thứ tự các cards luôn ở đây trước khi đưa dữ liệu xuống bên dưới các component con (video 71 đã giải thích lý do ở phần Fix bug quan trọng)
           column.cards = mapOrder(column.cards, column.cardOrderIds, '_id')
+          
+          // Đảm bảo mỗi card có trường labelIds
+          column.cards.forEach(card => {
+            if (!card.labelIds) {
+              card.labelIds = []
+            }
+          })
         }
       })
 
@@ -124,7 +185,10 @@ export const {
   updateCurrentActiveBoard, 
   updateCardInBoard, 
   updateColumnInBoard,
-  updateBoardBackground 
+  updateBoardBackground,
+  addLabelToBoard,
+  deleteLabelFromBoard,
+  updateCardLabels
 } = activeBoardSlice.actions
 
 // Selectors: Là nơi dành cho các components bên dưới gọi bằng hook useSelector() để lấy dữ liệu từ trong kho redux store ra sử dụng
@@ -135,6 +199,11 @@ export const selectCurrentActiveBoard = (state) => {
 // Selector để lấy background của board hiện tại
 export const selectBoardBackground = (state) => {
   return state.activeBoard.currentActiveBoard?.background || DEFAULT_BACKGROUND
+}
+
+// Selector để lấy labels của board hiện tại
+export const selectBoardLabels = (state) => {
+  return state.activeBoard.currentActiveBoard?.labels || []
 }
 
 // Cái file này tên là activeBoardSlice NHƯNG chúng ta sẽ export một thứ tên là Reducer, mọi người lưu ý :D
