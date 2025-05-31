@@ -15,6 +15,12 @@ import AutoFixHighOutlinedIcon from '@mui/icons-material/AutoFixHighOutlined'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
 import Tooltip from '@mui/material/Tooltip'
 import IconButton from '@mui/material/IconButton'
+import TextField from '@mui/material/TextField'
+import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
 
 import SubjectRoundedIcon from '@mui/icons-material/SubjectRounded'
 import DvrOutlinedIcon from '@mui/icons-material/DvrOutlined'
@@ -113,6 +119,58 @@ function ActiveCard() {
   const handleMoreMenuClose = () => {
     setAnchorEl(null);
   };
+
+  // State for Due Date Picker
+  const [showDueDatePicker, setShowDueDatePicker] = useState(false)
+  const [selectedDateTime, setSelectedDateTime] = useState('')
+
+  // Helper functions cho due date
+  const formatDueDateDisplay = (dueDate) => {
+    if (!dueDate) return ''
+    
+    const due = new Date(dueDate)
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate())
+    
+    const diffInDays = Math.ceil((dueDay - today) / (1000 * 60 * 60 * 24))
+    
+    if (diffInDays === 0) {
+      return `Hôm nay lúc ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    } else if (diffInDays === 1) {
+      return `Ngày mai lúc ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    } else if (diffInDays === -1) {
+      return `Hôm qua lúc ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    } else if (diffInDays < 0) {
+      return `${Math.abs(diffInDays)} ngày trước lúc ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    } else if (diffInDays <= 7) {
+      return `${diffInDays} ngày nữa lúc ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    } else {
+      return due.toLocaleString('vi-VN', { 
+        day: '2-digit', 
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
+  }
+
+  const getDueDateStatusColor = (dueDate) => {
+    if (!dueDate) return 'inherit'
+    
+    const now = new Date()
+    const due = new Date(dueDate)
+    const diffInHours = (due - now) / (1000 * 60 * 60)
+    
+    if (diffInHours < 0) {
+      return '#d32f2f' // Đỏ - đã quá hạn
+    } else if (diffInHours <= 24) {
+      return '#f57c00' // Cam - sắp hết hạn
+    } else {
+      return 'inherit' // Bình thường
+    }
+  }
 
   // Không dùng biến State để check đóng mở Modal nữa vì chúng ta sẽ check theo cái biến isShowModalActiveCard trong redux
   // const [isOpen, setIsOpen] = useState(true)
@@ -324,32 +382,67 @@ function ActiveCard() {
   }
 
   const onUpdateChecklists = async (updatedChecklists) => {
-    // Cập nhật state local
-    setChecklists(updatedChecklists)
-    
-    // Khi tích hợp API thực sự, chúng ta sẽ gọi API ở đây
-    // Hiện tại chỉ cập nhật state local
     try {
-      // Mock API call with setTimeout to simulate network delay
+      setChecklists(updatedChecklists)
       // await callApiUpdateCard({ checklists: updatedChecklists })
-      
-      // Để MOCK, không gọi API thật - chỉ cập nhật state local
-      // Khi backend ready, bỏ comment dòng trên để gọi API thật
-      
-      // Cập nhật lại UI
-      const updatedCard = {
-        ...activeCard,
-        checklists: updatedChecklists
-      }
-      
-      // Cập nhật lại store với dữ liệu mới
-      dispatch(updateCurrentActiveCard(updatedCard))
-      dispatch(updateCardInBoard(updatedCard))
-      
+      toast.success('Cập nhật checklist thành công!')
     } catch (error) {
-      toast.error('Cập nhật checklist thất bại!', { position: 'bottom-right' })
-      // Revert state if API fails
-      setChecklists(activeCard?.checklists || [])
+      toast.error('Có lỗi khi cập nhật checklist!')
+    }
+  }
+
+  // Due Date handlers
+  const onShowDueDatePicker = () => {
+    // Khởi tạo với giá trị hiện tại nếu có, hoặc giá trị mặc định
+    const currentDueDate = activeCard?.dueDate
+    if (currentDueDate) {
+      const date = new Date(currentDueDate)
+      // Format để phù hợp với input datetime-local
+      const formattedDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16)
+      setSelectedDateTime(formattedDate)
+    } else {
+      // Mặc định là 1 giờ từ bây giờ
+      const defaultDate = new Date()
+      defaultDate.setHours(defaultDate.getHours() + 1)
+      const formattedDate = new Date(defaultDate.getTime() - defaultDate.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16)
+      setSelectedDateTime(formattedDate)
+    }
+    setShowDueDatePicker(true)
+    handleMoreMenuClose()
+  }
+
+  const onCloseDueDatePicker = () => {
+    setShowDueDatePicker(false)
+    setSelectedDateTime('')
+  }
+
+  const onSaveDueDate = async () => {
+    if (!selectedDateTime) {
+      toast.error('Vui lòng chọn ngày và giờ')
+      return
+    }
+
+    try {
+      const dueDate = new Date(selectedDateTime).toISOString()
+      await callApiUpdateCard({ dueDate })
+      toast.success('Cập nhật ngày hết hạn thành công!')
+      onCloseDueDatePicker()
+    } catch (error) {
+      toast.error('Có lỗi khi cập nhật ngày hết hạn!')
+    }
+  }
+
+  const onRemoveDueDate = async () => {
+    try {
+      await callApiUpdateCard({ dueDate: null })
+      toast.success('Đã xóa ngày hết hạn!')
+      onCloseDueDatePicker()
+    } catch (error) {
+      toast.error('Có lỗi khi xóa ngày hết hạn!')
     }
   }
 
@@ -467,6 +560,31 @@ function ActiveCard() {
             onUpdateCardMembers={onUpdateCardMembers}
           />
         </Box>
+
+        {/* Due Date section */}
+        {activeCard?.dueDate && (
+          <Box sx={{ mb: 3 }}>
+            <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Due Date</Typography>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                p: 1.5,
+                borderRadius: 1,
+                backgroundColor: (theme) => 
+                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                border: `1px solid ${getDueDateStatusColor(activeCard.dueDate)}`,
+                color: getDueDateStatusColor(activeCard.dueDate)
+              }}
+            >
+              <WatchLaterOutlinedIcon fontSize="small" />
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {formatDueDateDisplay(activeCard.dueDate)}
+              </Typography>
+            </Box>
+          </Box>
+        )}
 
         {/* Add to card buttons - horizontal layout */}
         <Box sx={{ mb: 3 }}>
@@ -595,8 +713,7 @@ function ActiveCard() {
             >
               <MenuItem 
                 onClick={() => { 
-                  toast.info('Tính năng Dates đang được phát triển');
-                  handleMoreMenuClose(); 
+                  onShowDueDatePicker();
                 }}
                 sx={{
                   color: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#172b4d',
@@ -634,7 +751,7 @@ function ActiveCard() {
           {/* Description - Left side */}
           <Grid xs={12} sm={6}>
             <Box sx={{ mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                 <SubjectRoundedIcon />
                 <Typography variant="span" sx={{ fontWeight: '600', fontSize: '20px' }}>Description</Typography>
               </Box>
@@ -754,6 +871,100 @@ function ActiveCard() {
           checklists={checklists}
           onUpdateChecklists={onUpdateChecklists}
         />
+
+        {/* Due Date Picker Dialog */}
+        <Dialog 
+          open={showDueDatePicker} 
+          onClose={onCloseDueDatePicker}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 2,
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2f3542' : '#fff'
+            }
+          }}
+        >
+          <DialogTitle sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1,
+            pb: 1
+          }}>
+            <WatchLaterOutlinedIcon />
+            <Typography variant="h6">Cài đặt ngày hết hạn</Typography>
+          </DialogTitle>
+          
+          <DialogContent sx={{ pt: 2 }}>
+            <TextField
+              label="Chọn ngày và giờ"
+              type="datetime-local"
+              value={selectedDateTime}
+              onChange={(e) => setSelectedDateTime(e.target.value)}
+              fullWidth
+              InputLabelProps={{
+                shrink: true,
+              }}
+              sx={{
+                '& .MuiInputLabel-root': {
+                  color: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : 'inherit'
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)'
+                  },
+                  '&:hover fieldset': {
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#1976d2'
+                  }
+                }
+              }}
+            />
+            
+            {activeCard?.dueDate && (
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mt: 2, 
+                  color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                  fontStyle: 'italic'
+                }}
+              >
+                Hiện tại: {formatDueDateDisplay(activeCard.dueDate)}
+              </Typography>
+            )}
+          </DialogContent>
+          
+          <DialogActions sx={{ p: 2, gap: 1 }}>
+            {activeCard?.dueDate && (
+              <Button 
+                onClick={onRemoveDueDate}
+                color="error"
+                variant="outlined"
+                size="small"
+              >
+                Xóa ngày hết hạn
+              </Button>
+            )}
+            
+            <Box sx={{ flex: 1 }} />
+            
+            <Button 
+              onClick={onCloseDueDatePicker}
+              variant="outlined"
+              size="small"
+            >
+              Hủy
+            </Button>
+            
+            <Button 
+              onClick={onSaveDueDate}
+              variant="contained"
+              size="small"
+            >
+              Lưu
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Modal>
   )

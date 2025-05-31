@@ -5,6 +5,7 @@ import CardMedia from '@mui/material/CardMedia'
 import GroupIcon from '@mui/icons-material/Group'
 import CommentIcon from '@mui/icons-material/Comment'
 import AttachmentIcon from '@mui/icons-material/Attachment'
+import WatchLaterOutlinedIcon from '@mui/icons-material/WatchLaterOutlined'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -130,6 +131,95 @@ function Card({ card }) {
   const cardLabels = getCardLabels()
   const remainingLabelsCount = getRemainingLabelsCount()
 
+  // Helper functions cho due date
+  const getDueDateStatus = (dueDate) => {
+    if (!dueDate) return null
+    
+    const now = new Date()
+    const due = new Date(dueDate)
+    const diffInHours = (due - now) / (1000 * 60 * 60)
+    
+    if (diffInHours < 0) {
+      return 'overdue' // Đã quá hạn
+    } else if (diffInHours <= 24) {
+      return 'due-soon' // Sắp hết hạn (trong 24h)
+    } else {
+      return 'normal' // Bình thường
+    }
+  }
+
+  const formatDueDate = (dueDate) => {
+    if (!dueDate) return ''
+    
+    const due = new Date(dueDate)
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate())
+    
+    const diffInDays = Math.ceil((dueDay - today) / (1000 * 60 * 60 * 24))
+    
+    if (diffInDays === 0) {
+      return `Hôm nay ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    } else if (diffInDays === 1) {
+      return `Ngày mai ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    } else if (diffInDays === -1) {
+      return `Hôm qua ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    } else if (diffInDays < 0) {
+      return `${Math.abs(diffInDays)} ngày trước`
+    } else if (diffInDays <= 7) {
+      return `${diffInDays} ngày nữa`
+    } else {
+      return due.toLocaleDateString('vi-VN', { 
+        day: '2-digit', 
+        month: '2-digit',
+        year: 'numeric'
+      })
+    }
+  }
+
+  const getDueDateBadgeStyles = (status) => {
+    const baseStyles = {
+      fontSize: '11px',
+      height: '20px',
+      '& .MuiChip-label': {
+        px: 0.5,
+        fontSize: '11px'
+      },
+      '& .MuiChip-icon': {
+        fontSize: '14px',
+        marginLeft: '4px'
+      }
+    }
+
+    switch (status) {
+      case 'overdue':
+        return {
+          ...baseStyles,
+          backgroundColor: '#d32f2f',
+          color: 'white',
+          '& .MuiChip-icon': {
+            ...baseStyles['& .MuiChip-icon'],
+            color: 'white'
+          }
+        }
+      case 'due-soon':
+        return {
+          ...baseStyles,
+          backgroundColor: '#f5dcdc',
+          color: '#d32f2f',
+          border: '1px solid #d32f2f'
+        }
+      default:
+        return {
+          ...baseStyles,
+          backgroundColor: (theme) => 
+            theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+          color: (theme) => 
+            theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)'
+        }
+    }
+  }
+
   return (
     <>
       <MuiCard
@@ -248,6 +338,18 @@ function Card({ card }) {
                 />
               )}
             </Stack>
+          )}
+          
+          {/* Due Date Badge */}
+          {card?.dueDate && (
+            <Box sx={{ mb: 1 }}>
+              <Chip
+                icon={<WatchLaterOutlinedIcon />}
+                label={formatDueDate(card.dueDate)}
+                size="small"
+                sx={getDueDateBadgeStyles(getDueDateStatus(card.dueDate))}
+              />
+            </Box>
           )}
           
           {/* Checklist Progress */}
