@@ -46,6 +46,7 @@ import MenuItem from '@mui/material/MenuItem'
 import { styled } from '@mui/material/styles'
 import ImageLightbox from '../ImageLightbox/ImageLightbox'
 import CoverOptionsModal from './CoverOptionsModal'
+import AttachmentModal, { MOCK_ATTACHMENTS } from './AttachmentModal'
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -77,6 +78,12 @@ function ActiveCard() {
   const currentUser = useSelector(selectCurrentUser)
   const [showCoverLightbox, setShowCoverLightbox] = useState(false)
   const [showCoverOptions, setShowCoverOptions] = useState(false)
+
+  // State for Attachment feature
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false)
+  const [attachments, setAttachments] = useState(MOCK_ATTACHMENTS)
+  const [showAttachmentLightbox, setShowAttachmentLightbox] = useState(false)
+  const [selectedAttachment, setSelectedAttachment] = useState(null)
 
   // State for "Thêm" button dropdown menu
   const [anchorEl, setAnchorEl] = useState(null);
@@ -195,6 +202,40 @@ function ActiveCard() {
       callApiUpdateCard(reqData),
       { pending: 'Đang tải lên...', success: 'Cập nhật ảnh bìa thành công!', error: 'Cập nhật ảnh bìa thất bại!' }
     )
+  }
+
+  // Handlers for Attachment feature
+  const onShowAttachmentModal = () => {
+    setShowAttachmentModal(true)
+  }
+
+  const onCloseAttachmentModal = () => {
+    setShowAttachmentModal(false)
+  }
+
+  const onAddAttachment = (newAttachment) => {
+    setAttachments(prev => [...prev, newAttachment])
+    toast.success('Upload tệp đính kèm thành công!', { position: 'bottom-right' })
+  }
+
+  const onDeleteAttachment = (attachmentId) => {
+    setAttachments(prev => prev.filter(attachment => attachment.id !== attachmentId))
+    toast.success('Xóa tệp đính kèm thành công!', { position: 'bottom-right' })
+  }
+
+  const onShowAttachmentLightbox = (attachment) => {
+    if (attachment.type.startsWith('image/')) {
+      setSelectedAttachment(attachment)
+      setShowAttachmentLightbox(true)
+    } else {
+      // Nếu không phải ảnh, mở trong tab mới
+      window.open(attachment.url, '_blank')
+    }
+  }
+
+  const onCloseAttachmentLightbox = () => {
+    setShowAttachmentLightbox(false)
+    setSelectedAttachment(null)
   }
 
   return (
@@ -365,7 +406,9 @@ function ActiveCard() {
               </Box>
             </SidebarItem>
 
-            <SidebarItem><AttachFileOutlinedIcon fontSize="small" />Attachment</SidebarItem>
+            <SidebarItem onClick={onShowAttachmentModal}>
+              <AttachFileOutlinedIcon fontSize="small" />Attachment
+            </SidebarItem>
             <SidebarItem><LocalOfferOutlinedIcon fontSize="small" />Labels</SidebarItem>
             <SidebarItem><TaskAltOutlinedIcon fontSize="small" />Checklist</SidebarItem>
 
@@ -537,6 +580,23 @@ function ActiveCard() {
           onSelectColor={onSelectCoverColor}
           onUploadCover={onUploadCoverFromModal}
         />
+
+        <AttachmentModal 
+          isOpen={showAttachmentModal}
+          onClose={onCloseAttachmentModal}
+          attachments={attachments}
+          onAddAttachment={onAddAttachment}
+          onDeleteAttachment={onDeleteAttachment}
+          onPreviewAttachment={onShowAttachmentLightbox}
+        />
+
+        {selectedAttachment && showAttachmentLightbox && (
+          <ImageLightbox 
+            isOpen={showAttachmentLightbox}
+            onClose={onCloseAttachmentLightbox}
+            imageSrc={selectedAttachment.url}
+          />
+        )}
       </Box>
     </Modal>
   )
