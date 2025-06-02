@@ -2,14 +2,7 @@ import authorizedAxiosInstance from '~/utils/authorizeAxios'
 import { API_ROOT } from '~/utils/constants'
 import { toast } from 'react-toastify'
 
-/**
- * Lưu ý: Đối với việc sử dụng axios ở khóa MERN Stack Pro trên kênh YouTube: TrungQuanDev - Một Lập Trình Viên
- * Tất cả các function bên dưới các bạn sẽ thấy mình chỉ request và lấy data từ response luôn, mà không có try catch hay then catch gì để bắt lỗi.
- * Lý do là vì ở phía Front-end chúng ta không cần thiết làm như vậy đối với mọi request bởi nó sẽ gây ra việc dư thừa code catch lỗi quá nhiều.
- * Giải pháp Clean Code gọn gàng đó là chúng ta sẽ catch lỗi tập trung tại một nơi bằng cách tận dụng một thứ cực kỳ mạnh mẽ trong axios đó là Interceptors
- * Hiểu đơn giản Interceptors là cách mà chúng ta sẽ đánh chặn vào giữa request hoặc response để xử lý logic mà chúng ta muốn.
- * (Và ở học phần MERN Stack Advance nâng cao học trực tiếp mình sẽ dạy cực kỳ đầy đủ cách xử lý, áp dụng phần này chuẩn chỉnh cho các bạn.)
- */
+
 
 /** Boards */
 // Đã move vào redux
@@ -29,7 +22,7 @@ export const updateBoardBackgroundAPI = async (boardId, backgroundData) => {
   // Simulate random network errors (1 in 10 calls)
   const shouldFail = Math.random() < 0.1;
   const slowNetwork = Math.random() < 0.2;
-  
+
   // Giả lập delay để tạo cảm giác gọi API thực tế
   // Thêm thời gian delay ngẫu nhiên để giả lập mạng chậm
   const networkDelay = slowNetwork ? 3000 : 1500;
@@ -43,13 +36,13 @@ export const updateBoardBackgroundAPI = async (boardId, backgroundData) => {
       { code: 'TIMEOUT', message: 'Request timed out' }
     ];
     const randomError = errors[Math.floor(Math.random() * errors.length)];
-    
+
     const mockErrorResponse = {
       success: false,
       code: randomError.code,
       message: randomError.message
     };
-    
+
     throw mockErrorResponse;
   }
 
@@ -58,10 +51,10 @@ export const updateBoardBackgroundAPI = async (boardId, backgroundData) => {
     if (!backgroundData || !backgroundData.type) {
       throw new Error('Invalid background data');
     }
-    
+
     // Thực tế sẽ gọi API thực để cập nhật, ở đây chỉ mock và return success
     // const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/boards/${boardId}/background`, { background: backgroundData })
-    
+
     // Giả lập response thành công
     const mockSuccessResponse = {
       success: true,
@@ -72,7 +65,7 @@ export const updateBoardBackgroundAPI = async (boardId, backgroundData) => {
         updatedAt: new Date().toISOString()
       }
     }
-    
+
     return mockSuccessResponse
   } catch (error) {
     // Mặc dù interceptor đã xử lý lỗi, vẫn cần xử lý để giả lập API call
@@ -81,7 +74,7 @@ export const updateBoardBackgroundAPI = async (boardId, backgroundData) => {
       code: 'DATA_ERROR',
       message: error.message || 'Failed to update board background'
     }
-    
+
     throw mockErrorResponse
   }
 }

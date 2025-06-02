@@ -15,7 +15,9 @@ import InviteBoardUser from './InviteBoardUser'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import BoardBackgroundSwitcher from '~/components/Modal/BoardBackgroundSwitcher/BoardBackgroundSwitcher'
+import BoardAnalytics from '~/components/Modal/BoardAnalytics/BoardAnalytics'
 
 const MENU_STYLES = {
   color: 'white',
@@ -32,11 +34,15 @@ const MENU_STYLES = {
 }
 
 function BoardBar({ board, boardId }) {
+  const navigate = useNavigate()
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
   
   // State để quản lý modal background switcher
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false)
+  
+  // State để quản lý modal analytics
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false)
   
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
@@ -54,6 +60,27 @@ function BoardBar({ board, boardId }) {
 
   const handleCloseBackgroundModal = () => {
     setIsBackgroundModalOpen(false)
+  }
+
+  // Handler cho việc mở/đóng analytics modal
+  const handleOpenAnalyticsModal = () => {
+    setIsAnalyticsModalOpen(true)
+  }
+
+  const handleCloseAnalyticsModal = () => {
+    setIsAnalyticsModalOpen(false)
+  }
+
+  // Handler cho navigation đến Calendar
+  const handleNavigateToCalendar = () => {
+    const currentBoardId = boardId || board?._id
+    if (currentBoardId) {
+      console.log('📅 Navigating to board calendar:', `/boards/${currentBoardId}/calendar`)
+      navigate(`/boards/${currentBoardId}/calendar`)
+    } else {
+      console.log('📅 Navigating to general calendar:', '/calendar')
+      navigate('/calendar')
+    }
   }
 
   return (
@@ -91,6 +118,7 @@ function BoardBar({ board, boardId }) {
           icon={<BarChartIcon />}
           label="Thống kê"
           clickable
+          onClick={handleOpenAnalyticsModal}
         />
         <Chip
           sx={MENU_STYLES}
@@ -131,6 +159,7 @@ function BoardBar({ board, boardId }) {
           icon={<CalendarMonthIcon />}
           label="Lịch biểu"
           clickable
+          onClick={handleNavigateToCalendar}
         />
       </Box>
 
@@ -144,6 +173,13 @@ function BoardBar({ board, boardId }) {
         isOpen={isBackgroundModalOpen}
         onClose={handleCloseBackgroundModal}
         boardId={boardId || board?._id}
+      />
+
+      {/* BoardAnalytics Modal */}
+      <BoardAnalytics
+        isOpen={isAnalyticsModalOpen}
+        onClose={handleCloseAnalyticsModal}
+        board={board}
       />
     </Box>
   )

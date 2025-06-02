@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import Settings from '~/pages/Settings/Settings'
 import Boards from '~/pages/Boards'
+import Calendar from '~/pages/Calendar'
 
 /**
  * Giải pháp Clean Code trong việc xác định các route nào cần đăng nhập tài khoản xong thì mới cho truy cập
@@ -41,6 +42,10 @@ function App() {
         {/* Board Details */}
         <Route path='/boards/:boardId' element={<Board />} />
         <Route path='/boards' element={<Boards />} />
+
+        {/* Calendar Views */}
+        <Route path='/calendar' element={<Calendar />} />
+        <Route path='/boards/:boardId/calendar' element={<Calendar />} />
 
         {/* User Settings */}
         <Route path='/settings/account' element={<Settings />} />
