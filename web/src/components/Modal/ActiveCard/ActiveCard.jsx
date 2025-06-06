@@ -58,7 +58,7 @@ import MenuItem from '@mui/material/MenuItem'
 import { styled } from '@mui/material/styles'
 import ImageLightbox from '../ImageLightbox/ImageLightbox'
 import CoverOptionsModal from './CoverOptionsModal'
-import AttachmentModal, { MOCK_ATTACHMENTS } from './AttachmentModal'
+import AttachmentModal from './AttachmentModal' // ✅ Removed MOCK_ATTACHMENTS import
 import LabelDialog from '../LabelDialog/LabelDialog'
 import { generateLabelId } from '~/utils/labelConstants'
 import { toggleLabel } from '~/utils/labelHelpers'
@@ -100,9 +100,9 @@ function ActiveCard() {
   const [showCoverOptions, setShowCoverOptions] = useState(false)
   const [showLabelDialog, setShowLabelDialog] = useState(false)
 
-  // State for Attachment feature
+  // State for Attachment feature - 🚨 CRITICAL: Thay thế MOCK_ATTACHMENTS
   const [showAttachmentModal, setShowAttachmentModal] = useState(false)
-  const [attachments, setAttachments] = useState(MOCK_ATTACHMENTS)
+  const [attachments, setAttachments] = useState([]) // ✅ Removed MOCK_ATTACHMENTS
   const [showAttachmentLightbox, setShowAttachmentLightbox] = useState(false)
   const [selectedAttachment, setSelectedAttachment] = useState(null)
 
@@ -290,14 +290,15 @@ function ActiveCard() {
     setShowAttachmentModal(false)
   }
 
+  // 🔥 QUAN TRỌNG: Updated attachment handlers for API integration
   const onAddAttachment = (newAttachment) => {
     setAttachments(prev => [...prev, newAttachment])
-    toast.success('Upload tệp đính kèm thành công!', { position: 'bottom-right' })
+    // Toast success đã được handle trong AttachmentModal
   }
 
   const onDeleteAttachment = (attachmentId) => {
-    setAttachments(prev => prev.filter(attachment => attachment.id !== attachmentId))
-    toast.success('Xóa tệp đính kèm thành công!', { position: 'bottom-right' })
+    setAttachments(prev => prev.filter(attachment => (attachment._id || attachment.id) !== attachmentId))
+    // Toast success đã được handle trong AttachmentModal
   }
 
   const onShowAttachmentLightbox = (attachment) => {
@@ -839,6 +840,7 @@ function ActiveCard() {
         <AttachmentModal 
           isOpen={showAttachmentModal}
           onClose={onCloseAttachmentModal}
+          cardId={activeCard?._id} // 🚨 CRITICAL: Pass cardId for API calls
           attachments={attachments}
           onAddAttachment={onAddAttachment}
           onDeleteAttachment={onDeleteAttachment}

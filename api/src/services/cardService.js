@@ -6,6 +6,7 @@
 
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
+import { attachmentModel } from '~/models/attachmentModel'
 import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
 
 const createNew = async (reqBody) => {
@@ -82,6 +83,27 @@ const update = async (cardId, reqBody, cardCoverFile, userInfo) => {
     } else if (updateData.incomingMemberInfo) {
       // Trường hợp ADD hoặc REMOVE thành viên ra khỏi Card
       updatedCard = await cardModel.updateMembers(cardId, updateData.incomingMemberInfo)
+    } else if (updateData.deleteAllAttachments) {
+      // ⚠️ CẨN THẬN: Trường hợp xóa tất cả attachments của card
+      const attachments = await attachmentModel.findByCardId(cardId)
+      
+      // Xóa từng attachment và file trên Cloudinary
+      for (const attachment of attachments) {
+        try {
+          if (attachment.cloudinaryPublicId) {
+            await CloudinaryProvider.deleteResource(attachment.cloudinaryPublicId)
+          }
+          await attachmentModel.permanentlyDeleteOne(attachment._id.toString())
+        } catch (error) {
+          console.error(`Failed to delete attachment ${attachment._id}:`, error)
+        }
+      }
+      
+      // Reset attachmentIds và attachmentCount
+      updatedCard = await cardModel.update(cardId, { 
+        attachmentIds: [], 
+        attachmentCount: 0 
+      })
     } else {
       // Các trường hợp update chung như title, description
       updatedCard = await cardModel.update(cardId, updateData)
@@ -92,7 +114,99 @@ const update = async (cardId, reqBody, cardCoverFile, userInfo) => {
   } catch (error) { throw error }
 }
 
+/**
+ * ⚠️ CẨN THẬN: Xóa một card và tất cả attachments liên quan (cascade delete)
+ * @param {string} cardId - Card ID
+ * @returns {Promise<Object>} - Delete result
+ */
+const deleteCardAndAttachments = async (cardId) => {
+  try {
+    // Lấy thông tin card trước khi xóa
+    const existingCard = await cardModel.findOneById(cardId)
+    if (!existingCard) {
+      throw new Error('Card not found.')
+    }
+
+    // 🚨 CRITICAL: Xóa tất cả attachments của card trước
+    const attachments = await attachmentModel.findByCardId(cardId)
+    
+    // Xóa từng attachment và file trên Cloudinary
+    const deletionResults = {
+      totalAttachments: attachments.length,
+      deletedAttachments: 0,
+      failedAttachments: 0,
+      errors: []
+    }
+
+    for (const attachment of attachments) {
+      try {
+        // Xóa file trên Cloudinary
+        if (attachment.cloudinaryPublicId) {
+          await CloudinaryProvider.deleteResource(attachment.cloudinaryPublicId)
+        }
+        
+        // Hard delete attachment khỏi database
+        await attachmentModel.permanentlyDeleteOne(attachment._id.toString())
+        
+        deletionResults.deletedAttachments++
+      } catch (error) {
+        console.error(`Failed to delete attachment ${attachment._id}:`, error)
+        deletionResults.failedAttachments++
+        deletionResults.errors.push({
+          attachmentId: attachment._id,
+          error: error.message
+        })
+      }
+    }
+
+    // Sau khi xóa attachments, xóa card
+    const deletedCard = await cardModel.update(cardId, { _destroy: true })
+
+    return {
+      message: 'Card and attachments deleted successfully.',
+      cardId: cardId,
+      attachmentsDeletion: deletionResults,
+      deletedCard
+    }
+
+  } catch (error) {
+    console.error('Delete card and attachments error:', error)
+    throw error
+  }
+}
+
+/**
+ * Lấy card với attachments đầy đủ (populate attachments)
+ * @param {string} cardId - Card ID
+ * @returns {Promise<Object>} - Card with populated attachments
+ */
+const getCardWithAttachments = async (cardId) => {
+  try {
+    const card = await cardModel.findOneById(cardId)
+    if (!card) {
+      throw new Error('Card not found.')
+    }
+
+    // Lấy danh sách attachments của card
+    const attachments = await attachmentModel.findByCardId(cardId)
+    
+    // Kết hợp card với attachments
+    return {
+      ...card,
+      attachments: attachments || []
+    }
+
+  } catch (error) {
+    console.error('Get card with attachments error:', error)
+    throw error
+  }
+}
+
 export const cardService = {
   createNew,
-  update
+  update,
+  
+  // Thêm các function mới để xử lý attachments
+  deleteCardAndAttachments,
+  getCardWithAttachments
 }
