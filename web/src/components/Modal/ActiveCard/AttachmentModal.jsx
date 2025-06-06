@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Dialog from '@mui/material/Dialog'
@@ -18,12 +18,21 @@ import CardContent from '@mui/material/CardContent'
 import CardMedia from '@mui/material/CardMedia'
 import Divider from '@mui/material/Divider'
 import Stack from '@mui/material/Stack'
+import CircularProgress from '@mui/material/CircularProgress'
 import { styled } from '@mui/material/styles'
 import Grid from '@mui/material/Unstable_Grid2'
 import Tooltip from '@mui/material/Tooltip'
 import { toast } from 'react-toastify'
 import { v4 as uuidv4 } from 'uuid'
 import { multipleFilesValidator, ALLOW_ATTACHMENT_FILE_TYPES } from '~/utils/validators'
+
+// 🚨 CRITICAL: Import attachment APIs để thay thế mock data
+import {
+  uploadAttachmentsAPI,
+  getAttachmentsAPI,
+  deleteAttachmentAPI,
+  downloadAttachmentAPI
+} from '~/apis/attachmentAPIs'
 
 // Mock data cho attachments
 export const MOCK_ATTACHMENTS = [
@@ -92,6 +101,8 @@ const AttachmentCard = styled(Card)(({ theme }) => ({
   borderRadius: '8px',
   border: `1px solid ${theme.palette.mode === 'dark' ? '#3a4050' : '#e0e0e0'}`,
   transition: 'all 0.2s ease',
+  // 🎨 CRITICAL: Fixed height để tất cả cards bằng nhau
+  height: '280px',
   '&:hover': {
     boxShadow: theme.palette.mode === 'dark' 
       ? '0 4px 8px rgba(255, 255, 255, 0.1)' 
@@ -128,17 +139,32 @@ function formatFileSize(bytes) {
   else return (bytes / 1048576).toFixed(1) + ' MB'
 }
 
-// Helper function để format date
+// Helper function để format date với error handling
 function formatDate(date) {
-  return new Date(date).toLocaleDateString('vi-VN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
+  try {
+    if (!date) return 'Unknown Date'
+    
+    const dateObj = new Date(date)
+    
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.warn('Invalid date format:', date)
+      return 'Invalid Date'
+    }
+    
+    return dateObj.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  } catch (error) {
+    console.error('Date formatting error:', error, 'for date:', date)
+    return 'Error Date'
+  }
 }
 
 // Component cho từng attachment item
-function AttachmentItem({ attachment, onDelete, onPreview }) {
+function AttachmentItem({ attachment, onDelete, onPreview, onDownload, isDeleting = false, isDownloading = false }) {
   const isImage = attachment.type.startsWith('image/')
   const isPdf = attachment.type === 'application/pdf'
   
@@ -152,8 +178,13 @@ function AttachmentItem({ attachment, onDelete, onPreview }) {
   const handleDeleteClick = (e) => {
     e.stopPropagation()
     if (window.confirm(`Bạn có chắc chắn muốn xóa file "${attachment.name}"?`)) {
-      onDelete(attachment.id)
+      onDelete(attachment._id || attachment.id) // Support both _id (API) and id (mock)
     }
+  }
+
+  const handleDownloadClick = (e) => {
+    e.stopPropagation()
+    onDownload(attachment._id || attachment.id, attachment.name)
   }
 
   return (
@@ -184,23 +215,70 @@ function AttachmentItem({ attachment, onDelete, onPreview }) {
           </Box>
         )}
         
-        <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
-          <Typography variant="subtitle2" component="div" noWrap title={attachment.name}>
+        <CardContent sx={{ 
+          flexGrow: 1, 
+          p: 1.5,
+          // 🎨 CRITICAL: Fixed content area height
+          height: '80px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
+        }}>
+          <Typography 
+            variant="subtitle2" 
+            component="div" 
+            noWrap 
+            title={attachment.name}
+            sx={{ mb: 0.5, lineHeight: 1.2 }}
+          >
             {attachment.name}
           </Typography>
-          <Typography variant="caption" color="text.secondary" component="div">
-            {formatFileSize(attachment.size)} • {formatDate(attachment.uploadedAt)}
+          <Typography 
+            variant="caption" 
+            color="text.secondary" 
+            component="div"
+            sx={{ lineHeight: 1.2 }}
+          >
+            {formatFileSize(attachment.size)} • {formatDate(attachment.createdAt)}
           </Typography>
         </CardContent>
 
-        <CardActions sx={{ p: 1, pt: 0, justifyContent: 'flex-end' }}>
+        <CardActions sx={{ 
+          p: 1, 
+          pt: 0, 
+          justifyContent: 'space-between',
+          // 🎨 CRITICAL: Fixed action bar height
+          height: '48px',
+          alignItems: 'center'
+        }}>
+          <Tooltip title={isDownloading ? 'Đang tải xuống...' : 'Tải xuống'}>
+            <IconButton 
+              size="small" 
+              color="primary"
+              onClick={handleDownloadClick}
+              disabled={isDownloading}
+              data-testid="download-attachment"
+            >
+              {isDownloading ? (
+                <CircularProgress size={16} />
+              ) : (
+                <UploadFileIcon fontSize="small" sx={{ transform: 'rotate(180deg)' }} />
+              )}
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Xóa tệp đính kèm">
             <IconButton 
               size="small" 
               color="error"
               onClick={handleDeleteClick}
+              disabled={isDeleting}
+              data-testid="delete-attachment"
             >
-              <DeleteOutlinedIcon fontSize="small" />
+              {isDeleting ? (
+                <CircularProgress size={16} />
+              ) : (
+                <DeleteOutlinedIcon fontSize="small" />
+              )}
             </IconButton>
           </Tooltip>
         </CardActions>
@@ -209,9 +287,106 @@ function AttachmentItem({ attachment, onDelete, onPreview }) {
   )
 }
 
-function AttachmentModal({ isOpen, onClose, attachments = MOCK_ATTACHMENTS, onAddAttachment, onDeleteAttachment, onPreviewAttachment }) {
-  // Xử lý upload file
-  const handleFileUpload = (event) => {
+function AttachmentModal({ 
+  isOpen, 
+  onClose, 
+  cardId, 
+  attachments = [], 
+  onAddAttachment, 
+  onDeleteAttachment, 
+  onPreviewAttachment 
+}) {
+  // 🚨 CRITICAL: State management cho loading states
+  const [isUploading, setIsUploading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [deletingAttachments, setDeletingAttachments] = useState(new Set())
+  const [localAttachments, setLocalAttachments] = useState(attachments)
+  
+  // 🔍 DEBUG: Track localAttachments changes
+  useEffect(() => {
+    console.log('📊 localAttachments state changed:', localAttachments.length, localAttachments)
+  }, [localAttachments])
+  // 🎯 PHASE 11: Error handling với retry mechanism
+  const [loadError, setLoadError] = useState(null)
+  const [retryCount, setRetryCount] = useState(0)
+
+  // ⚠️ CẨN THẬN: Load attachments khi mở modal và reset khi đóng
+  useEffect(() => {
+    if (isOpen && cardId) {
+      console.log('🔄 Modal opened - Loading attachments for cardId:', cardId)
+      loadAttachments()
+    } else if (!isOpen) {
+      // Reset state khi đóng modal để tránh stale data
+      console.log('🔄 Modal closed - Resetting state')
+      setLocalAttachments([])
+      setLoadError(null)
+      setRetryCount(0)
+    }
+  }, [isOpen, cardId])
+
+  // 🚨 CRITICAL: Remove props sync - depend only on API calls
+  // Props attachments không được sync nữa để tránh conflict với reload từ server
+
+  // 🔥 QUAN TRỌNG: Load attachments từ API với debug logging
+  const loadAttachments = async (retryAttempt = 0) => {
+    if (!cardId) {
+      console.log('❌ loadAttachments: No cardId provided')
+      return
+    }
+    
+    console.log('🔄 loadAttachments: Starting for cardId:', cardId)
+    
+    try {
+      setIsLoading(true)
+      setLoadError(null)
+      
+      const result = await getAttachmentsAPI(cardId)
+      console.log('✅ loadAttachments: Success, got', result.attachments.length, 'attachments')
+      console.log('📝 loadAttachments: Setting localAttachments to:', result.attachments)
+      
+      // 🔍 DEBUG: Check date fields specifically
+      if (result.attachments.length > 0) {
+        const firstAttachment = result.attachments[0]
+        console.log('📅 DEBUG attachment date fields:', {
+          createdAt: firstAttachment.createdAt,
+          updatedAt: firstAttachment.updatedAt,
+          uploadedAt: firstAttachment.uploadedAt,
+          typeof_createdAt: typeof firstAttachment.createdAt
+        })
+      }
+      
+      // 🚨 CRITICAL: Force state update với callback để đảm bảo update
+      setLocalAttachments(prev => {
+        console.log('📊 setLocalAttachments: prev state was:', prev.length)
+        console.log('📊 setLocalAttachments: updating to:', result.attachments.length)
+        return result.attachments
+      })
+      
+      setRetryCount(0) // Reset retry count on success
+      
+    } catch (error) {
+      console.error('❌ loadAttachments: Failed:', error)
+      setLoadError(error.message)
+      
+      // Fallback to props attachments nếu API failed
+      if (attachments.length > 0) {
+        console.log('🔄 loadAttachments: Using fallback props attachments')
+        setLocalAttachments(attachments)
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 🎯 PHASE 11: Retry function
+  const handleRetryLoad = () => {
+    const newRetryCount = retryCount + 1
+    setRetryCount(newRetryCount)
+    loadAttachments(newRetryCount)
+  }
+
+  // 🚨 CRITICAL: Real upload function thay thế mock
+  const handleFileUpload = async (event) => {
     const files = event.target.files
     
     if (!files || files.length === 0) return
@@ -222,47 +397,129 @@ function AttachmentModal({ isOpen, onClose, attachments = MOCK_ATTACHMENTS, onAd
       toast.error(error)
       return
     }
+
+    if (!cardId) {
+      toast.error('Card ID không hợp lệ')
+      return
+    }
     
-    // Giả lập upload
-    Array.from(files).forEach((file) => {
-      // Random waiting time để giả lập upload
-      const randomWaitTime = Math.floor(Math.random() * 1000) + 500
+    try {
+      setIsUploading(true)
       
-      toast.info(`Đang tải lên ${file.name}...`, { autoClose: randomWaitTime })
+      // 🔥 QUAN TRỌNG: Upload thật thay vì mock
+      const result = await uploadAttachmentsAPI(cardId, files)
       
-      setTimeout(() => {
-        // Tạo URL tạm thời cho mỗi file
-        let fileUrl
-        if (file.type.startsWith('image/')) {
-          // Giả lập URL ảnh
-          const width = Math.floor(Math.random() * 400) + 400
-          const height = Math.floor(Math.random() * 300) + 300
-          fileUrl = `https://via.placeholder.com/${width}x${height}?text=${encodeURIComponent(file.name)}`
-        } else if (file.type === 'application/pdf') {
-          // URL cho PDF mẫu
-          fileUrl = 'https://incompetech.com/documents/samples/Sample%20Document.pdf'
-        } else {
-          // URL mẫu cho các loại file khác
-          fileUrl = 'https://example.com/files/document.docx'
-        }
+      // 🔍 DEBUG: Log upload response structure
+      console.log('📦 Upload result:', result)
+      console.log('📦 Upload result.data:', result.data)
+      
+      if (result.success) {
+        // 🚨 CRITICAL: Safe access với correct property names từ backend
+        const uploadResults = result.data?.uploadResults || {}
+        const successCount = uploadResults.successCount || 0
+        const totalCount = uploadResults.totalFiles || 0
+        const failedFiles = uploadResults.failedFiles || [] // Backend uses 'failedFiles', not 'failed'
         
-        // Tạo attachment mới
-        const newAttachment = {
-          id: `att-${uuidv4()}`,
-          name: file.name,
-          url: fileUrl,
-          type: file.type,
-          size: file.size,
-          uploadedAt: new Date()
-        }
+        toast.success(`Upload thành công ${successCount}/${totalCount} files!`)
         
-        // Thêm vào state thông qua callback
-        onAddAttachment(newAttachment)
-      }, randomWaitTime)
-    })
-    
-    // Reset input file
-    event.target.value = ''
+        // Thông báo failed files nếu có
+        if (failedFiles.length > 0) {
+          failedFiles.forEach(failedFile => {
+            toast.error(`Upload failed: ${failedFile.name} - ${failedFile.error}`)
+          })
+        }
+
+        // 🚨 CRITICAL: Reload attachments từ server để đảm bảo data consistency
+        console.log('🔄 Upload success - Reloading attachments...')
+        console.log('📊 localAttachments before reload:', localAttachments.length)
+        await loadAttachments()
+        console.log('✅ Upload reload completed')
+        
+        // 🔍 DEBUG: Check state after a delay
+        setTimeout(() => {
+          console.log('📊 localAttachments after 1s delay:', localAttachments.length)
+        }, 1000)
+        
+        // 🚨 CRITICAL: Skip callback để tránh conflict với reload
+        console.log('🔄 Skipping onAddAttachment callback to avoid conflicts')
+        // Callback có thể gây conflict với reload data từ server
+        // if (onAddAttachment) {
+        //   const newAttachments = result.data.uploadResults.successFiles.map(file => ({
+        //     _id: file.attachmentId,
+        //     name: file.name,
+        //     url: file.url,
+        //     type: file.type,
+        //     size: file.size,
+        //     uploadedAt: file.uploadedAt || new Date()
+        //   }))
+        //   newAttachments.forEach(attachment => onAddAttachment(attachment))
+        // }
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      // Error đã được handle trong API function
+    } finally {
+      setIsUploading(false)
+      // Reset input file
+      event.target.value = ''
+    }
+  }
+
+  // 🚨 CRITICAL: Real delete function với reload data
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      setDeletingAttachments(prev => new Set([...prev, attachmentId]))
+      
+      await deleteAttachmentAPI(attachmentId)
+      
+      // 🚨 CRITICAL: Reload attachments từ server thay vì chỉ remove local
+      console.log('🔄 Delete success - Reloading attachments...')
+      await loadAttachments()
+      console.log('✅ Delete reload completed')
+      
+      // Callback để cập nhật parent component
+      if (onDeleteAttachment) {
+        onDeleteAttachment(attachmentId)
+      }
+      
+      // Success feedback đã có trong API function
+    } catch (error) {
+      console.error('Delete error:', error)
+      // Error đã được handle trong API function
+    } finally {
+      setDeletingAttachments(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(attachmentId)
+        return newSet
+      })
+    }
+  }
+
+  // 🔥 QUAN TRỌNG: Real download function với loading state
+  const [downloadingAttachments, setDownloadingAttachments] = useState(new Set())
+  
+  const handleDownloadAttachment = async (attachmentId, fileName) => {
+    try {
+      // Add loading state
+      setDownloadingAttachments(prev => new Set([...prev, attachmentId]))
+      
+      console.log('🔄 Starting download process for:', attachmentId, fileName)
+      
+      await downloadAttachmentAPI(attachmentId, fileName)
+      
+      console.log('✅ Download completed for:', attachmentId)
+      
+    } catch (error) {
+      console.error('❌ Download error:', error)
+      // Error đã được handle trong API function
+    } finally {
+      // Remove loading state
+      setDownloadingAttachments(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(attachmentId)
+        return newSet
+      })
+    }
   }
 
   return (
@@ -301,16 +558,18 @@ function AttachmentModal({ isOpen, onClose, attachments = MOCK_ATTACHMENTS, onAd
               </Typography>
               <Button
                 component="label"
-                startIcon={<UploadFileIcon />}
+                startIcon={isUploading ? <CircularProgress size={20} /> : <UploadFileIcon />}
                 variant="contained"
                 color="primary"
+                disabled={isUploading}
               >
-                Chọn tệp
+                {isUploading ? 'Đang tải lên...' : 'Chọn tệp'}
                 <VisuallyHiddenInput 
                   type="file" 
                   multiple 
                   onChange={handleFileUpload}
                   accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                  disabled={isUploading}
                 />
               </Button>
               <Typography variant="caption" color="text.secondary">
@@ -323,10 +582,114 @@ function AttachmentModal({ isOpen, onClose, attachments = MOCK_ATTACHMENTS, onAd
           
           {/* Attachment list */}
           <Typography variant="h6" component="div" sx={{ mb: 2 }}>
-            Danh sách tệp đính kèm ({attachments.length})
+            Danh sách tệp đính kèm ({localAttachments.length})
           </Typography>
           
-          {attachments.length === 0 ? (
+          {isLoading ? (
+            <Box sx={{ py: 2 }}>
+              {/* 🚀 BONUS: Skeleton loading cho better UX */}
+              <Grid container spacing={2}>
+                {[1, 2, 3].map((index) => (
+                  <Grid xs={12} sm={6} md={4} key={`skeleton-${index}`}>
+                    <Box
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        overflow: 'hidden',
+                        // 🎨 CRITICAL: Match AttachmentCard height
+                        height: 280
+                      }}
+                    >
+                      {/* Image skeleton */}
+                      <Box
+                        sx={{
+                          height: 140,
+                          backgroundColor: 'action.hover',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <CircularProgress size={20} />
+                      </Box>
+                      {/* Content skeleton */}
+                      <Box sx={{ 
+                        p: 1.5,
+                        // 🎨 CRITICAL: Match CardContent height
+                        height: 80,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                      }}>
+                        <Box
+                          sx={{
+                            height: 16,
+                            backgroundColor: 'action.hover',
+                            borderRadius: 0.5,
+                            mb: 1
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            height: 12,
+                            backgroundColor: 'action.hover',
+                            borderRadius: 0.5,
+                            width: '70%'
+                          }}
+                        />
+                      </Box>
+                      {/* Actions skeleton */}
+                      <Box sx={{ 
+                        p: 1, 
+                        display: 'flex', 
+                        justifyContent: 'space-between',
+                        // 🎨 CRITICAL: Match CardActions height
+                        height: 48,
+                        alignItems: 'center'
+                      }}>
+                        <Box
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            backgroundColor: 'action.hover',
+                            borderRadius: '50%'
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            backgroundColor: 'action.hover',
+                            borderRadius: '50%'
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+                      ) : loadError ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              {/* 🎯 PHASE 11: Error state với retry */}
+              <Typography variant="h6" color="error" sx={{ mb: 2 }}>
+                ⚠️ Không thể tải danh sách tệp đính kèm
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                {loadError}
+              </Typography>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleRetryLoad}
+                disabled={isLoading}
+                startIcon={isLoading ? <CircularProgress size={16} /> : null}
+              >
+                {isLoading ? 'Đang thử lại...' : `Thử lại${retryCount > 0 ? ` (${retryCount})` : ''}`}
+              </Button>
+            </Box>
+          ) : localAttachments.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography variant="body1" color="text.secondary">
                 Chưa có tệp đính kèm nào
@@ -334,12 +697,15 @@ function AttachmentModal({ isOpen, onClose, attachments = MOCK_ATTACHMENTS, onAd
             </Box>
           ) : (
             <Grid container spacing={2}>
-              {attachments.map((attachment) => (
-                <Grid xs={12} sm={6} md={4} key={attachment.id}>
+              {localAttachments.map((attachment) => (
+                <Grid xs={12} sm={6} md={4} key={attachment._id || attachment.id}>
                   <AttachmentItem 
                     attachment={attachment} 
-                    onDelete={onDeleteAttachment}
+                    onDelete={handleDeleteAttachment}
                     onPreview={onPreviewAttachment}
+                    onDownload={handleDownloadAttachment}
+                    isDeleting={deletingAttachments.has(attachment._id || attachment.id)}
+                    isDownloading={downloadingAttachments.has(attachment._id || attachment.id)}
                   />
                 </Grid>
               ))}

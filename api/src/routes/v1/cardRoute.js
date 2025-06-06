@@ -1,8 +1,4 @@
-/**
- * Updated by trungquandev.com's author on August 17 2023
- * YouTube: https://youtube.com/@trungquandev
- * "A bit of fragrance clings to the hand that gives flowers!"
- */
+
 import express from 'express'
 import { cardValidation } from '~/validations/cardValidation'
 import { cardController } from '~/controllers/cardController'
@@ -24,5 +20,9 @@ Router.route('/:id')
     cardValidation.update,
     cardController.update
   )
+
+// ⚠️ CẨN THẬN: Route để lấy card với attachments (nếu cần)
+// Note: Attachment routes đã handle việc lấy attachments của card
+// Route này có thể bổ sung nếu muốn lấy card + attachments trong một API call
 
 export const cardRoute = Router

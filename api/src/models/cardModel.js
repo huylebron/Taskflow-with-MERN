@@ -35,6 +35,16 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
     commentedAt: Joi.date().timestamp()
   }).default([]),
 
+  // Thêm trường attachmentIds để lưu danh sách ID của các attachment liên kết với card
+  // Chúng ta sẽ sử dụng populate thay vì nhúng toàn bộ dữ liệu attachment vào card
+  attachmentIds: Joi.array().items(
+    Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
+  ).default([]),
+  
+  // Thêm trường attachmentCount để lưu số lượng attachment của card
+  // Giúp hiển thị nhanh số lượng attachment mà không cần query
+  attachmentCount: Joi.number().default(0),
+
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
@@ -164,6 +174,75 @@ const updateManyComments = async (userInfo) => {
   } catch (error) { throw new Error(error) }
 }
 
+/**
+ * Thêm một attachment vào card
+ * @param {string} cardId - Card ID
+ * @param {string} attachmentId - Attachment ID
+ * @returns {Promise<Object>} - Updated card
+ */
+const pushAttachmentId = async (cardId, attachmentId) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(cardId) },
+      { 
+        $push: { attachmentIds: new ObjectId(attachmentId) },
+        $inc: { attachmentCount: 1 },
+        $set: { updatedAt: Date.now() }
+      },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
+/**
+ * Xóa một attachment khỏi card
+ * @param {string} cardId - Card ID
+ * @param {string} attachmentId - Attachment ID
+ * @returns {Promise<Object>} - Updated card
+ */
+const pullAttachmentId = async (cardId, attachmentId) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(cardId) },
+      { 
+        $pull: { attachmentIds: new ObjectId(attachmentId) },
+        $inc: { attachmentCount: -1 },
+        $set: { updatedAt: Date.now() }
+      },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
+/**
+ * Cập nhật số lượng attachment của card
+ * Hữu ích khi cần đồng bộ lại số lượng attachment
+ * @param {string} cardId - Card ID
+ * @returns {Promise<Object>} - Updated card
+ */
+const updateAttachmentCount = async (cardId) => {
+  try {
+    // Đếm số lượng attachmentIds trong card
+    const card = await findOneById(cardId)
+    const attachmentCount = card?.attachmentIds?.length || 0
+    
+    // Cập nhật attachmentCount
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(cardId) },
+      { 
+        $set: { 
+          attachmentCount: attachmentCount,
+          updatedAt: Date.now() 
+        }
+      },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
@@ -173,5 +252,10 @@ export const cardModel = {
   deleteManyByColumnId,
   unshiftNewComment,
   updateMembers,
-  updateManyComments
+  updateManyComments,
+  
+  // Thêm các hàm mới để quản lý mối quan hệ với attachments
+  pushAttachmentId,
+  pullAttachmentId,
+  updateAttachmentCount
 }
