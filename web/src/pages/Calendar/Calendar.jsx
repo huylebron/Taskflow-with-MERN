@@ -580,95 +580,39 @@ function Calendar() {
         </Box>
       )}
 
-      {/* Header */}
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
-          📅 {isBoardCalendar ? `Lịch biểu - ${boardTitle}` : 'Lịch biểu dự án'}
-        </Typography>
-        
-        {/* Summary Stats */}
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {isBoardCalendar && (
-            <>Board: <strong>{boardTitle}</strong> • </>
-          )}
-          Tổng cộng <strong>{totalCards}</strong> tasks có deadline • 
-          <strong>{labels.length}</strong> labels • 
-          <strong>{users.length}</strong> thành viên
-        </Typography>
-
-        {/* Labels Legend */}
-        {labels.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              🏷️ Labels:
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {labels.map((label) => (
-                <Chip
-                  key={label._id}
-                  label={label.title}
-                  size="small"
-                  sx={{
-                    backgroundColor: label.color,
-                    color: '#ffffff',
-                    fontWeight: 500,
-                    '&:hover': {
-                      backgroundColor: label.color,
-                      opacity: 0.8
-                    }
-                  }}
-                />
-              ))}
-            </Stack>
-          </Box>
-        )}
-        
-        {/* View Switcher and Refresh Button */}
-        <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center', justifyContent: 'space-between' }}>
-          <Stack direction="row" spacing={1}>
-            {viewOptions.map((option) => {
-              const IconComponent = option.icon
-              return (
-                <Chip
-                  key={option.key}
-                  icon={<IconComponent />}
-                  label={option.label}
-                  onClick={() => handleViewChange(option.key)}
-                  color={currentView === option.key ? 'primary' : 'default'}
-                  variant={currentView === option.key ? 'filled' : 'outlined'}
-                  sx={{ fontWeight: currentView === option.key ? 600 : 400 }}
-                />
-              )
-            })}
-          </Stack>
-          
-          {/* Manual Refresh Button */}
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Refresh />}
-            onClick={() => fetchCalendarData()}
-            disabled={loading}
-            sx={{ minWidth: 'auto' }}
-          >
-            Làm mới
-          </Button>
+      {/* View Switcher and Refresh Button */}
+      <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center', justifyContent: 'space-between' }}>
+        <Stack direction="row" spacing={1}>
+          {viewOptions.map((option) => {
+            const IconComponent = option.icon
+            return (
+              <Chip
+                key={option.key}
+                icon={<IconComponent />}
+                label={option.label}
+                onClick={() => handleViewChange(option.key)}
+                color={currentView === option.key ? 'primary' : 'default'}
+                variant={currentView === option.key ? 'filled' : 'outlined'}
+                sx={{ fontWeight: currentView === option.key ? 600 : 400 }}
+              />
+            )
+          })}
         </Stack>
-      </Box>
+        
+        {/* Manual Refresh Button */}
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<Refresh />}
+          onClick={() => fetchCalendarData()}
+          disabled={loading}
+          sx={{ minWidth: 'auto' }}
+        >
+          Làm mới
+        </Button>
+      </Stack>
 
-      {/* Debug Info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <Box sx={{ mb: 2, p: 2, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
-          <Typography variant="body2" gutterBottom>
-            Debug Info: {events.length} events loaded, Loading: {loading.toString()}, Error: {error || 'None'}
-          </Typography>
-          {events.length > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              Sample event: {events[0]?.title} - {events[0]?.start}
-            </Typography>
-          )}
-        </Box>
-      )}
+
 
       {/* Calendar Container */}
       <Paper 
