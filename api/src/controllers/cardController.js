@@ -25,6 +25,38 @@ const update = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+/**
+ * Get cards with due dates for calendar view
+ * Supports filtering by boardId, startDate, endDate
+ */
+const getCardsWithDueDate = async (req, res, next) => {
+  try {
+    const { boardId, startDate, endDate } = req.query
+    const cardsWithDueDate = await cardService.getCardsWithDueDate(boardId, startDate, endDate)
+    
+    res.status(StatusCodes.OK).json(cardsWithDueDate)
+  } catch (error) { next(error) }
+}
+
+/**
+ * Quick update card due date (for calendar drag-and-drop)
+ */
+const updateDueDate = async (req, res, next) => {
+  try {
+    const cardId = req.params.id
+    const { dueDate } = req.body
+    
+    if (!cardId || dueDate === undefined) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ 
+        message: 'Card ID and due date are required' 
+      })
+    }
+    
+    const updatedCard = await cardService.update(cardId, { dueDate })
+    res.status(StatusCodes.OK).json(updatedCard)
+  } catch (error) { next(error) }
+}
+
 const getCoverOptions = async (req, res, next) => {
   try {
     const coverOptions = {
@@ -39,5 +71,7 @@ const getCoverOptions = async (req, res, next) => {
 export const cardController = {
   createNew,
   update,
-  getCoverOptions
+  getCoverOptions,
+  getCardsWithDueDate,
+  updateDueDate
 }

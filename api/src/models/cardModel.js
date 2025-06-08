@@ -45,6 +45,9 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
   // Giúp hiển thị nhanh số lượng attachment mà không cần query
   attachmentCount: Joi.number().default(0),
 
+  // Add dueDate field to schema - supports both null (no due date) and Date values
+  dueDate: Joi.date().timestamp('javascript').allow(null).default(null),
+
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
@@ -243,6 +246,24 @@ const updateAttachmentCount = async (cardId) => {
   } catch (error) { throw new Error(error) }
 }
 
+/**
+ * Create database indexes for better query performance
+ * This function should be called when the application starts
+ */
+const createIndexes = async () => {
+  try {
+    // Index for cards with due dates
+    await GET_DB().collection(CARD_COLLECTION_NAME).createIndex({ dueDate: 1 })
+    
+    // Compound index for board-specific calendar queries
+    await GET_DB().collection(CARD_COLLECTION_NAME).createIndex({ boardId: 1, dueDate: 1 })
+    
+    console.log('Card indexes created successfully')
+  } catch (error) { 
+    console.error('Error creating card indexes:', error)
+  }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
@@ -257,5 +278,6 @@ export const cardModel = {
   // Thêm các hàm mới để quản lý mối quan hệ với attachments
   pushAttachmentId,
   pullAttachmentId,
-  updateAttachmentCount
+  updateAttachmentCount,
+  createIndexes
 }

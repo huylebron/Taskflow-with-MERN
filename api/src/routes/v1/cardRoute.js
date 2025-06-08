@@ -1,4 +1,3 @@
-
 import express from 'express'
 import { cardValidation } from '~/validations/cardValidation'
 import { cardController } from '~/controllers/cardController'
@@ -9,6 +8,14 @@ const Router = express.Router()
 
 Router.route('/')
   .post(authMiddleware.isAuthorized, cardValidation.createNew, cardController.createNew)
+
+// Calendar-related endpoints
+Router.route('/calendar')
+  .get(authMiddleware.isAuthorized, cardController.getCardsWithDueDate)
+
+// Due date specific endpoint for calendar drag-and-drop operations
+Router.route('/:id/due-date')
+  .put(authMiddleware.isAuthorized, cardController.updateDueDate)
 
 Router.route('/cover-options')
   .get(authMiddleware.isAuthorized, cardController.getCoverOptions)

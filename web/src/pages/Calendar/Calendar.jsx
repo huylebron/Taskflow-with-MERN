@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Box, Typography, Paper, Chip, Stack, useTheme, useMediaQuery, CircularProgress, Alert, Snackbar, Breadcrumbs, Button } from '@mui/material'
-import { CalendarMonth, CalendarViewWeek, CalendarToday, ArrowBack, Home, Dashboard } from '@mui/icons-material'
+import { CalendarMonth, CalendarViewWeek, CalendarToday, ArrowBack, Home, Dashboard, Refresh } from '@mui/icons-material'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -8,9 +8,18 @@ import interactionPlugin from '@fullcalendar/interaction'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 
-// Import mock data and helpers
-import { mockData } from '~/apis/mock-data'
+// Import real API functions instead of mock data
+import { fetchCardsWithDueDateAPI, updateCardDueDateAPI } from '~/apis'
 import { processCalendarData } from '~/utils/calendarHelpers'
+
+// Import visual constants for consistent styling
+import { 
+  getDueDateStatus, 
+  getDueDateColor,
+  getCalendarEventStyles,
+  getUrgencyText,
+  DUE_DATE_STATUS
+} from '~/utils/dueDateConstants'
 
 // Import ActiveCard modal components
 import ActiveCard from '~/components/Modal/ActiveCard/ActiveCard'
@@ -21,8 +30,9 @@ import {
   selectIsShowModalActiveCard
 } from '~/redux/activeCard/activeCardSlice'
 
-// Import board selector if needed
+// Import board selector and calendar sync hook
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
+import { useCalendarSync } from '~/customHooks/useCalendarSync'
 
 function Calendar() {
   const theme = useTheme()
@@ -32,10 +42,20 @@ function Calendar() {
   const navigate = useNavigate()
   const { boardId } = useParams()
   
+  // Calendar ref for direct method calls
+  const calendarRef = useRef(null)
+  
   // Redux selectors for ActiveCard modal and board data
   const currentActiveCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
   const currentActiveBoard = useSelector(selectCurrentActiveBoard)
+  
+  // Use calendar synchronization hook
+  const { 
+    updateDueDate, 
+    cardsWithDueDate,
+    shouldRefreshCalendar 
+  } = useCalendarSync()
   
   // Determine if this is board-specific calendar
   const isBoardCalendar = Boolean(boardId)
@@ -59,44 +79,160 @@ function Calendar() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' })
+  const [calendarData, setCalendarData] = useState({
+    events: [],
+    labels: [],
+    users: [],
+    totalCards: 0,
+    board: null
+  })
+  const [lastFetchTime, setLastFetchTime] = useState(null)
 
-  // Process calendar data từ mock data
-  const calendarData = useMemo(() => {
-    try {
-      // If board-specific calendar, filter data for that board
-      let sourceData = mockData
-      if (isBoardCalendar && boardId) {
-        // For now use mock data, later this would filter by actual boardId
-        sourceData = mockData
-      }
-      return processCalendarData(sourceData)
-    } catch (err) {
-      setError('Có lỗi khi xử lý dữ liệu calendar')
-      return { events: [], labels: [], users: [], totalCards: 0, board: null }
-    }
-  }, [isBoardCalendar, boardId])
-
+  // Extract calendar data properties
   const { events, labels, users, totalCards, board } = calendarData
 
-  // Simulate loading for demo
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  // Fetch calendar data from API
+  const fetchCalendarData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Prepare API filters
+      const filters = {}
+      if (isBoardCalendar && boardId) {
+        filters.boardId = boardId
+      }
+
+      console.log('🔄 Fetching calendar data with filters:', filters)
+
+      // Fetch cards with due dates from API
+      const cardsWithDueDates = await fetchCardsWithDueDateAPI(filters)
+      
+      console.log('📅 Received calendar data:', cardsWithDueDates)
+
+      // Handle empty or invalid response
+      if (!cardsWithDueDates) {
+        console.warn('No data received from API')
+        setCalendarData({ events: [], labels: [], users: [], totalCards: 0, board: null })
+        setLastFetchTime(Date.now())
+        return
+      }
+
+      // Process the API response for calendar display
+      const processedData = processCardsForCalendar(cardsWithDueDates)
+      
+      console.log('📅 Processed calendar data:', processedData)
+      
+      setCalendarData(processedData)
+      setLastFetchTime(Date.now())
+    } catch (err) {
+      console.error('Error fetching calendar data:', err)
+      setError('Có lỗi khi tải dữ liệu calendar. Vui lòng kiểm tra kết nối mạng và thử lại.')
+      setCalendarData({ events: [], labels: [], users: [], totalCards: 0, board: null })
+      
+      // Show error notification
+      setNotification({
+        open: true,
+        message: 'Không thể tải dữ liệu calendar. Vui lòng thử lại.',
+        severity: 'error'
+      })
+    } finally {
       setLoading(false)
-    }, 800)
+    }
+  }
+
+  // Process API response into calendar format
+  const processCardsForCalendar = (cardsData) => {
+    try {
+      if (!Array.isArray(cardsData)) {
+        console.warn('Invalid cards data format:', cardsData)
+        return { events: [], labels: [], users: [], totalCards: 0, board: null }
+      }
+
+      const events = cardsData.map(card => {
+        const eventStyles = getEnhancedEventStyles(card.dueDate)
+        const dueDateStatus = getDueDateStatus(card.dueDate)
+        
+        return {
+          id: card._id,
+          title: card.title,
+          start: card.dueDate,
+          end: card.dueDate,
+          allDay: false,
+          extendedProps: {
+            cardId: card._id,
+            columnTitle: card.columnTitle || 'Unknown Column',
+            description: card.description || '',
+            memberIds: card.memberIds || [],
+            labelIds: card.labelIds || [],
+            boardId: card.boardId,
+            status: dueDateStatus,
+            urgencyText: getUrgencyText(dueDateStatus),
+            statusLevel: dueDateStatus
+          },
+          backgroundColor: eventStyles.backgroundColor,
+          borderColor: eventStyles.borderColor,
+          textColor: eventStyles.textColor,
+          className: eventStyles.className,
+          // Add visual priority indicators
+          ...(dueDateStatus === DUE_DATE_STATUS.OVERDUE && {
+            borderWidth: '3px',
+            borderStyle: 'solid'
+          })
+        }
+      })
+
+      // Extract unique labels and users (simplified for now)
+      const labels = []
+      const users = []
+
+      return {
+        events,
+        labels,
+        users,
+        totalCards: cardsData.length,
+        board: null // We don't have full board data from this API
+      }
+    } catch (error) {
+      console.error('Error processing cards for calendar:', error)
+      return { events: [], labels: [], users: [], totalCards: 0, board: null }
+    }
+  }
+
+  // Helper function to get enhanced event styling based on due date
+  const getEnhancedEventStyles = (dueDate) => {
+    const status = getDueDateStatus(dueDate)
+    const styles = getCalendarEventStyles(status)
     
-    return () => clearTimeout(timer)
-  }, [])
+    return {
+      backgroundColor: styles.backgroundColor,
+      borderColor: styles.borderColor,
+      textColor: styles.textColor,
+      className: `fc-event ${styles.className}`,
+      extendedProps: {
+        urgencyText: getUrgencyText(status),
+        statusLevel: status
+      }
+    }
+  }
+
+  // Load calendar data when component mounts or dependencies change
+  useEffect(() => {
+    fetchCalendarData()
+  }, [isBoardCalendar, boardId])
 
   // Sync changes from ActiveCard modal to calendar
   useEffect(() => {
     if (currentActiveCard) {
       console.log('🔄 ActiveCard updated, syncing with calendar:', currentActiveCard)
       
-      // Re-process calendar data when card is updated
-      // This will refresh the events with updated card data
-      // For now, we log it - in real app, we'd update the events state
+      // If due date was updated, refresh calendar data
+      if (currentActiveCard.dueDate !== undefined) {
+        console.log('📅 Due date changed, refreshing calendar...')
+        fetchCalendarData()
+      }
     }
-  }, [currentActiveCard])
+  }, [currentActiveCard?.dueDate, currentActiveCard?._id])
 
   // Handle modal close notification
   useEffect(() => {
@@ -129,10 +265,46 @@ function Calendar() {
     { key: 'timeGridDay', label: 'Ngày', icon: CalendarToday }
   ]
 
-  // Handle view change
+  // Handle view change with FullCalendar API
   const handleViewChange = (view) => {
+    console.log('🔄 Changing calendar view to:', view)
     setCurrentView(view)
+    
+    // Use FullCalendar API to change view
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi()
+      calendarApi.changeView(view)
+    }
   }
+
+  // Auto-refresh calendar when due dates change
+  useEffect(() => {
+    fetchCalendarData()
+  }, [boardId]) // Refresh when boardId changes
+
+  // Listen for active card changes to trigger calendar refresh
+  useEffect(() => {
+    // If modal just closed, refresh calendar to show latest changes
+    if (!isShowModalActiveCard && lastFetchTime) {
+      const shouldRefresh = shouldRefreshCalendar(lastFetchTime)
+      if (shouldRefresh) {
+        console.log('🔄 Refreshing calendar after modal close')
+        fetchCalendarData()
+      }
+    }
+  }, [isShowModalActiveCard, lastFetchTime, shouldRefreshCalendar])
+
+  // Auto-refresh calendar every 30 seconds for live updates
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      if (!isShowModalActiveCard) { // Don't refresh while modal is open
+        console.log('🔄 Auto-refreshing calendar')
+        fetchCalendarData()
+      }
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(refreshInterval)
+  }, [isShowModalActiveCard])
 
   // Handle event click
   const handleEventClick = (clickInfo) => {
@@ -142,12 +314,12 @@ function Calendar() {
       cardId: extendedProps.cardId,
       title: clickInfo.event.title,
       columnTitle: extendedProps.columnTitle,
-      labels: extendedProps.labels,
-      memberNames: extendedProps.memberNames
+      labelIds: extendedProps.labelIds,
+      memberIds: extendedProps.memberIds
     })
     
-    // Find the full card data from board
-    const fullCard = findCardById(extendedProps.cardId, board)
+    // Find the full card data from calendar events
+    const fullCard = findCardById(extendedProps.cardId)
     
     if (fullCard) {
       // Dispatch action to show ActiveCard modal with card data
@@ -163,23 +335,26 @@ function Calendar() {
     }
   }
 
-  // Helper function to find card by ID in board data
-  const findCardById = (cardId, boardData) => {
-    if (!boardData || !boardData.columns) return null
+  // Helper function to find card by ID in calendar events
+  const findCardById = (cardId) => {
+    const event = events.find(evt => evt.extendedProps.cardId === cardId)
+    if (!event) return null
     
-    for (const column of boardData.columns) {
-      if (column.cards) {
-        const card = column.cards.find(c => c._id === cardId)
-        if (card) {
-          return card
-        }
-      }
+    // Reconstruct card object from event data
+    return {
+      _id: cardId,
+      title: event.title,
+      dueDate: event.start,
+      description: event.extendedProps.description || '',
+      memberIds: event.extendedProps.memberIds || [],
+      labelIds: event.extendedProps.labelIds || [],
+      boardId: event.extendedProps.boardId,
+      columnTitle: event.extendedProps.columnTitle
     }
-    return null
   }
 
-  // Handle event drop (drag & drop)
-  const handleEventDrop = (dropInfo) => {
+  // Handle event drop (drag & drop) with improved synchronization
+  const handleEventDrop = async (dropInfo) => {
     const { event, oldEvent } = dropInfo
     const { extendedProps } = event
     
@@ -190,9 +365,10 @@ function Calendar() {
     // Check if dropping to past date (before today)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    targetDate.setHours(0, 0, 0, 0)
+    const targetDateOnly = new Date(targetDate)
+    targetDateOnly.setHours(0, 0, 0, 0)
     
-    if (targetDate < today) {
+    if (targetDateOnly < today) {
       // Revert the drop
       dropInfo.revert()
       setNotification({
@@ -202,40 +378,91 @@ function Calendar() {
       })
       return
     }
-    
+
     // Check if same date
     if (targetDate.getTime() === oldDate.getTime()) {
-      // Same date, no need to update
+      console.log('📅 Same date, no update needed')
       return
     }
-    
-    console.log('🎯 Event dropped:', {
-      cardId: extendedProps.cardId,
-      title: event.title,
-      oldDate: oldEvent.start,
-      newDate: event.start,
-      columnTitle: extendedProps.columnTitle
-    })
-    
-    // TODO: Update card dueDate in state/backend
-    // For now, just show success message with date info
-    const formatDate = (date) => {
-      return new Date(date).toLocaleDateString('vi-VN', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+
+    try {
+      // Preserve time component from original due date if it exists
+      const originalDueDate = new Date(oldEvent.start)
+      const newDueDate = new Date(targetDate)
+      
+      // If the original due date had a specific time, preserve it
+      if (originalDueDate.getHours() !== 0 || originalDueDate.getMinutes() !== 0) {
+        newDueDate.setHours(originalDueDate.getHours(), originalDueDate.getMinutes(), 0, 0)
+      } else {
+        // Default to 12:00 PM for all-day events moved to specific dates
+        newDueDate.setHours(12, 0, 0, 0)
+      }
+
+      console.log('🎯 Event dropped:', {
+        cardId: extendedProps.cardId,
+        title: event.title,
+        oldDate: oldEvent.start,
+        newDate: newDueDate.toISOString(),
+        columnTitle: extendedProps.columnTitle
+      })
+
+      // Use the synchronization hook for optimistic updates and error handling
+      await updateDueDate(
+        extendedProps.cardId, 
+        newDueDate.toISOString(),
+        {
+          optimistic: true,
+          showToast: false, // We'll show our own notification
+          source: 'calendar-drag-drop'
+        }
+      )
+      
+      // Update the event appearance immediately with enhanced styling
+      const newEventStyles = getEnhancedEventStyles(newDueDate.toISOString())
+      const newStatus = getDueDateStatus(newDueDate.toISOString())
+      
+      event.setProp('backgroundColor', newEventStyles.backgroundColor)
+      event.setProp('borderColor', newEventStyles.borderColor)
+      event.setProp('className', newEventStyles.className)
+      event.setExtendedProp('status', newStatus)
+      event.setExtendedProp('urgencyText', getUrgencyText(newStatus))
+      event.setExtendedProp('statusLevel', newStatus)
+      
+      const formatDate = (date) => {
+        return new Date(date).toLocaleDateString('vi-VN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      }
+      
+      // Show success notification
+      setNotification({
+        open: true,
+        message: `✅ Đã cập nhật deadline cho "${event.title}" sang ${formatDate(newDueDate)}`,
+        severity: 'success'
+      })
+
+      console.log('✅ Due date updated successfully via calendar sync!')
+      
+      // Trigger calendar refresh after a short delay to ensure backend is updated
+      setTimeout(() => {
+        fetchCalendarData()
+      }, 1000)
+
+    } catch (error) {
+      console.error('❌ Error updating due date via drag and drop:', error)
+      
+      // Revert the drop on error
+      dropInfo.revert()
+      
+      setNotification({
+        open: true,
+        message: `❌ Có lỗi khi cập nhật deadline cho "${event.title}": ${error.message}`,
+        severity: 'error'
       })
     }
-    
-    console.log('✅ Due date updated successfully!')
-    
-    // Show success notification with details
-    setNotification({
-      open: true,
-      message: `✅ Đã cập nhật deadline cho "${event.title}" sang ${formatDate(event.start)}`,
-      severity: 'success'
-    })
   }
 
   // Handle date select (click on calendar)
@@ -396,24 +623,52 @@ function Calendar() {
           </Box>
         )}
         
-        {/* View Switcher */}
-        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-          {viewOptions.map((option) => {
-            const IconComponent = option.icon
-            return (
-              <Chip
-                key={option.key}
-                icon={<IconComponent />}
-                label={option.label}
-                onClick={() => handleViewChange(option.key)}
-                color={currentView === option.key ? 'primary' : 'default'}
-                variant={currentView === option.key ? 'filled' : 'outlined'}
-                sx={{ fontWeight: currentView === option.key ? 600 : 400 }}
-              />
-            )
-          })}
+        {/* View Switcher and Refresh Button */}
+        <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center', justifyContent: 'space-between' }}>
+          <Stack direction="row" spacing={1}>
+            {viewOptions.map((option) => {
+              const IconComponent = option.icon
+              return (
+                <Chip
+                  key={option.key}
+                  icon={<IconComponent />}
+                  label={option.label}
+                  onClick={() => handleViewChange(option.key)}
+                  color={currentView === option.key ? 'primary' : 'default'}
+                  variant={currentView === option.key ? 'filled' : 'outlined'}
+                  sx={{ fontWeight: currentView === option.key ? 600 : 400 }}
+                />
+              )
+            })}
+          </Stack>
+          
+          {/* Manual Refresh Button */}
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Refresh />}
+            onClick={() => fetchCalendarData()}
+            disabled={loading}
+            sx={{ minWidth: 'auto' }}
+          >
+            Làm mới
+          </Button>
         </Stack>
       </Box>
+
+      {/* Debug Info (remove in production) */}
+      {process.env.NODE_ENV === 'development' && (
+        <Box sx={{ mb: 2, p: 2, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
+          <Typography variant="body2" gutterBottom>
+            Debug Info: {events.length} events loaded, Loading: {loading.toString()}, Error: {error || 'None'}
+          </Typography>
+          {events.length > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              Sample event: {events[0]?.title} - {events[0]?.start}
+            </Typography>
+          )}
+        </Box>
+      )}
 
       {/* Calendar Container */}
       <Paper 
@@ -427,7 +682,42 @@ function Calendar() {
           }
         }}
       >
-        {events.length === 0 ? (
+        {loading ? (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100%',
+            flexDirection: 'column'
+          }}>
+            <CircularProgress size={40} sx={{ mb: 2 }} />
+            <Typography variant="body2" color="text.secondary">
+              Đang tải dữ liệu calendar...
+            </Typography>
+          </Box>
+        ) : error ? (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100%',
+            flexDirection: 'column'
+          }}>
+            <Typography variant="h6" color="error.main" gutterBottom>
+              ❌ Có lỗi khi tải calendar
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {error}
+            </Typography>
+            <Button 
+              variant="outlined" 
+              onClick={fetchCalendarData}
+              sx={{ mt: 2 }}
+            >
+              Thử lại
+            </Button>
+          </Box>
+        ) : !Array.isArray(events) || events.length === 0 ? (
           <Box sx={{ 
             display: 'flex', 
             justifyContent: 'center', 
@@ -443,60 +733,78 @@ function Calendar() {
             </Typography>
           </Box>
         ) : (
-          <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView={currentView}
-            view={currentView}
-            headerToolbar={{
-              left: 'prev,next today',
-              center: 'title',
-              right: ''
-            }}
-            events={events}
-            editable={true}
-            droppable={true}
-            selectable={true}
-            eventClick={handleEventClick}
-            eventDrop={handleEventDrop}
-            eventResize={handleEventResize}
-            height="100%"
-            locale="vi"
-            buttonText={{
-              today: 'Hôm nay',
-              month: 'Tháng',
-              week: 'Tuần',
-              day: 'Ngày'
-            }}
-            dayHeaderFormat={{ 
-              weekday: 'short',
-              month: 'numeric',
-              day: 'numeric'
-            }}
-            eventDisplay="block"
-            eventTextColor="#fff"
-            eventMouseEnter={(info) => {
-              info.el.style.cursor = 'pointer'
-              info.el.title = `${info.event.title} - ${info.event.extendedProps.columnTitle}`
-            }}
-            // Responsive configurations
-            aspectRatio={isMobile ? 1.0 : isTablet ? 1.35 : 1.8}
-            slotMinTime="06:00:00"
-            slotMaxTime="22:00:00"
-            allDaySlot={true}
-            nowIndicator={true}
-            weekends={true}
-            // Custom styling
-            eventClassNames="calendar-event"
-            dayMaxEventRows={isMobile ? 2 : 4}
-            moreLinkText="tasks khác"
-            // Event rendering
-            eventDidMount={(info) => {
-              // Add tooltip with more details
-              const { extendedProps } = info.event
-              info.el.title = `${info.event.title}\nColumn: ${extendedProps.columnTitle}\nLabels: ${extendedProps.labels.join(', ')}\nMembers: ${extendedProps.memberNames || 'Chưa assign'}`
-            }}
-            dateClick={handleDateSelect}
-          />
+          <Box sx={{ height: '100%', position: 'relative' }}>
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView={currentView}
+              headerToolbar={{
+                left: 'prev,next today',
+                center: 'title',
+                right: ''
+              }}
+              events={events.filter(event => event && event.id && event.title && event.start)}
+              editable={true}
+              droppable={true}
+              selectable={true}
+              eventClick={handleEventClick}
+              eventDrop={handleEventDrop}
+              eventResize={handleEventResize}
+              height="100%"
+              locale="vi"
+              buttonText={{
+                today: 'Hôm nay',
+                month: 'Tháng',
+                week: 'Tuần',
+                day: 'Ngày'
+              }}
+              dayHeaderFormat={{ 
+                weekday: 'short',
+                month: 'numeric',
+                day: 'numeric'
+              }}
+              eventDisplay="block"
+              eventTextColor="#fff"
+              eventMouseEnter={(info) => {
+                try {
+                  info.el.style.cursor = 'pointer'
+                  info.el.title = `${info.event.title} - ${info.event.extendedProps?.columnTitle || 'Unknown Column'}`
+                } catch (error) {
+                  console.warn('Error setting event hover:', error)
+                }
+              }}
+              // Responsive configurations
+              aspectRatio={isMobile ? 1.0 : isTablet ? 1.35 : 1.8}
+              slotMinTime="06:00:00"
+              slotMaxTime="22:00:00"
+              allDaySlot={true}
+              nowIndicator={true}
+              weekends={true}
+              // Custom styling
+              eventClassNames="calendar-event"
+              dayMaxEventRows={isMobile ? 2 : 4}
+              moreLinkText="tasks khác"
+              // Event rendering
+              eventDidMount={(info) => {
+                try {
+                  // Add tooltip with more details
+                  const { extendedProps } = info.event
+                  const labelText = extendedProps?.labelIds && extendedProps.labelIds.length > 0 
+                    ? `Labels: ${extendedProps.labelIds.length} label(s)` 
+                    : 'Labels: None'
+                  const memberText = extendedProps?.memberIds && extendedProps.memberIds.length > 0 
+                    ? `Members: ${extendedProps.memberIds.length} member(s)` 
+                    : 'Members: Chưa assign'
+                  
+                  info.el.title = `${info.event.title}\nColumn: ${extendedProps?.columnTitle || 'Unknown'}\n${labelText}\n${memberText}`
+                } catch (error) {
+                  console.warn('Error setting event tooltip:', error)
+                  info.el.title = info.event.title
+                }
+              }}
+              dateClick={handleDateSelect}
+            />
+          </Box>
         )}
       </Paper>
 

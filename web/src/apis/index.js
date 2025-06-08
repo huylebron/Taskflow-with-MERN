@@ -140,6 +140,19 @@ export const updateCardDetailsAPI = async (cardId, updateData) => {
   return response.data
 }
 
+/** Calendar APIs - Due Date Management */
+export const fetchCardsWithDueDateAPI = async (filters = {}) => {
+  const queryParams = new URLSearchParams(filters).toString()
+  const url = queryParams ? `${API_ROOT}/v1/cards/calendar?${queryParams}` : `${API_ROOT}/v1/cards/calendar`
+  const response = await authorizedAxiosInstance.get(url)
+  return response.data
+}
+
+export const updateCardDueDateAPI = async (cardId, dueDate) => {
+  const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/cards/${cardId}/due-date`, { dueDate })
+  return response.data
+}
+
 export const inviteUserToBoardAPI = async (data) => {
   const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/invitations/board`, data)
   toast.success('User invited to board successfully!')

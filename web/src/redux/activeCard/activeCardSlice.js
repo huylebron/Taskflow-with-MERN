@@ -30,6 +30,46 @@ export const activeCardSlice = createSlice({
       //...
       // Update lại dữ liệu currentActiveCard trong Redux
       state.currentActiveCard = fullCard
+    },
+
+    // Action to update specific fields in current active card
+    updateActiveCardField: (state, action) => {
+      const { fieldName, fieldValue } = action.payload
+      
+      if (state.currentActiveCard) {
+        state.currentActiveCard[fieldName] = fieldValue
+        state.currentActiveCard.updatedAt = Date.now()
+        
+        // Log for debugging
+        console.log(`📝 ActiveCard Redux: Updated ${fieldName} to`, fieldValue)
+      }
+    },
+
+    // Action specifically for due date updates with validation
+    updateActiveCardDueDate: (state, action) => {
+      const { dueDate } = action.payload
+      
+      if (state.currentActiveCard) {
+        // Store the previous value for potential rollback
+        const previousDueDate = state.currentActiveCard.dueDate
+        
+        state.currentActiveCard.dueDate = dueDate
+        state.currentActiveCard.updatedAt = Date.now()
+        state.currentActiveCard._previousDueDate = previousDueDate
+        
+        console.log(`📅 ActiveCard Redux: Updated due date from ${previousDueDate} to ${dueDate}`)
+      }
+    },
+
+    // Action to rollback due date changes if API call fails
+    rollbackActiveCardDueDate: (state) => {
+      if (state.currentActiveCard && state.currentActiveCard._previousDueDate !== undefined) {
+        const previousDueDate = state.currentActiveCard._previousDueDate
+        state.currentActiveCard.dueDate = previousDueDate
+        delete state.currentActiveCard._previousDueDate
+        
+        console.log('🔄 ActiveCard Redux: Rolled back due date to', previousDueDate)
+      }
     }
   },
   // ExtraReducers: Xử lý dữ liệu bất đồng bộ
@@ -43,7 +83,10 @@ export const activeCardSlice = createSlice({
 export const {
   clearAndHideCurrentActiveCard,
   updateCurrentActiveCard,
-  showModalActiveCard
+  showModalActiveCard,
+  updateActiveCardField,
+  updateActiveCardDueDate,
+  rollbackActiveCardDueDate
 } = activeCardSlice.actions
 
 // Selectors: Là nơi dành cho các components bên dưới gọi bằng hook useSelector() để lấy dữ liệu từ trong kho redux store ra sử dụng

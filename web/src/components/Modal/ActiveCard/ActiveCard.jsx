@@ -67,6 +67,10 @@ import LabelChip from '~/components/LabelChip/LabelChip'
 import ChecklistDialog from '../ChecklistDialog/ChecklistDialog'
 import { MOCK_CHECKLISTS } from '~/utils/checklistConstants'
 
+// Import the new due date API function for optimized calendar operations
+import { updateCardDueDateAPI } from '~/apis'
+import { useCalendarSync } from '~/customHooks/useCalendarSync'
+
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -99,6 +103,9 @@ function ActiveCard() {
   const [showCoverLightbox, setShowCoverLightbox] = useState(false)
   const [showCoverOptions, setShowCoverOptions] = useState(false)
   const [showLabelDialog, setShowLabelDialog] = useState(false)
+
+  // Use calendar synchronization hook for due date management
+  const { updateDueDate, triggerCalendarRefresh } = useCalendarSync()
 
   // State for Attachment feature - 🚨 CRITICAL: Thay thế MOCK_ATTACHMENTS
   const [showAttachmentModal, setShowAttachmentModal] = useState(false)
@@ -428,22 +435,77 @@ function ActiveCard() {
     }
 
     try {
-      const dueDate = new Date(selectedDateTime).toISOString()
-      await callApiUpdateCard({ dueDate })
-      toast.success('Cập nhật ngày hết hạn thành công!')
+      // Validate the selected date
+      const selectedDate = new Date(selectedDateTime)
+      if (isNaN(selectedDate.getTime())) {
+        toast.error('Ngày giờ không hợp lệ!')
+        return
+      }
+
+      // Check if date is not in the past (optional validation)
+      const now = new Date()
+      if (selectedDate < now) {
+        // Warning for past dates but still allow
+        if (!window.confirm('Ngày đã chọn đã qua. Bạn có chắc chắn muốn tiếp tục?')) {
+          return
+        }
+      }
+
+      const dueDate = selectedDate.toISOString()
+      
+      // Use the synchronization hook for better state management
+      await updateDueDate(activeCard._id, dueDate, {
+        optimistic: true,
+        showToast: true,
+        source: 'active-card-modal'
+      })
+      
+      // Trigger calendar refresh to show updated due date
+      triggerCalendarRefresh()
+      
       onCloseDueDatePicker()
     } catch (error) {
-      toast.error('Có lỗi khi cập nhật ngày hết hạn!')
+      console.error('Error updating due date:', error)
+      // Error toast is handled by the sync hook
     }
   }
 
   const onRemoveDueDate = async () => {
     try {
-      await callApiUpdateCard({ dueDate: null })
-      toast.success('Đã xóa ngày hết hạn!')
+      // Confirm before removing due date
+      if (!window.confirm('Bạn có chắc chắn muốn xóa ngày hết hạn?')) {
+        return
+      }
+
+      // Use the synchronization hook for consistent state management
+      await updateDueDate(activeCard._id, null, {
+        optimistic: true,
+        showToast: true,
+        source: 'active-card-modal-remove'
+      })
+      
+      // Trigger calendar refresh to show removed due date
+      triggerCalendarRefresh()
+      
       onCloseDueDatePicker()
     } catch (error) {
-      toast.error('Có lỗi khi xóa ngày hết hạn!')
+      console.error('Error removing due date:', error)
+      // Error toast is handled by the sync hook
+    }
+  }
+
+  // Quick due date update function for calendar drag-and-drop operations
+  const onQuickUpdateDueDate = async (newDueDate) => {
+    try {
+      // Use the synchronization hook for optimistic updates and consistent state management
+      return await updateDueDate(activeCard._id, newDueDate, {
+        optimistic: true,
+        showToast: true,
+        source: 'calendar-drag-drop-to-modal'
+      })
+    } catch (error) {
+      console.error('Error updating due date via calendar:', error)
+      throw error
     }
   }
 

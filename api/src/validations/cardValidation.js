@@ -12,7 +12,8 @@ const createNew = async (req, res, next) => {
   const correctCondition = Joi.object({
     boardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
     columnId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-    title: Joi.string().required().min(3).max(50).trim().strict()
+    title: Joi.string().required().min(3).max(50).trim().strict(),
+    dueDate: Joi.date().allow(null).optional()
   })
 
   try {
@@ -31,7 +32,8 @@ const update = async (req, res, next) => {
     deleteCardCover: Joi.boolean().optional(),
     cloudinaryPublicId: Joi.string().optional(),
     coverType: Joi.string().valid('image', 'color', 'gradient').optional(),
-    cover: Joi.string().optional()
+    cover: Joi.string().optional(),
+    dueDate: Joi.date().allow(null).optional()
   })
 
   try {

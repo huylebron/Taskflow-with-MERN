@@ -35,6 +35,13 @@ import {
   formatProgressText, 
   getProgressColor 
 } from '~/utils/checklistUtils'
+import { 
+  getDueDateStatus, 
+  formatDueDateDisplay, 
+  getDueDateChipStyles,
+  getUrgencyText,
+  DUE_DATE_STATUS
+} from '~/utils/dueDateConstants'
 
 function Card({ card }) {
   const dispatch = useDispatch()
@@ -131,107 +138,57 @@ function Card({ card }) {
   const cardLabels = getCardLabels()
   const remainingLabelsCount = getRemainingLabelsCount()
 
-  // Helper functions cho due date
-  const getDueDateStatus = (dueDate) => {
-    if (!dueDate) return null
-    
-    const now = new Date()
-    const due = new Date(dueDate)
-    const diffInHours = (due - now) / (1000 * 60 * 60)
-    
-    if (diffInHours < 0) {
-      return 'overdue' // Đã quá hạn
-    } else if (diffInHours <= 24) {
-      return 'due-soon' // Sắp hết hạn (trong 24h)
-    } else {
-      return 'normal' // Bình thường
-    }
-  }
-
-  const formatDueDate = (dueDate) => {
-    if (!dueDate) return ''
-    
-    const due = new Date(dueDate)
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate())
-    
-    const diffInDays = Math.ceil((dueDay - today) / (1000 * 60 * 60 * 24))
-    
-    if (diffInDays === 0) {
-      return `Hôm nay ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-    } else if (diffInDays === 1) {
-      return `Ngày mai ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-    } else if (diffInDays === -1) {
-      return `Hôm qua ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-    } else if (diffInDays < 0) {
-      return `${Math.abs(diffInDays)} ngày trước`
-    } else if (diffInDays <= 7) {
-      return `${diffInDays} ngày nữa`
-    } else {
-      return due.toLocaleDateString('vi-VN', { 
-        day: '2-digit', 
-        month: '2-digit',
-        year: 'numeric'
-      })
-    }
-  }
-
-  const getDueDateBadgeStyles = (status) => {
-    const baseStyles = {
-      fontSize: '11px',
-      height: '20px',
-      '& .MuiChip-label': {
-        px: 0.5,
-        fontSize: '11px'
-      },
-      '& .MuiChip-icon': {
-        fontSize: '14px',
-        marginLeft: '4px'
-      }
-    }
-
-    switch (status) {
-      case 'overdue':
-        return {
-          ...baseStyles,
-          backgroundColor: '#d32f2f',
-          color: 'white',
-          '& .MuiChip-icon': {
-            ...baseStyles['& .MuiChip-icon'],
-            color: 'white'
-          }
-        }
-      case 'due-soon':
-        return {
-          ...baseStyles,
-          backgroundColor: '#f5dcdc',
-          color: '#d32f2f',
-          border: '1px solid #d32f2f'
-        }
-      default:
-        return {
-          ...baseStyles,
-          backgroundColor: (theme) => 
-            theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-          color: (theme) => 
-            theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)'
-        }
-    }
-  }
+  // Get due date status for current card
+  const dueDateStatus = getDueDateStatus(card?.dueDate)
+  const isOverdue = dueDateStatus === DUE_DATE_STATUS.OVERDUE
+  const isDueSoon = dueDateStatus === DUE_DATE_STATUS.DUE_SOON
 
   return (
     <>
       <MuiCard
         onClick={setActiveCard}
         ref={setNodeRef} style={dndKitCardStyles} {...attributes} {...listeners}
+        className={`due-date-indicator ${isOverdue ? 'overdue' : isDueSoon ? 'due-soon' : ''}`}
         sx={{
           cursor: 'pointer',
-          boxShadow: '0 1px 1px rgba(0, 0, 0, 0.2)',
+          boxShadow: isOverdue 
+            ? '0 2px 8px rgba(211, 47, 47, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2)' 
+            : isDueSoon 
+            ? '0 2px 8px rgba(245, 124, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.2)'
+            : '0 1px 1px rgba(0, 0, 0, 0.2)',
           overflow: 'unset',
           display: card?.FE_PlaceholderCard ? 'none' : 'block',
-          border: '1px solid transparent',
-          '&:hover': { borderColor: (theme) => theme.palette.primary.main }
+          border: isOverdue 
+            ? '2px solid #d32f2f' 
+            : isDueSoon 
+            ? '1px solid #f57c00' 
+            : '1px solid transparent',
+          position: 'relative',
+          transition: 'all 0.3s ease-in-out',
+          '&:hover': { 
+            borderColor: (theme) => theme.palette.primary.main,
+            transform: 'translateY(-2px)',
+            boxShadow: isOverdue 
+              ? '0 4px 16px rgba(211, 47, 47, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2)' 
+              : isDueSoon 
+              ? '0 4px 16px rgba(245, 124, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)'
+              : '0 4px 16px rgba(0, 0, 0, 0.15)'
+          },
+          // Add urgency indicator for overdue cards
+          ...(isOverdue && {
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: '-2px',
+              left: '-2px',
+              right: '-2px',
+              bottom: '-2px',
+              background: 'linear-gradient(45deg, rgba(211, 47, 47, 0.1), rgba(183, 28, 28, 0.1))',
+              borderRadius: 'inherit',
+              zIndex: -1,
+              animation: 'pulse 2s infinite'
+            }
+          })
         }}
       >
         {card?.cover && 
@@ -340,15 +297,35 @@ function Card({ card }) {
             </Stack>
           )}
           
-          {/* Due Date Badge */}
+          {/* Enhanced Due Date Badge */}
           {card?.dueDate && (
             <Box sx={{ mb: 1 }}>
-              <Chip
-                icon={<WatchLaterOutlinedIcon />}
-                label={formatDueDate(card.dueDate)}
-                size="small"
-                sx={getDueDateBadgeStyles(getDueDateStatus(card.dueDate))}
-              />
+              <Tooltip title={getUrgencyText(dueDateStatus)} arrow>
+                <Chip
+                  icon={<WatchLaterOutlinedIcon />}
+                  label={formatDueDateDisplay(card.dueDate)}
+                  size="small"
+                  sx={getDueDateChipStyles(dueDateStatus)}
+                  className={`due-date-chip ${dueDateStatus}`}
+                />
+              </Tooltip>
+              {/* Urgency indicator for overdue items */}
+              {isOverdue && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    backgroundColor: '#d32f2f',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    animation: 'pulse 1.5s infinite'
+                  }}
+                />
+              )}
             </Box>
           )}
           

@@ -130,6 +130,47 @@ export const activeBoardSlice = createSlice({
           break
         }
       }
+    },
+    // Action to specifically handle due date updates for better calendar synchronization
+    updateCardDueDate: (state, action) => {
+      const { cardId, dueDate } = action.payload
+      
+      // Đảm bảo currentActiveBoard tồn tại
+      if (!state.currentActiveBoard) return
+
+      // Tìm card trong board và cập nhật due date
+      for (const column of state.currentActiveBoard.columns) {
+        const card = column.cards.find(c => c._id === cardId)
+        if (card) {
+          // Cập nhật due date và timestamp cập nhật
+          card.dueDate = dueDate
+          card.updatedAt = Date.now()
+          
+          console.log(`📅 Redux: Updated due date for card "${card.title}" to ${dueDate}`)
+          break
+        }
+      }
+    },
+    // Action to sync calendar changes back to board view
+    syncCalendarToBoard: (state, action) => {
+      const { cardUpdates } = action.payload
+      
+      // Đảm bảo currentActiveBoard tồn tại
+      if (!state.currentActiveBoard || !Array.isArray(cardUpdates)) return
+
+      // Cập nhật nhiều cards cùng lúc (useful for calendar batch operations)
+      cardUpdates.forEach(({ cardId, updates }) => {
+        for (const column of state.currentActiveBoard.columns) {
+          const card = column.cards.find(c => c._id === cardId)
+          if (card) {
+            Object.keys(updates).forEach(key => {
+              card[key] = updates[key]
+            })
+            card.updatedAt = Date.now()
+            break
+          }
+        }
+      })
     }
   },
   // ExtraReducers: Nơi xử lý dữ liệu bất đồng bộ
@@ -188,7 +229,9 @@ export const {
   updateBoardBackground,
   addLabelToBoard,
   deleteLabelFromBoard,
-  updateCardLabels
+  updateCardLabels,
+  updateCardDueDate,
+  syncCalendarToBoard
 } = activeBoardSlice.actions
 
 // Selectors: Là nơi dành cho các components bên dưới gọi bằng hook useSelector() để lấy dữ liệu từ trong kho redux store ra sử dụng
@@ -204,6 +247,103 @@ export const selectBoardBackground = (state) => {
 // Selector để lấy labels của board hiện tại
 export const selectBoardLabels = (state) => {
   return state.activeBoard.currentActiveBoard?.labels || []
+}
+
+// Calendar-specific selectors for better state management
+export const selectCardsWithDueDate = (state) => {
+  const board = state.activeBoard.currentActiveBoard
+  if (!board?.columns) return []
+  
+  const cardsWithDueDate = []
+  
+  board.columns.forEach(column => {
+    if (column.cards) {
+      column.cards.forEach(card => {
+        // Skip placeholder cards and cards without due date
+        if (!card.FE_PlaceholderCard && card.dueDate) {
+          cardsWithDueDate.push({
+            ...card,
+            columnTitle: column.title,
+            columnId: column._id
+          })
+        }
+      })
+    }
+  })
+  
+  return cardsWithDueDate
+}
+
+// Selector để lấy cards với due date trong khoảng thời gian nhất định
+export const selectCardsWithDueDateInRange = (startDate, endDate) => (state) => {
+  const cardsWithDueDate = selectCardsWithDueDate(state)
+  
+  if (!startDate && !endDate) return cardsWithDueDate
+  
+  return cardsWithDueDate.filter(card => {
+    const cardDueDate = new Date(card.dueDate)
+    const start = startDate ? new Date(startDate) : null
+    const end = endDate ? new Date(endDate) : null
+    
+    if (start && end) {
+      return cardDueDate >= start && cardDueDate <= end
+    } else if (start) {
+      return cardDueDate >= start
+    } else if (end) {
+      return cardDueDate <= end
+    }
+    
+    return true
+  })
+}
+
+// Selector để lấy thống kê due date cho dashboard
+export const selectDueDateStats = (state) => {
+  const cardsWithDueDate = selectCardsWithDueDate(state)
+  const now = new Date()
+  
+  const stats = {
+    total: cardsWithDueDate.length,
+    overdue: 0,
+    dueSoon: 0, // within 24 hours
+    upcoming: 0 // within 7 days
+  }
+  
+  cardsWithDueDate.forEach(card => {
+    const dueDate = new Date(card.dueDate)
+    const diffInHours = (dueDate - now) / (1000 * 60 * 60)
+    
+    if (diffInHours < 0) {
+      stats.overdue++
+    } else if (diffInHours <= 24) {
+      stats.dueSoon++
+    } else if (diffInHours <= 168) { // 7 days
+      stats.upcoming++
+    }
+  })
+  
+  return stats
+}
+
+// Selector để tìm card theo ID trong board hiện tại
+export const selectCardById = (cardId) => (state) => {
+  const board = state.activeBoard.currentActiveBoard
+  if (!board?.columns) return null
+  
+  for (const column of board.columns) {
+    if (column.cards) {
+      const card = column.cards.find(c => c._id === cardId)
+      if (card) {
+        return {
+          ...card,
+          columnTitle: column.title,
+          columnId: column._id
+        }
+      }
+    }
+  }
+  
+  return null
 }
 
 // Cái file này tên là activeBoardSlice NHƯNG chúng ta sẽ export một thứ tên là Reducer, mọi người lưu ý :D

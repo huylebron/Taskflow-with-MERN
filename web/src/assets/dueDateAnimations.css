@@ -1,0 +1,232 @@
+/* Due Date Animations and Visual Effects */
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(211, 47, 47, 0.3);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);
+    transform: scale(1);
+  }
+}
+
+@keyframes urgentPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Due Date Status Classes */
+.due-date-overdue {
+  animation: pulse 2s infinite;
+}
+
+.due-date-overdue .due-date-chip {
+  animation: urgentPulse 1.5s infinite;
+}
+
+.due-date-due-soon {
+  border-color: #f57c00 !important;
+}
+
+.due-date-upcoming {
+  border-color: #388e3c !important;
+}
+
+/* Card Urgency Indicators */
+.due-date-indicator {
+  position: relative;
+  overflow: visible;
+}
+
+.due-date-indicator.overdue {
+  box-shadow: 
+    0 0 0 1px rgba(211, 47, 47, 0.3),
+    0 2px 8px rgba(211, 47, 47, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.due-date-indicator.due-soon {
+  box-shadow: 
+    0 0 0 1px rgba(245, 124, 0, 0.2),
+    0 2px 6px rgba(245, 124, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover Effects */
+.due-date-indicator:hover {
+  transform: translateY(-2px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.due-date-indicator.overdue:hover {
+  box-shadow: 
+    0 0 0 2px rgba(211, 47, 47, 0.4),
+    0 4px 16px rgba(211, 47, 47, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.due-date-indicator.due-soon:hover {
+  box-shadow: 
+    0 0 0 2px rgba(245, 124, 0, 0.3),
+    0 4px 16px rgba(245, 124, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Calendar Event Styling */
+.fc-event.due-date-overdue {
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%) !important;
+  border-color: #b71c1c !important;
+  animation: pulse 2s infinite;
+}
+
+.fc-event.due-date-due-soon {
+  background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%) !important;
+  border-color: #ef6c00 !important;
+}
+
+.fc-event.due-date-upcoming {
+  background: linear-gradient(135deg, #388e3c 0%, #4caf50 100%) !important;
+  border-color: #4caf50 !important;
+}
+
+.fc-event.due-date-normal {
+  background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%) !important;
+  border-color: #2196f3 !important;
+}
+
+/* Chip Animations */
+.due-date-chip.overdue {
+  position: relative;
+  overflow: hidden;
+}
+
+.due-date-chip.overdue::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+/* Urgency Badge */
+.urgency-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d32f2f;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: urgentPulse 1.5s infinite;
+}
+
+/* Status Indicators */
+.status-indicator-overdue {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+.status-indicator-due-soon {
+  color: #f57c00;
+  font-weight: 600;
+}
+
+.status-indicator-upcoming {
+  color: #388e3c;
+  font-weight: 500;
+}
+
+.status-indicator-normal {
+  color: #1976d2;
+  font-weight: normal;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .due-date-indicator {
+    transform: none !important;
+  }
+  
+  .due-date-indicator:hover {
+    transform: none !important;
+  }
+  
+  .due-date-chip {
+    font-size: 10px !important;
+    height: 20px !important;
+  }
+}
+
+/* Dark Theme Adjustments */
+@media (prefers-color-scheme: dark) {
+  .due-date-indicator.overdue {
+    box-shadow: 
+      0 0 0 1px rgba(244, 67, 54, 0.4),
+      0 2px 8px rgba(244, 67, 54, 0.3),
+      0 1px 3px rgba(255, 255, 255, 0.1);
+  }
+  
+  .due-date-indicator.due-soon {
+    box-shadow: 
+      0 0 0 1px rgba(255, 152, 0, 0.3),
+      0 2px 6px rgba(255, 152, 0, 0.2),
+      0 1px 3px rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .due-date-overdue,
+  .due-date-chip.overdue,
+  .urgency-badge {
+    animation: none;
+  }
+  
+  .due-date-indicator:hover {
+    transform: none;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .due-date-indicator {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+  
+  .due-date-chip {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #ccc !important;
+  }
+} 

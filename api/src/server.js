@@ -19,6 +19,8 @@ import cookieParser from 'cookie-parser'
 import http from 'http'
 import socketIo from 'socket.io'
 import { inviteUserToBoardSocket } from '~/sockets/inviteUserToBoardSocket'
+// Import card model for creating indexes
+import { cardModel } from '~/models/cardModel'
 
 const START_SERVER = () => {
   const app = express()
@@ -87,6 +89,10 @@ const START_SERVER = () => {
     await CONNECT_DB()
     console.log('2. Connected to MongoDB Cloud Atlas!')
 
+    // Create database indexes for optimized queries
+    console.log('2.1. Creating database indexes for optimized queries...')
+    await cardModel.createIndexes()
+    
     // Khởi động Server Back-end sau khi đã Connect Database thành công
     START_SERVER()
   } catch (error) {

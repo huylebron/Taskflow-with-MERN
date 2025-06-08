@@ -10,6 +10,9 @@ import Settings from '~/pages/Settings/Settings'
 import Boards from '~/pages/Boards'
 import Calendar from '~/pages/Calendar'
 
+// Import due date animations and visual effects
+import '~/assets/dueDateAnimations.css'
+
 /**
  * Giải pháp Clean Code trong việc xác định các route nào cần đăng nhập tài khoản xong thì mới cho truy cập
  * Sử dụng <Outlet /> của react-router-dom để hiển thị các Child Route (xem cách sử dụng trong App() bên dưới)
