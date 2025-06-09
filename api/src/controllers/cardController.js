@@ -1,8 +1,4 @@
-/**
- * Updated by trungquandev.com's author on August 17 2023
- * YouTube: https://youtube.com/@trungquandev
- * "A bit of fragrance clings to the hand that gives flowers!"
- */
+
 import { StatusCodes } from 'http-status-codes'
 import { cardService } from '~/services/cardService'
 import { CARD_COVER_COLORS, CARD_COVER_GRADIENTS } from '~/utils/constants'
@@ -33,7 +29,7 @@ const getCardsWithDueDate = async (req, res, next) => {
   try {
     const { boardId, startDate, endDate } = req.query
     const cardsWithDueDate = await cardService.getCardsWithDueDate(boardId, startDate, endDate)
-    
+
     res.status(StatusCodes.OK).json(cardsWithDueDate)
   } catch (error) { next(error) }
 }
@@ -45,13 +41,13 @@ const updateDueDate = async (req, res, next) => {
   try {
     const cardId = req.params.id
     const { dueDate } = req.body
-    
+
     if (!cardId || dueDate === undefined) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ 
-        message: 'Card ID and due date are required' 
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Card ID and due date are required'
       })
     }
-    
+
     const updatedCard = await cardService.update(cardId, { dueDate })
     res.status(StatusCodes.OK).json(updatedCard)
   } catch (error) { next(error) }
@@ -63,7 +59,7 @@ const getCoverOptions = async (req, res, next) => {
       colors: CARD_COVER_COLORS,
       gradients: CARD_COVER_GRADIENTS
     }
-    
+
     res.status(StatusCodes.OK).json(coverOptions)
   } catch (error) { next(error) }
 }

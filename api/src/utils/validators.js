@@ -1,8 +1,3 @@
-/**
- * Updated by trungquandev.com's author on Oct 8 2023
- * YouTube: https://youtube.com/@trungquandev
- * "A bit of fragrance clings to the hand that gives flowers!"
- */
 
 export const OBJECT_ID_RULE = /^[0-9a-fA-F]{24}$/
 export const OBJECT_ID_RULE_MESSAGE = 'Your string fails to match the Object Id pattern!'
@@ -24,7 +19,7 @@ export const ALLOW_ATTACHMENT_FILE_TYPES = [
   // Images
   'image/jpg', 'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp',
   // Documents
-  'application/pdf', 
+  'application/pdf',
   'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // Word
   'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Excel
   'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', // PowerPoint
@@ -36,15 +31,15 @@ export const validateAttachmentFile = (file) => {
   if (!file || !file.originalname || !file.size || !file.mimetype) {
     return 'File data is incomplete.'
   }
-  
+
   if (file.size > LIMIT_COMMON_FILE_SIZE) {
     return `File "${file.originalname}" exceeds maximum size of 10MB.`
   }
-  
+
   if (!ALLOW_ATTACHMENT_FILE_TYPES.includes(file.mimetype)) {
     return `File "${file.originalname}" type is not supported. Allowed types: images, PDF, Office documents, text.`
   }
-  
+
   return null
 }
 
@@ -53,13 +48,13 @@ export const validateMultipleAttachmentFiles = (files) => {
   if (!files || files.length === 0) {
     return 'Please select at least one file.'
   }
-  
+
   for (let i = 0; i < files.length; i++) {
     const error = validateAttachmentFile(files[i])
     if (error) {
       return error
     }
   }
-  
+
   return null
 }

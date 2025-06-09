@@ -1,30 +1,16 @@
-/**
- * Updated by trungquandev.com's author on August 17 2023
- * YouTube: https://youtube.com/@trungquandev
- * "A bit of fragrance clings to the hand that gives flowers!"
- */
 
-// Lưu ý Brevo là tên thương hiệu mới của sib - Sendinblue
-// Vì thế trong phần hướng dẫn trên github có thể nó vẫn còn giữ tên biến SibApiV3Sdk
-// https://github.com/getbrevo/brevo-node
+
+
 const SibApiV3Sdk = require('@getbrevo/brevo')
 import { env } from '~/config/environment'
 
 
-/**
-* Có thể xem thêm phần docs cấu hình theo từng ngôn ngữ khác nhau tùy dự án ở Brevo Dashboard > Account > SMTP & API > API Keys
-* https://brevo.com
-* Với Nodejs thì tốt nhất cứ lên github repo của bọn nó là nhanh nhất:
-* https://github.com/getbrevo/brevo-node
-*/
+
 let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi()
 let apiKey = apiInstance.authentications['apiKey']
 apiKey.apiKey = env.BREVO_API_KEY
 
-/**
- * Update kiến thức: Brevo mới update vụ Whitelist IP tương tự MongoDB Atlas, nếu bạn không gửi được mail thì cần phải config 0.0.0.0 hoặc uncheck cái review IP Address trong dashboard là được nhé.
- * https://app.brevo.com/security/authorised_ips
- */
+
 const sendEmail = async (recipientEmail, customSubject, customHtmlContent) => {
   // Khởi tạo một cái sendSmtpEmail với những thông tin cần thiết
   let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail()

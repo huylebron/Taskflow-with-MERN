@@ -1,8 +1,4 @@
-/**
- * Author: TrungQuanDev - Một Lập Trình Viên
- * YouTube: https://youtube.com/@trungquandev
-*/
-/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useCallback } from 'react'
 import { debounce } from 'lodash'
 /**

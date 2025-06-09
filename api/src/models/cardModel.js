@@ -1,8 +1,3 @@
-/**
- * Updated by trungquandev.com's author on Oct 8 2023
- * YouTube: https://youtube.com/@trungquandev
- * "A bit of fragrance clings to the hand that gives flowers!"
- */
 
 import Joi from 'joi'
 import { ObjectId } from 'mongodb'
@@ -40,7 +35,7 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
   attachmentIds: Joi.array().items(
     Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
   ).default([]),
-  
+
   // Thêm trường attachmentCount để lưu số lượng attachment của card
   // Giúp hiển thị nhanh số lượng attachment mà không cần query
   attachmentCount: Joi.number().default(0),
@@ -187,7 +182,7 @@ const pushAttachmentId = async (cardId, attachmentId) => {
   try {
     const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(cardId) },
-      { 
+      {
         $push: { attachmentIds: new ObjectId(attachmentId) },
         $inc: { attachmentCount: 1 },
         $set: { updatedAt: Date.now() }
@@ -208,7 +203,7 @@ const pullAttachmentId = async (cardId, attachmentId) => {
   try {
     const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(cardId) },
-      { 
+      {
         $pull: { attachmentIds: new ObjectId(attachmentId) },
         $inc: { attachmentCount: -1 },
         $set: { updatedAt: Date.now() }
@@ -230,14 +225,14 @@ const updateAttachmentCount = async (cardId) => {
     // Đếm số lượng attachmentIds trong card
     const card = await findOneById(cardId)
     const attachmentCount = card?.attachmentIds?.length || 0
-    
+
     // Cập nhật attachmentCount
     const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(cardId) },
-      { 
-        $set: { 
+      {
+        $set: {
           attachmentCount: attachmentCount,
-          updatedAt: Date.now() 
+          updatedAt: Date.now()
         }
       },
       { returnDocument: 'after' }
@@ -254,12 +249,12 @@ const createIndexes = async () => {
   try {
     // Index for cards with due dates
     await GET_DB().collection(CARD_COLLECTION_NAME).createIndex({ dueDate: 1 })
-    
+
     // Compound index for board-specific calendar queries
     await GET_DB().collection(CARD_COLLECTION_NAME).createIndex({ boardId: 1, dueDate: 1 })
-    
+
     console.log('Card indexes created successfully')
-  } catch (error) { 
+  } catch (error) {
     console.error('Error creating card indexes:', error)
   }
 }
@@ -274,7 +269,7 @@ export const cardModel = {
   unshiftNewComment,
   updateMembers,
   updateManyComments,
-  
+
   // Thêm các hàm mới để quản lý mối quan hệ với attachments
   pushAttachmentId,
   pullAttachmentId,

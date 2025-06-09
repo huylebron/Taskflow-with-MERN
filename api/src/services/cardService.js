@@ -1,8 +1,4 @@
-/**
- * Updated by trungquandev.com's author on August 17 2023
- * YouTube: https://youtube.com/@trungquandev
- * "A bit of fragrance clings to the hand that gives flowers!"
- */
+
 
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
@@ -53,7 +49,7 @@ const update = async (cardId, updateData, cardCoverFile, userInfo) => {
   try {
     // Add updatedAt to mark when card was last modified
     updateData.updatedAt = Date.now()
-    
+
     // Lọc những field mà chúng ta không cho phép cập nhật linh tinh
     Object.keys(updateData).forEach(fieldName => {
       if (INVALID_UPDATE_FIELDS.includes(fieldName)) {
@@ -86,14 +82,14 @@ const update = async (cardId, updateData, cardCoverFile, userInfo) => {
 
     if (cardCoverFile) {
       const uploadResult = await CloudinaryProvider.streamUpload(cardCoverFile.buffer, 'card-covers')
-      updatedCard = await cardModel.update(cardId, { 
+      updatedCard = await cardModel.update(cardId, {
         cover: uploadResult.secure_url,
         coverType: 'image'
       })
     } else if (updateData.deleteCardCover) {
       // Xóa ảnh cover bằng cách set cover = null
       const currentCard = await cardModel.findOneById(cardId)
-      
+
       // Nếu có publicId của ảnh cover trên Cloudinary, thì xóa ảnh đó
       if (currentCard && currentCard.cover && updateData.cloudinaryPublicId) {
         try {
@@ -104,8 +100,8 @@ const update = async (cardId, updateData, cardCoverFile, userInfo) => {
           // Tiếp tục xử lý ngay cả khi xóa ảnh trên Cloudinary thất bại
         }
       }
-      
-      updatedCard = await cardModel.update(cardId, { 
+
+      updatedCard = await cardModel.update(cardId, {
         cover: null,
         coverType: null
       })
@@ -114,8 +110,8 @@ const update = async (cardId, updateData, cardCoverFile, userInfo) => {
       if (!updateData.cover) {
         throw new Error('Cover value is required for color or gradient type')
       }
-      
-      updatedCard = await cardModel.update(cardId, { 
+
+      updatedCard = await cardModel.update(cardId, {
         cover: updateData.cover,
         coverType: updateData.coverType
       })
@@ -134,7 +130,7 @@ const update = async (cardId, updateData, cardCoverFile, userInfo) => {
     } else if (updateData.deleteAllAttachments) {
       // ⚠️ CẨN THẬN: Trường hợp xóa tất cả attachments của card
       const attachments = await attachmentModel.findByCardId(cardId)
-      
+
       // Xóa từng attachment và file trên Cloudinary
       for (const attachment of attachments) {
         try {
@@ -146,11 +142,11 @@ const update = async (cardId, updateData, cardCoverFile, userInfo) => {
           console.error(`Failed to delete attachment ${attachment._id}:`, error)
         }
       }
-      
+
       // Reset attachmentIds và attachmentCount
-      updatedCard = await cardModel.update(cardId, { 
-        attachmentIds: [], 
-        attachmentCount: 0 
+      updatedCard = await cardModel.update(cardId, {
+        attachmentIds: [],
+        attachmentCount: 0
       })
     } else {
       // Các trường hợp update chung như title, description
@@ -177,7 +173,7 @@ const deleteCardAndAttachments = async (cardId) => {
 
     // 🚨 CRITICAL: Xóa tất cả attachments của card trước
     const attachments = await attachmentModel.findByCardId(cardId)
-    
+
     // Xóa từng attachment và file trên Cloudinary
     const deletionResults = {
       totalAttachments: attachments.length,
@@ -192,10 +188,10 @@ const deleteCardAndAttachments = async (cardId) => {
         if (attachment.cloudinaryPublicId) {
           await CloudinaryProvider.deleteResource(attachment.cloudinaryPublicId)
         }
-        
+
         // Hard delete attachment khỏi database
         await attachmentModel.permanentlyDeleteOne(attachment._id.toString())
-        
+
         deletionResults.deletedAttachments++
       } catch (error) {
         console.error(`Failed to delete attachment ${attachment._id}:`, error)
@@ -237,7 +233,7 @@ const getCardWithAttachments = async (cardId) => {
 
     // Lấy danh sách attachments của card
     const attachments = await attachmentModel.findByCardId(cardId)
-    
+
     // Kết hợp card với attachments
     return {
       ...card,
@@ -260,7 +256,7 @@ const getCardWithAttachments = async (cardId) => {
  */
 const getCardsWithDueDate = async (boardId, startDate, endDate) => {
   try {
-    const query = { 
+    const query = {
       _destroy: false,
       dueDate: { $ne: null } // Only get cards with due dates
     }
@@ -293,7 +289,7 @@ const getCardsWithDueDate = async (boardId, startDate, endDate) => {
       .find(query)
       .sort({ dueDate: 1 }) // Sort by due date ascending
       .toArray()
-    
+
     // Populate column information for each card
     // This is important for calendar display to show which column/status the card is in
     const cardsWithColumnInfo = await Promise.all(cards.map(async (card) => {
@@ -310,7 +306,7 @@ const getCardsWithDueDate = async (boardId, startDate, endDate) => {
         }
       }
     }))
-    
+
     return cardsWithColumnInfo
   } catch (error) {
     throw new Error(`Error getting cards with due dates: ${error.message}`)
@@ -320,7 +316,7 @@ const getCardsWithDueDate = async (boardId, startDate, endDate) => {
 export const cardService = {
   createNew,
   update,
-  
+
   // Thêm các function mới để xử lý attachments
   deleteCardAndAttachments,
   getCardWithAttachments,

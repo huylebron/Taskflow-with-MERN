@@ -1,7 +1,4 @@
-/**
- * YouTube: TrungQuanDev - Một Lập Trình Viên
- * Created by trungquandev.com's author on Sep 27, 2023
- */
+
 import { pick } from 'lodash'
 
 /**

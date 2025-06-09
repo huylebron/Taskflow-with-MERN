@@ -1,8 +1,4 @@
-/**
- * Updated by trungquandev.com's author on Oct 18 2023
- * YouTube: https://youtube.com/@trungquandev
- * "A bit of fragrance clings to the hand that gives flowers!"
- */
+
 
 import { WHITELIST_DOMAINS } from '~/utils/constants'
 import { env } from '~/config/environment'

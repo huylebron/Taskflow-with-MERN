@@ -3,9 +3,6 @@ import { LIMIT_COMMON_FILE_SIZE, ALLOW_COMMON_FILE_TYPES, ALLOW_ATTACHMENT_FILE_
 import ApiError from '~/utils/ApiError'
 import { StatusCodes } from 'http-status-codes'
 
-/** Hầu hết những thứ bên dưới đều có ở docs của multer, chỉ là anh tổ chức lại sao cho khoa học và gọn gàng nhất có thể
-* https://www.npmjs.com/package/multer
-*/
 
 // Function Kiểm tra loại file nào được chấp nhận cho card cover (existing)
 const customFileFilter = (req, file, callback) => {
@@ -29,7 +26,7 @@ const attachmentFileFilter = (req, file, callback) => {
     const errMessage = `File "${file.originalname}" type is not supported. Allowed types: images, PDF, Office documents, text.`
     return callback(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errMessage), null)
   }
-  
+
   // Kiểm tra kích thước file
   // Note: multer sẽ tự động check limits.fileSize, nhưng chúng ta kiểm tra thêm để có error message rõ ràng hơn
   if (file.size && file.size > LIMIT_COMMON_FILE_SIZE) {
@@ -49,7 +46,7 @@ const upload = multer({
 
 // 🚨 CRITICAL: Khởi tạo function upload cho attachments (multiple files)
 const uploadAttachments = multer({
-  limits: { 
+  limits: {
     fileSize: LIMIT_COMMON_FILE_SIZE,
     files: 10 // Giới hạn tối đa 10 file cùng lúc để tránh DoS
   },
@@ -57,7 +54,7 @@ const uploadAttachments = multer({
   storage: multer.memoryStorage() // Lưu trong memory để upload lên Cloudinary
 })
 
-export const multerUploadMiddleware = { 
+export const multerUploadMiddleware = {
   upload, // Existing upload for card covers
   uploadAttachments // New upload for attachments
 }
