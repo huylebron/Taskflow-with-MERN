@@ -5,6 +5,8 @@
  */
 import { StatusCodes } from 'http-status-codes'
 import { boardService } from '~/services/boardService'
+import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
+import fs from 'fs'
 
 const createNew = async (req, res, next) => {
   try {
@@ -66,6 +68,28 @@ const getBoards = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+const updateBackground = async (req, res, next) => {
+  try {
+    const boardId = req.params.id
+    let updateData = { ...req.body }
+
+    // Nếu có file upload (multer lưu ở req.file)
+    if (req.file) {
+      // Đọc file buffer
+      const fileBuffer = fs.readFileSync(req.file.path)
+      // Upload lên Cloudinary, folder: 'board-backgrounds'
+      const result = await CloudinaryProvider.streamUpload(fileBuffer, 'board-backgrounds')
+      console.log(result)
+      updateData.backgroundUpload = result.secure_url
+      // Xóa file tạm sau khi upload
+      fs.unlinkSync(req.file.path)
+    }
+
+    // Cập nhật background cho board
+    const updatedBoard = await boardService.update(boardId, updateData)
+    res.status(StatusCodes.OK).json(updatedBoard)
+  } catch (error) { next(error) }
+}
 
 const deleteBoard = async (req, res, next) => {
   try {
@@ -116,5 +140,6 @@ export const boardController = {
   deleteBoard,
   addLabel,
   updateLabel,
-  deleteLabel
+  deleteLabel,
+  updateBackground
 }

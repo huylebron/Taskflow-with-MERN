@@ -5,10 +5,11 @@ import bcryptjs from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
 import { pickUser } from '~/utils/formatters'
 import { WEBSITE_DOMAIN } from '~/utils/constants'
-import { BrevoProvider } from '~/providers/BrevoProvider'
 import { env } from '~/config/environment'
 import { JwtProvider } from '~/providers/JwtProvider'
 import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
+import { NodemailerProvider } from '~/providers/sendMailProvider'
+import { emailTemplates } from '~/templates/emailTemplates'
 
 const createNew = async (reqBody) => {
   try {
@@ -26,7 +27,7 @@ const createNew = async (reqBody) => {
       password: bcryptjs.hashSync(reqBody.password, 8), // Tham số thứ hai là độ phức tạp, giá trị càng cao thì băm càng lâu
       username: nameFromEmail,
       displayName: nameFromEmail, // mặc định để giống username khi user đăng ký mới, về sau làm tính năng update cho user
-       isActive: true, // Mặc định bên userModel khi không khai báo sẽ là false, để true ở đây trong trường hợp  gặp lỗi trong quá trình tạo tài khoản Brevo.
+      //  isActive: true, // Mặc định bên userModel khi không khai báo sẽ là false, để true ở đây trong trường hợp  gặp lỗi trong quá trình tạo tài khoản Brevo.
       verifyToken: uuidv4()
     }
 
@@ -37,14 +38,10 @@ const createNew = async (reqBody) => {
     // Gửi email cho người dùng xác thực tài khoản (buổi sau...)
     const verificationLink = `${WEBSITE_DOMAIN}/account/verification?email=${getNewUser.email}&token=${getNewUser.verifyToken}`
     const customSubject = 'Trello MERN Stack Advanced: Please verify your email before using our services!'
-    const htmlContent = `
-      <h3>Here is your verification link:</h3>
-      <h3>${verificationLink}</h3>
-      <h3>Sincerely,<br/> - Trungquandev - Một Lập Trình Viên - </h3>
-    `
+    const htmlContent = emailTemplates.verifyEmail(verificationLink)
     // Gọi tới cái Provider gửi mail
 
-    //await BrevoProvider.sendEmail(getNewUser.email, customSubject, htmlContent)
+    await NodemailerProvider.sendEmail(getNewUser.email, customSubject, htmlContent)
 
     // return trả về dữ liệu cho phía Controller
     console.log(verificationLink);
