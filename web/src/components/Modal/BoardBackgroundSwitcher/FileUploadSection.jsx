@@ -250,15 +250,10 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
 
   // Apply uploaded image with error handling
   const handleApply = useCallback(() => {
-    if (previewUrl) {
-      // Apply safety check
-      if (previewImageRef.current && previewImageRef.current.complete) {
-        onFileSelect(previewUrl)
-      } else {
-        setError('Hình ảnh chưa được tải hoàn tất. Vui lòng đợi một chút.')
-      }
+    if (uploadedFile) {
+      onFileSelect(BACKGROUND_TYPES.UPLOAD, uploadedFile)
     }
-  }, [previewUrl, onFileSelect]);
+  }, [uploadedFile, onFileSelect]);
 
   // Remove uploaded file with cleanup
   const handleRemove = useCallback(() => {
@@ -448,6 +443,7 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
           >
             {isCurrentlySelected() ? 'Đã áp dụng' : 'Áp dụng'}
           </Button>
+         
         </Box>
       )}
 

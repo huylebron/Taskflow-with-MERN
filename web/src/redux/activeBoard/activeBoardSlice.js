@@ -186,9 +186,16 @@ export const activeBoardSlice = createSlice({
       board.columns = mapOrder(board.columns, board.columnOrderIds, '_id')
 
       // Đảm bảo board có background, nếu không thì set default
-      if (!board.background) {
-        board.background = DEFAULT_BACKGROUND
+      // Map background từ backend về FE
+      function mapApiBackgroundToFE(board) {
+        if (!board) return DEFAULT_BACKGROUND
+        if (board.backgroundType === 'color') return { type: 'color', value: board.backgroundColor }
+        if (board.backgroundType === 'image') return { type: 'image', value: board.backgroundImage }
+        if (board.backgroundType === 'url') return { type: 'url', value: board.backgroundUrl }
+        if (board.backgroundType === 'upload') return { type: 'upload', value: board.backgroundUpload }
+        return DEFAULT_BACKGROUND
       }
+      board.background = mapApiBackgroundToFE(board)
 
       // Đảm bảo board có trường labels, nếu không thì khởi tạo với mock data
       if (!board.labels) {

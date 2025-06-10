@@ -183,7 +183,7 @@ function CustomUrlInput({ selectedBackground, onApplyUrl }) {
 
   const handleApply = () => {
     if (isValidImage && previewUrl) {
-      onApplyUrl(previewUrl)
+      onApplyUrl(BACKGROUND_TYPES.URL, previewUrl)
       // Don't clear the URL after applying
       // Keep the preview visible
     }
