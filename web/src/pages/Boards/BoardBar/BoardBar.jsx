@@ -8,6 +8,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import WallpaperIcon from '@mui/icons-material/Wallpaper'
 import GroupIcon from '@mui/icons-material/Group'
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import { Tooltip } from '@mui/material'
 import { capitalizeFirstLetter } from '~/utils/formatters'
 import BoardUserGroup from './BoardUserGroup'
@@ -16,8 +17,12 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import BoardBackgroundSwitcher from '~/components/Modal/BoardBackgroundSwitcher/BoardBackgroundSwitcher'
 import BoardAnalytics from '~/components/Modal/BoardAnalytics/BoardAnalytics'
+import DeleteBoardModal from '~/components/Modal/DeleteBoardModal/DeleteBoardModal'
+import { deleteBoardAPI } from '~/redux/activeBoard/activeBoardSlice'
+import { selectCurrentUser } from '~/redux/user/userSlice'
 
 const MENU_STYLES = {
   color: 'white',
@@ -35,6 +40,9 @@ const MENU_STYLES = {
 
 function BoardBar({ board, boardId }) {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const currentUser = useSelector(selectCurrentUser)
+  
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
   
@@ -43,6 +51,13 @@ function BoardBar({ board, boardId }) {
   
   // State để quản lý modal analytics
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false)
+  
+  // State để quản lý modal delete board
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Check if current user is board owner
+  const isOwner = board?.ownerIds?.includes(currentUser?._id)
   
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
@@ -80,6 +95,40 @@ function BoardBar({ board, boardId }) {
     } else {
       console.log('📅 Navigating to general calendar:', '/calendar')
       navigate('/calendar')
+    }
+  }
+
+  // Handler cho việc mở/đóng delete modal
+  const handleOpenDeleteModal = () => {
+    setIsDeleteModalOpen(true)
+    handleClose() // Đóng menu sau khi chọn
+  }
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false)
+  }
+
+  // Handler xác nhận xóa board
+  const handleConfirmDelete = async () => {
+    if (!board?._id || isDeleting) return
+
+    try {
+      setIsDeleting(true)
+      
+      // Dispatch delete action
+      await dispatch(deleteBoardAPI(board._id)).unwrap()
+      
+      // Close modal
+      setIsDeleteModalOpen(false)
+      
+      // Navigate to boards list
+      navigate('/boards')
+      
+    } catch (error) {
+      console.error('Delete board failed:', error)
+      // Error toast is handled by the API function
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -153,6 +202,20 @@ function BoardBar({ board, boardId }) {
           <MenuItem onClick={handleClose}>
             <GroupIcon /> Thành viên
           </MenuItem>
+          {isOwner && (
+            <MenuItem 
+              onClick={handleOpenDeleteModal}
+              sx={{
+                color: 'error.main',
+                '&:hover': { 
+                  bgcolor: 'error.light',
+                  color: 'error.dark'
+                }
+              }}
+            >
+              <DeleteForeverIcon /> Xóa Board
+            </MenuItem>
+          )}
         </Menu>
         <Chip
           sx={MENU_STYLES}
@@ -180,6 +243,15 @@ function BoardBar({ board, boardId }) {
         isOpen={isAnalyticsModalOpen}
         onClose={handleCloseAnalyticsModal}
         board={board}
+      />
+
+      {/* Delete Board Modal */}
+      <DeleteBoardModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        board={board}
+        isLoading={isDeleting}
       />
     </Box>
   )

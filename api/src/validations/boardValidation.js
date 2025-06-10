@@ -93,8 +93,26 @@ const moveCardToDifferentColumn = async (req, res, next) => {
   }
 }
 
+const deleteBoard = async (req, res, next) => {
+  const correctCondition = Joi.object({
+    // No body validation needed for delete, just validate the boardId param
+    // The boardId validation will be handled by the route parameter
+  })
+
+  try {
+    // Validate that boardId parameter is a valid ObjectId
+    const boardIdValidation = Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
+    await boardIdValidation.validateAsync(req.params.id, { abortEarly: false })
+    
+    next()
+  } catch (error) {
+    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message))
+  }
+}
+
 export const boardValidation = {
   createNew,
   update,
-  moveCardToDifferentColumn
+  moveCardToDifferentColumn,
+  deleteBoard
 }
