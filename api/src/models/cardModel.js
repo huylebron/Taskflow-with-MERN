@@ -264,6 +264,24 @@ const createIndexes = async () => {
   }
 }
 
+const deleteMany = async (boardId) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).updateMany(
+      { 
+        boardId: new ObjectId(boardId),
+        _destroy: false
+      },
+      { 
+        $set: { 
+          _destroy: true,
+          updatedAt: Date.now()
+        } 
+      }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
@@ -271,6 +289,7 @@ export const cardModel = {
   findOneById,
   update,
   deleteManyByColumnId,
+  deleteMany,
   unshiftNewComment,
   updateMembers,
   updateManyComments,

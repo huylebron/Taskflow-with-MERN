@@ -243,6 +243,37 @@ const pushMemberIds = async (boardId, userId) => {
   } catch (error) { throw new Error(error) }
 }
 
+const deleteBoard = async (userId, boardId) => {
+  try {
+    // First, verify that the user is the owner of the board
+    const queryConditions = [
+      { _id: new ObjectId(boardId) },
+      { _destroy: false },
+      { ownerIds: { $all: [new ObjectId(userId)] } }
+    ]
+
+    const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ $and: queryConditions })
+    
+    if (!board) {
+      throw new Error('Board not found or you do not have permission to delete this board')
+    }
+
+    // Perform soft delete by setting _destroy to true
+    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(boardId) },
+      { 
+        $set: { 
+          _destroy: true,
+          updatedAt: Date.now()
+        } 
+      },
+      { returnDocument: 'after' }
+    )
+
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   BOARD_COLLECTION_SCHEMA,
@@ -253,5 +284,6 @@ export const boardModel = {
   update,
   pullColumnOrderIds,
   getBoards,
-  pushMemberIds
+  pushMemberIds,
+  deleteBoard
 }

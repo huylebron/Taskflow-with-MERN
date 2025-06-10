@@ -114,10 +114,38 @@ const getBoards = async (userId, page, itemsPerPage, queryFilters) => {
   } catch (error) { throw error }
 }
 
+const deleteBoard = async (userId, boardId) => {
+  try {
+    // Call the model function to delete the board
+    const deletedBoard = await boardModel.deleteBoard(userId, boardId)
+    
+    if (!deletedBoard) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Board not found or you do not have permission to delete this board!')
+    }
+
+    // Handle related data cleanup - mark columns and cards as deleted
+    // Mark all columns of this board as deleted
+    await columnModel.deleteMany(boardId)
+    
+    // Mark all cards of this board as deleted
+    await cardModel.deleteMany(boardId)
+
+    return { deleteResult: 'Board deleted successfully!' }
+  } catch (error) { 
+    // If the error is already an ApiError, just throw it
+    if (error.statusCode) {
+      throw error
+    }
+    // Otherwise, wrap it in a generic error
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, error.message || 'Failed to delete board')
+  }
+}
+
 export const boardService = {
   createNew,
   getDetails,
   update,
   moveCardToDifferentColumn,
-  getBoards
+  getBoards,
+  deleteBoard
 }

@@ -23,6 +23,14 @@ export const fetchBoardDetailsAPI = createAsyncThunk(
   }
 )
 
+export const deleteBoardAPI = createAsyncThunk(
+  'activeBoard/deleteBoardAPI',
+  async (boardId) => {
+    const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/boards/${boardId}`)
+    return { boardId, ...response.data }
+  }
+)
+
 // Khởi tạo một cái Slice trong kho lưu trữ - Redux Store
 export const activeBoardSlice = createSlice({
   name: 'activeBoard',
@@ -215,6 +223,17 @@ export const activeBoardSlice = createSlice({
 
       // Update lại dữ liệu của cái currentActiveBoard
       state.currentActiveBoard = board
+    })
+
+    // Handle delete board
+    builder.addCase(deleteBoardAPI.fulfilled, (state, action) => {
+      // Clear the current active board when it's deleted
+      state.currentActiveBoard = null
+    })
+    
+    builder.addCase(deleteBoardAPI.rejected, (state, action) => {
+      // Handle delete error - keep the current board state
+      console.error('Delete board failed:', action.error.message)
     })
   }
 })
