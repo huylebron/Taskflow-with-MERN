@@ -317,6 +317,16 @@ const getCardsWithDueDate = async (boardId, startDate, endDate) => {
   }
 }
 
+// Cập nhật labelIds cho card
+const updateCardLabels = async (cardId, labelIds) => {
+  const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
+    { _id: new ObjectId(cardId), _destroy: false },
+    { $set: { labelIds, updatedAt: Date.now() } },
+    { returnDocument: 'after' }
+  );
+  return result;
+};
+
 export const cardService = {
   createNew,
   update,
@@ -324,5 +334,6 @@ export const cardService = {
   // Thêm các function mới để xử lý attachments
   deleteCardAndAttachments,
   getCardWithAttachments,
-  getCardsWithDueDate
+  getCardsWithDueDate,
+  updateCardLabels
 }

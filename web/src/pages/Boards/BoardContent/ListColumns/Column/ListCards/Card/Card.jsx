@@ -120,9 +120,8 @@ function Card({ card }) {
     if (!card?.labelIds?.length || !boardLabels.length) return []
     
     // Giới hạn hiển thị tối đa 3 labels
-    const displayLimit = 3
+    const displayLimit = 6
     const labelIdsToShow = card.labelIds.slice(0, displayLimit)
-    
     return labelIdsToShow.map(labelId => {
       return findLabelById(labelId, boardLabels)
     }).filter(Boolean) // Loại bỏ các giá trị null nếu có

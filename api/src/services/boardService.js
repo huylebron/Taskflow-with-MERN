@@ -14,6 +14,8 @@ import ApiError from '~/utils/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import { cloneDeep } from 'lodash'
 import { DEFAULT_PAGE, DEFAULT_ITEMS_PER_PAGE } from '~/utils/constants'
+import { GET_DB } from '~/config/mongodb'
+import { ObjectId } from 'mongodb'
 
 const createNew = async (userId, reqBody) => {
   try {
@@ -141,11 +143,73 @@ const deleteBoard = async (userId, boardId) => {
   }
 }
 
+// Thêm label vào board
+const addLabel = async (boardId, label) => {
+  const result = await GET_DB().collection(boardModel.BOARD_COLLECTION_NAME).findOneAndUpdate(
+    { _id: new ObjectId(boardId), _destroy: false },
+    { $push: { labels: label }, $set: { updatedAt: Date.now() } },
+    { returnDocument: 'after' }
+  );
+  return result;
+};
+
+// Sửa label trong board
+const updateLabel = async (boardId, labelId, updateData) => {
+  const result = await GET_DB().collection(boardModel.BOARD_COLLECTION_NAME).findOneAndUpdate(
+    { _id: new ObjectId(boardId), _destroy: false, 'labels.id': labelId },
+    { $set: { 'labels.$.name': updateData.name, 'labels.$.color': updateData.color, updatedAt: Date.now() } },
+    { returnDocument: 'after' }
+  );
+  return result;
+};
+
+// Xoá label khỏi board và xoá label đó khỏi tất cả các card thuộc board
+const deleteLabel = async (boardId, labelId) => {
+  // Xoá label khỏi board
+  await GET_DB().collection(boardModel.BOARD_COLLECTION_NAME).findOneAndUpdate(
+    { _id: new ObjectId(boardId), _destroy: false },
+    { $pull: { labels: { id: labelId } }, $set: { updatedAt: Date.now() } },
+    { returnDocument: 'after' }
+  );
+  // Xoá label khỏi tất cả các card thuộc board
+  await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).updateMany(
+    { boardId: new ObjectId(boardId) },
+    { $pull: { labelIds: labelId } }
+  );
+
+  // Dọn dẹp: Xoá tất cả labelId không còn tồn tại trong board khỏi các card
+  // Lấy danh sách labelId còn lại trong board
+  const board = await boardModel.findOneById(boardId)
+  const validLabelIds = (board.labels || []).map(l => l.id)
+  // Xoá các labelId không hợp lệ khỏi các card
+  await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).updateMany(
+    { boardId: new ObjectId(boardId) },
+    [
+      {
+        $set: {
+          labelIds: {
+            $filter: {
+              input: '$labelIds',
+              as: 'id',
+              cond: { $in: ['$$id', validLabelIds] }
+            }
+          }
+        }
+      }
+    ]
+  )
+
+  return { message: 'Xoá label thành công và đã dọn dẹp các label không còn trong board khỏi các card.' };
+};
+
 export const boardService = {
   createNew,
   getDetails,
   update,
   moveCardToDifferentColumn,
   getBoards,
-  deleteBoard
+  deleteBoard,
+  addLabel,
+  updateLabel,
+  deleteLabel
 }

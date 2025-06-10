@@ -68,10 +68,21 @@ const getCoverOptions = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+// Cập nhật labelIds cho card
+export const updateCardLabels = async (req, res, next) => {
+  try {
+    const { cardId } = req.params;
+    const { labelIds } = req.body;
+    const result = await cardService.updateCardLabels(cardId, labelIds);
+    res.status(200).json(result);
+  } catch (error) { next(error); }
+};
+
 export const cardController = {
   createNew,
   update,
   getCoverOptions,
   getCardsWithDueDate,
-  updateDueDate
+  updateDueDate,
+  updateCardLabels
 }

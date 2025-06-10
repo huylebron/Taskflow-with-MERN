@@ -148,7 +148,7 @@ const LabelDialog = ({
     <DialogWrapper open={isOpen} onClose={onClose}>
       <DialogHeader>
         <Typography variant="h6" component="div">
-          Labels
+          Nhãn
         </Typography>
         <CloseButton onClick={onClose} aria-label="Đóng">
           <CloseIcon fontSize="small" />
@@ -159,7 +159,7 @@ const LabelDialog = ({
         {/* Search input */}
         <TextField
           fullWidth
-          placeholder="Tìm kiếm labels..."
+          placeholder="Tìm kiếm nhãn..."
           variant="outlined"
           size="small"
           value={searchTerm}
@@ -176,7 +176,7 @@ const LabelDialog = ({
 
         {/* Labels list */}
         <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-          Labels
+          Danh sách nhãn
         </Typography>
         
         <List sx={{ mb: 2 }}>
@@ -217,7 +217,7 @@ const LabelDialog = ({
                       ✓
                     </Box>
                   )}
-                  <Tooltip title="Xóa label này" placement="top">
+                  <Tooltip title="Xóa nhãn này" placement="top">
                     <IconButton
                       size="small"
                       color="error"
@@ -242,7 +242,7 @@ const LabelDialog = ({
             })
           ) : (
             <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-              Không tìm thấy label nào
+              Không tìm thấy nhãn nào
             </Typography>
           )}
         </List>
@@ -251,13 +251,13 @@ const LabelDialog = ({
 
         {/* Create new label */}
         <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-          Tạo label mới
+          Tạo nhãn mới
         </Typography>
         
         <Box sx={{ display: 'flex', mb: 2 }}>
           <TextField
             fullWidth
-            placeholder="Tên label mới..."
+            placeholder="Tên nhãn mới..."
             variant="outlined"
             size="small"
             value={newLabelName}
