@@ -48,7 +48,8 @@ import FileUploadSection from './FileUploadSection'
 
 import { 
   selectBoardBackground, 
-  updateBoardBackground 
+  updateBoardBackground,
+  fetchBoardDetailsAPI
 } from '~/redux/activeBoard/activeBoardSlice'
 import { updateBoardBackgroundAPI } from '~/apis'
 import { 
@@ -301,63 +302,54 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
     handleSave();
   }, []);
 
+  // Thêm hàm chuyển đổi background FE sang payload backend
+  function mapBackgroundToApiPayload(selectedBackground) {
+    if (!selectedBackground) return {}
+    const { type, value } = selectedBackground
+    if (type === 'color') return { backgroundType: 'color', backgroundColor: value }
+    if (type === 'image' && typeof value === 'string' && value.startsWith('http')) return { backgroundType: 'image', backgroundImage: value }
+    if (type === 'url') return { backgroundType: 'url', backgroundUrl: value }
+    if (type === 'upload' && value instanceof File) return { backgroundType: 'upload', backgroundUpload: value }
+    return {}
+  }
+
   /**
    * Handle save - gọi API và toast notification
    * Xử lý các trạng thái loading và error
    */
   const handleSave = useCallback(async () => {
+    console.log('selectedBackground khi lưu:', selectedBackground)
     if (!selectedBackground || !boardId) return
 
-    // Đặt cờ để ngăn useEffect cập nhật background khi đang lưu
     setIsSaving(true)
     setIsLoading(true)
     setErrorState(ERROR_STATES.NONE)
     setErrorMessage('')
-    
-    // Start progress simulation
     startProgressSimulation();
-    
     try {
-      // Show notification if retry
       if (retryCount.current > 0) {
         showNotification(`Đang thử lại (lần ${retryCount.current})...`, 'info');
       }
-      
-      // Gọi mock API
-      const response = await updateBoardBackgroundAPI(boardId, selectedBackground)
-      
+      const apiPayload = mapBackgroundToApiPayload(selectedBackground)
+      const response = await updateBoardBackgroundAPI(boardId, apiPayload)
       if (response.success) {
-        // Stop progress simulation with success
         stopProgressSimulation(true);
-        
-        // Cập nhật Redux một lần nữa để đảm bảo dữ liệu đồng bộ
-        dispatch(updateBoardBackground(selectedBackground))
-        
-        // Toast success
+        // Fetch lại board từ backend để đồng bộ dữ liệu
+        await dispatch(fetchBoardDetailsAPI(boardId))
         toast.success('Background đã được cập nhật thành công!', {
           position: 'bottom-right',
           autoClose: 3000,
           theme: 'colored'
         })
-        
-        // Close modal
         onClose()
       }
     } catch (error) {
-      // Stop progress simulation with failure
       stopProgressSimulation(false);
-      
       console.error('Error updating background:', error);
-      
-      // Map error code to state
       const errorStateValue = mapErrorCodeToState(error.code);
       setErrorState(errorStateValue);
       setErrorMessage(error.message || 'Có lỗi xảy ra khi cập nhật background');
-      
-      // Restore original background nếu có lỗi
       dispatch(updateBoardBackground(originalBackground))
-      
-      // Toast error
       toast.error(error.message || 'Có lỗi xảy ra khi cập nhật background!', {
         position: 'bottom-right',
         autoClose: 3000,
@@ -367,7 +359,7 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
       setIsLoading(false)
       setIsSaving(false)
     }
-  }, [selectedBackground, boardId, originalBackground, dispatch, onClose, startProgressSimulation, stopProgressSimulation, showNotification, mapErrorCodeToState])
+  }, [selectedBackground, boardId, originalBackground, dispatch, onClose, startProgressSimulation, stopProgressSimulation, showNotification, mapBackgroundToApiPayload, mapErrorCodeToState])
 
   /**
    * Kiểm tra nếu background hiện tại khác với background gốc
@@ -479,14 +471,17 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
         return (
           <CustomUrlInput 
             selectedBackground={selectedBackground}
-            onApplyUrl={(imageUrl) => handleBackgroundSelect(BACKGROUND_TYPES.IMAGE, imageUrl)}
+            onApplyUrl={(type, value) => handleBackgroundSelect(type, value)}
           />
         )
       case TAB_VALUES.FILE_UPLOAD:
         return (
           <FileUploadSection 
             selectedBackground={selectedBackground}
-            onFileSelect={(fileUrl) => handleBackgroundSelect(BACKGROUND_TYPES.IMAGE, fileUrl)}
+            onFileSelect={(type, value) => {
+              console.log('onFileSelect:', type, value)
+              handleBackgroundSelect(type, value)
+            }}
           />
         )
       default:
@@ -691,7 +686,7 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
               <Button 
                 variant="contained" 
                 onClick={handleSave}
-                disabled={isLoading || !hasChanges()}
+                // disabled={isLoading || !hasChanges()}
                 startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : null}
               >
                 {isLoading ? 'Đang lưu...' : 'Lưu'}
