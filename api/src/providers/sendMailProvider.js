@@ -15,7 +15,7 @@ export const NodemailerProvider = {
     sendEmail: async (to, subject, html) => {
       try {
         const mailOptions = {
-          from: env.EMAIL_PASSWORD,
+          from: env.EMAIL_GMAIL,
           to,
           subject,
           html

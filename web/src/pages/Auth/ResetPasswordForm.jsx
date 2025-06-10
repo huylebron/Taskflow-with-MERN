@@ -1,45 +1,34 @@
-// TrungQuanDev: https://youtube.com/@trungquandev
+import React, { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import Avatar from '@mui/material/Avatar'
+import {
+  Box,
+  Button,
+  Avatar,
+  Typography,
+  Card as MuiCard,
+  CardActions,
+  TextField,
+  Zoom,
+  Alert,
+  IconButton,
+  InputAdornment
+} from '@mui/material'
 import LockResetIcon from '@mui/icons-material/LockReset'
-import Typography from '@mui/material/Typography'
-import { Card as MuiCard } from '@mui/material'
-import { ReactComponent as TrelloIcon } from '~/assets/trello.svg'
-import CardActions from '@mui/material/CardActions'
-import TextField from '@mui/material/TextField'
-import Zoom from '@mui/material/Zoom'
-import Alert from '@mui/material/Alert'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
-import { useForm } from 'react-hook-form'
-import {
-  PASSWORD_RULE,
-  FIELD_REQUIRED_MESSAGE,
-  PASSWORD_RULE_MESSAGE
-} from '~/utils/validators'
-import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
-import { useDispatch } from 'react-redux'
-import { resetPasswordAPI } from '~/redux/user/userSlice'
-import { toast } from 'react-toastify'
+import { resetPasswordAPI } from '~/apis'
 
 function ResetPasswordForm() {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
   const { token } = useParams()
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-
-  const { register, handleSubmit, formState: { errors }, watch } = useForm()
-
-  // Watch password field for validation
-  const watchPassword = watch('newPassword')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     // Redirect if no token is provided
@@ -48,32 +37,48 @@ function ResetPasswordForm() {
     }
   }, [token, navigate])
 
-  const submitResetPassword = (data) => {
-    const { newPassword, confirmPassword } = data
+  // Handle success state
+  useEffect(() => {
+    if (isSuccess) {
+      // Redirect to login after 3 seconds
+      const timer = setTimeout(() => {
+        navigate('/login')
+      }, 3000)
 
-    // Client-side validation for password confirmation
-    if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match!')
+      return () => clearTimeout(timer)
+    }
+  }, [isSuccess, navigate])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!newPassword) {
+      setError('New password is required')
       return
     }
 
-    toast.promise(
-      dispatch(resetPasswordAPI({ token, newPassword })),
-      { 
-        pending: 'Resetting your password...',
-        success: 'Password reset successfully!',
-        error: 'Failed to reset password. Please try again.'
-      }
-    ).then(res => {
-      // console.log(res)
-      if (!res.error) {
-        setIsSubmitted(true)
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          navigate('/login')
-        }, 3000)
-      }
-    })
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long')
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+
+    try {
+      await resetPasswordAPI({ token, newPassword })
+      setIsLoading(false)
+      setIsSuccess(true)
+    } catch (err) {
+      setIsLoading(false)
+      console.error('Reset password error:', err)
+      setError(err.response?.data?.message || 'Failed to reset password. Please try again.')
+    }
   }
 
   const togglePasswordVisibility = () => {
@@ -84,67 +89,106 @@ function ResetPasswordForm() {
     setShowConfirmPassword(!showConfirmPassword)
   }
 
-  if (isSubmitted) {
+  if (!token) {
     return (
-      <Zoom in={true} style={{ transitionDelay: '200ms' }}>
-        <MuiCard sx={{ minWidth: 380, maxWidth: 420, marginTop: '6em' }}>
-          <Box sx={{
-            margin: '1em',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: 1
-          }}>
-            <Avatar sx={{ bgcolor: 'success.main' }}><CheckCircleIcon /></Avatar>
-            <Avatar sx={{ bgcolor: 'primary.main' }}><TrelloIcon /></Avatar>
-          </Box>
-          <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', color: theme => theme.palette.grey[500] }}>
-            Author: TrungQuanDev
-          </Box>
-          <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', flexDirection: 'column', padding: '0 1em' }}>
-            <Alert severity="success" sx={{ '.MuiAlert-message': { overflow: 'hidden' } }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                Password Reset Successful! 🎉
-              </Typography>
-              Your password has been successfully updated. You can now log in with your new password.
-              <br /><br />
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                You will be redirected to the login page in a few seconds...
-              </Typography>
-            </Alert>
-          </Box>
-          <Box sx={{ padding: '0 1em 1em 1em', textAlign: 'center' }}>
-            <Link to="/login" style={{ textDecoration: 'none' }}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                fullWidth
-                sx={{ mt: 2 }}
-              >
-                Go to Login Now
-              </Button>
-            </Link>
-          </Box>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <MuiCard sx={{ padding: 4, textAlign: 'center' }}>
+          <Typography variant="h5" color="error" gutterBottom>
+            Invalid Reset Link
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            This password reset link is invalid or has expired.
+          </Typography>
+          <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
+            <Button variant="contained" color="primary">
+              Request New Reset Link
+            </Button>
+          </Link>
         </MuiCard>
-      </Zoom>
+      </Box>
+    )
+  }
+
+  if (isSuccess) {
+    return (
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <Zoom in={true} style={{ transitionDelay: '200ms' }}>
+          <MuiCard sx={{ minWidth: 380, maxWidth: 420, marginTop: '6em' }}>
+            <Box sx={{
+              margin: '1em',
+              display: 'flex',
+              justifyContent: 'center',
+              gap: 1
+            }}>
+              <Avatar sx={{ bgcolor: 'success.main' }}><CheckCircleIcon /></Avatar>
+            </Box>
+            <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', color: theme => theme.palette.grey[500] }}>
+              Author: huylebron
+            </Box>
+            <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', flexDirection: 'column', padding: '0 1em' }}>
+              <Alert severity="success" sx={{ '.MuiAlert-message': { overflow: 'hidden' } }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  Password Reset Successful! 🎉
+                </Typography>
+                Your password has been successfully updated. You can now log in with your new password.
+                <br /><br />
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  You will be redirected to the login page in a few seconds...
+                </Typography>
+              </Alert>
+            </Box>
+            <Box sx={{ padding: '0 1em 1em 1em', textAlign: 'center' }}>
+              <Link to="/login" style={{ textDecoration: 'none' }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  fullWidth
+                  sx={{ mt: 2 }}
+                >
+                  Go to Login Now
+                </Button>
+              </Link>
+            </Box>
+          </MuiCard>
+        </Zoom>
+      </Box>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit(submitResetPassword)}>
-      <Zoom in={true} style={{ transitionDelay: '200ms' }}>
-        <MuiCard sx={{ minWidth: 380, maxWidth: 420, marginTop: '6em' }}>
-          <Box sx={{
-            margin: '1em',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: 1
-          }}>
-            <Avatar sx={{ bgcolor: 'info.main' }}><LockResetIcon /></Avatar>
-            <Avatar sx={{ bgcolor: 'primary.main' }}><TrelloIcon /></Avatar>
-          </Box>
+    <Box sx={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      backgroundColor: '#f5f5f5'
+    }}>
+      <form onSubmit={handleSubmit}>
+        <Zoom in={true} style={{ transitionDelay: '200ms' }}>
+          <MuiCard sx={{ minWidth: 380, maxWidth: 420, marginTop: '6em' }}>
+            <Box sx={{
+              margin: '1em',
+              display: 'flex',
+              justifyContent: 'center',
+              gap: 1
+            }}>
+              <Avatar sx={{ bgcolor: 'info.main' }}><LockResetIcon /></Avatar>
+            </Box>
           <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', color: theme => theme.palette.grey[500] }}>
-            Author: TrungQuanDev
+            Author: huylebron
           </Box>
           <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', flexDirection: 'column', padding: '0 1em' }}>
             <Typography variant="h5" sx={{ textAlign: 'center', fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
@@ -153,6 +197,11 @@ function ResetPasswordForm() {
             <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary', mb: 2 }}>
               Please enter your new password below. Make sure it's strong and secure!
             </Typography>
+            {error && (
+              <Alert severity="error" sx={{ mt: 1, mb: 2 }}>
+                {error}
+              </Alert>
+            )}
           </Box>
           <Box sx={{ padding: '0 1em 1em 1em' }}>
             <Box sx={{ marginTop: '1em' }}>
@@ -162,7 +211,10 @@ function ResetPasswordForm() {
                 label="New Password"
                 type={showPassword ? 'text' : 'password'}
                 variant="outlined"
-                error={!!errors['newPassword']}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={isLoading}
+                sx={{ mb: 2 }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -170,30 +222,22 @@ function ResetPasswordForm() {
                         aria-label="toggle password visibility"
                         onClick={togglePasswordVisibility}
                         edge="end"
+                        disabled={isLoading}
                       >
                         {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
-                {...register('newPassword', {
-                  required: FIELD_REQUIRED_MESSAGE,
-                  pattern: {
-                    value: PASSWORD_RULE,
-                    message: PASSWORD_RULE_MESSAGE
-                  }
-                })}
               />
-              <FieldErrorAlert errors={errors} fieldName={'newPassword'} />
-            </Box>
-
-            <Box sx={{ marginTop: '1em' }}>
               <TextField
                 fullWidth
                 label="Confirm New Password"
                 type={showConfirmPassword ? 'text' : 'password'}
                 variant="outlined"
-                error={!!errors['confirmPassword']}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={isLoading}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -201,19 +245,14 @@ function ResetPasswordForm() {
                         aria-label="toggle confirm password visibility"
                         onClick={toggleConfirmPasswordVisibility}
                         edge="end"
+                        disabled={isLoading}
                       >
                         {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
-                {...register('confirmPassword', {
-                  required: FIELD_REQUIRED_MESSAGE,
-                  validate: (value) => 
-                    value === watchPassword || 'Passwords do not match'
-                })}
               />
-              <FieldErrorAlert errors={errors} fieldName={'confirmPassword'} />
             </Box>
           </Box>
           <CardActions sx={{ padding: '0 1em 1em 1em' }}>
@@ -224,8 +263,9 @@ function ResetPasswordForm() {
               color="primary"
               size="large"
               fullWidth
+              disabled={isLoading}
             >
-              Update Password
+              {isLoading ? 'Updating...' : 'Update Password'}
             </Button>
           </CardActions>
           <Box sx={{ padding: '0 1em 1em 1em', textAlign: 'center' }}>
@@ -236,10 +276,11 @@ function ResetPasswordForm() {
               </Typography>
             </Link>
           </Box>
-        </MuiCard>
-      </Zoom>
-    </form>
+          </MuiCard>
+        </Zoom>
+      </form>
+    </Box>
   )
 }
 
-export default ResetPasswordForm 
+export default ResetPasswordForm
