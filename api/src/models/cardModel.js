@@ -53,6 +53,22 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
     Joi.string()
   ).default([]),
 
+  // Thêm trường checklist để lưu danh sách các checklist
+  checklists: Joi.array().items(
+    Joi.object({
+      _id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+      title: Joi.string().required().min(1).max(100).trim().strict(),
+      items: Joi.array().items(
+        Joi.object({
+          _id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+          title: Joi.string().required().min(1).max(200).trim().strict(),
+          isCompleted: Joi.boolean().default(false),
+          completedAt: Joi.date().timestamp('javascript').allow(null).default(null)
+        })
+      ).default([])
+    })
+  ).default([]),
+
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)

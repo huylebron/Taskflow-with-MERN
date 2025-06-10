@@ -33,7 +33,7 @@ import CardUserGroup from './CardUserGroup'
 import CardDescriptionMdEditor from './CardDescriptionMdEditor'
 import CardActivitySection from './CardActivitySection'
 import { useDispatch, useSelector } from 'react-redux'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   clearAndHideCurrentActiveCard,
   selectCurrentActiveCard,
@@ -118,9 +118,16 @@ function ActiveCard() {
   const [showAttachmentLightbox, setShowAttachmentLightbox] = useState(false)
   const [selectedAttachment, setSelectedAttachment] = useState(null)
 
-  // State for Checklist feature
+  // State for Checklist feature - Remove mock data
   const [showChecklistDialog, setShowChecklistDialog] = useState(false)
-  const [checklists, setChecklists] = useState(activeCard?.checklists || MOCK_CHECKLISTS)
+  const [checklists, setChecklists] = useState(activeCard?.checklists || [])
+
+  // Update checklists when activeCard changes
+  useEffect(() => {
+    if (activeCard?.checklists) {
+      setChecklists(activeCard.checklists)
+    }
+  }, [activeCard])
 
   // State for "Thêm" button dropdown menu
   const [anchorEl, setAnchorEl] = useState(null);
@@ -389,8 +396,14 @@ function ActiveCard() {
 
   const onUpdateChecklists = async (updatedChecklists) => {
     try {
+      // Update local state
       setChecklists(updatedChecklists)
-      // await callApiUpdateCard({ checklists: updatedChecklists })
+      
+      // Update card in Redux store
+      const updatedCard = { ...activeCard, checklists: updatedChecklists }
+      dispatch(updateCurrentActiveCard(updatedCard))
+      dispatch(updateCardInBoard(updatedCard))
+      
       toast.success('Cập nhật checklist thành công!')
     } catch (error) {
       toast.error('Có lỗi khi cập nhật checklist!')
@@ -932,6 +945,7 @@ function ActiveCard() {
           onClose={onCloseChecklistDialog}
           checklists={checklists}
           onUpdateChecklists={onUpdateChecklists}
+          cardId={activeCard?._id}
         />
 
         {/* Due Date Picker Dialog */}

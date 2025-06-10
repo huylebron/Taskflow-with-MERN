@@ -31,6 +31,16 @@ Router.route('/:id')
 // Label APIs for card
 Router.put('/:cardId/labels', cardController.updateCardLabels)
 
+// Checklist APIs
+Router.route('/:cardId/checklists')
+  .post(authMiddleware.isAuthorized, cardController.createChecklist)
+
+Router.route('/:cardId/checklists/:checklistId/items')
+  .post(authMiddleware.isAuthorized, cardController.addChecklistItem)
+
+Router.route('/:cardId/checklists/:checklistId/items/:itemId/status')
+  .put(authMiddleware.isAuthorized, cardController.updateChecklistItemStatus)
+
 // ⚠️ CẨN THẬN: Route để lấy card với attachments (nếu cần)
 // Note: Attachment routes đã handle việc lấy attachments của card
 // Route này có thể bổ sung nếu muốn lấy card + attachments trong một API call

@@ -327,6 +327,107 @@ const updateCardLabels = async (cardId, labelIds) => {
   return result;
 };
 
+/**
+ * Tạo checklist mới cho card
+ * @param {string} cardId - Card ID
+ * @param {string} title - Tiêu đề checklist
+ * @returns {Promise<Object>} - Updated card
+ */
+const createChecklist = async (cardId, title) => {
+  try {
+    // Tạo một ObjectId mới
+    const newObjectId = new ObjectId()
+    
+    const checklist = {
+      _id: newObjectId.toString(), // Chuyển ObjectId thành string
+      title: title,
+      items: []
+    };
+
+    const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(cardId), _destroy: false },
+      { 
+        $push: { checklists: checklist },
+        $set: { updatedAt: Date.now() }
+      },
+      { returnDocument: 'after' }
+    );
+    return result;
+  } catch (error) {
+    throw new Error(`Error creating checklist: ${error.message}`);
+  }
+};
+
+/**
+ * Thêm item vào checklist
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID
+ * @param {string} title - Tiêu đề item
+ * @returns {Promise<Object>} - Updated card
+ */
+const addChecklistItem = async (cardId, checklistId, title) => {
+  try {
+    // Tạo một ObjectId mới cho item
+    const newObjectId = new ObjectId()
+    
+    const item = {
+      _id: newObjectId.toString(),
+      title: title, // Sử dụng title được truyền vào
+      isCompleted: false,
+      completedAt: null
+    };
+
+    const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
+      { 
+        _id: new ObjectId(cardId),
+        'checklists._id': checklistId,
+        _destroy: false
+      },
+      { 
+        $push: { 'checklists.$.items': item },
+        $set: { updatedAt: Date.now() }
+      },
+      { returnDocument: 'after' }
+    );
+    return result;
+  } catch (error) {
+    throw new Error(`Error adding checklist item: ${error.message}`);
+  }
+};
+
+/**
+ * Cập nhật trạng thái hoàn thành của checklist item
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID
+ * @param {string} itemId - Item ID
+ * @param {boolean} isCompleted - Trạng thái hoàn thành
+ * @returns {Promise<Object>} - Updated card
+ */
+const updateChecklistItemStatus = async (cardId, checklistId, itemId, isCompleted) => {
+  try {
+    const updateData = {
+      'checklists.$[checklist].items.$[item].isCompleted': isCompleted,
+      'checklists.$[checklist].items.$[item].completedAt': isCompleted ? Date.now() : null,
+      updatedAt: Date.now()
+    };
+
+    const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(cardId), _destroy: false },
+      { $set: updateData },
+      {
+        arrayFilters: [
+          { 'checklist._id': checklistId },
+          { 'item._id': itemId }
+        ],
+        returnDocument: 'after'
+      }
+    );
+    return result;
+  } catch (error) {
+    throw new Error(`Error updating checklist item status: ${error.message}`);
+  }
+};
+
 export const cardService = {
   createNew,
   update,
@@ -335,5 +436,9 @@ export const cardService = {
   deleteCardAndAttachments,
   getCardWithAttachments,
   getCardsWithDueDate,
-  updateCardLabels
+  updateCardLabels,
+  // Thêm các function mới để xử lý checklists
+  createChecklist,
+  addChecklistItem,
+  updateChecklistItemStatus
 }
