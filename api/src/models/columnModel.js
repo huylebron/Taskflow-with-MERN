@@ -49,7 +49,10 @@ const createNew = async (data) => {
 
 const findOneById = async (columnId) => {
   try {
-    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOne({ _id: new ObjectId(columnId) })
+    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOne({ 
+      _id: new ObjectId(columnId),
+      _destroy: false
+    })
     return result
   } catch (error) { throw new Error(error) }
 }
