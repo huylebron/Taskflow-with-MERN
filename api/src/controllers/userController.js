@@ -75,6 +75,23 @@ const refreshToken = async (req, res, next) => {
   }
 }
 
+const forgotPassword = async (req, res, next) => {
+  try {
+    const result = await userService.forgotPassword(req.body)
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) { next(error) }
+}
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const result = await userService.resetPassword({
+      token: req.params.token,
+      newPassword: req.body.newPassword
+    })
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) { next(error) }
+}
+
 const update = async (req, res, next) => {
   try {
     const userId = req.jwtDecoded._id
@@ -91,5 +108,7 @@ export const userController = {
   login,
   logout,
   refreshToken,
+  forgotPassword,
+  resetPassword,
   update
 }
