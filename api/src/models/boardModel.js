@@ -75,7 +75,21 @@ const createNew = async (userId, data) => {
 
 const findOneById = async (boardId) => {
   try {
-    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ _id: new ObjectId(boardId) })
+    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ 
+      _id: new ObjectId(boardId),
+      _destroy: false
+    })
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
+// Internal function to find board by ID regardless of delete status
+// Useful for admin functions, audit logs, or internal operations
+const findOneByIdInternal = async (boardId) => {
+  try {
+    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ 
+      _id: new ObjectId(boardId)
+    })
     return result
   } catch (error) { throw new Error(error) }
 }
@@ -101,13 +115,23 @@ const getDetails = async (userId, boardId) => {
         from: columnModel.COLUMN_COLLECTION_NAME,
         localField: '_id',
         foreignField: 'boardId',
-        as: 'columns'
+        as: 'columns',
+        // Pipeline to filter out deleted columns
+        pipeline: [
+          { $match: { _destroy: false } },
+          { $sort: { createdAt: 1 } }
+        ]
       } },
       { $lookup: {
         from: cardModel.CARD_COLLECTION_NAME,
         localField: '_id',
         foreignField: 'boardId',
-        as: 'cards'
+        as: 'cards',
+        // Pipeline to filter out deleted cards
+        pipeline: [
+          { $match: { _destroy: false } },
+          { $sort: { createdAt: 1 } }
+        ]
       } },
       { $lookup: {
         from: userModel.USER_COLLECTION_NAME,
@@ -136,7 +160,10 @@ const getDetails = async (userId, boardId) => {
 const pushColumnOrderIds = async (column) => {
   try {
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
-      { _id: new ObjectId(column.boardId) },
+      { 
+        _id: new ObjectId(column.boardId),
+        _destroy: false  // Only update non-deleted boards
+      },
       { $push: { columnOrderIds: new ObjectId(column._id) } },
       { returnDocument: 'after' }
     )
@@ -149,7 +176,10 @@ const pushColumnOrderIds = async (column) => {
 const pullColumnOrderIds = async (column) => {
   try {
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
-      { _id: new ObjectId(column.boardId) },
+      { 
+        _id: new ObjectId(column.boardId),
+        _destroy: false  // Only update non-deleted boards
+      },
       { $pull: { columnOrderIds: new ObjectId(column._id) } },
       { returnDocument: 'after' }
     )
@@ -172,7 +202,10 @@ const update = async (boardId, updateData) => {
     }
 
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
-      { _id: new ObjectId(boardId) },
+      { 
+        _id: new ObjectId(boardId),
+        _destroy: false  // Only update non-deleted boards
+      },
       { $set: updateData },
       { returnDocument: 'after' } // sẽ trả về kết quả mới sau khi cập nhật
     )
@@ -241,10 +274,44 @@ const getBoards = async (userId, page, itemsPerPage, queryFilters) => {
 const pushMemberIds = async (boardId, userId) => {
   try {
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
-      { _id: new ObjectId(boardId) },
+      { 
+        _id: new ObjectId(boardId),
+        _destroy: false  // Only update non-deleted boards
+      },
       { $push: { memberIds: new ObjectId(userId) } },
       { returnDocument: 'after' }
     )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
+const deleteBoard = async (userId, boardId) => {
+  try {
+    // First, verify that the user is the owner of the board
+    const queryConditions = [
+      { _id: new ObjectId(boardId) },
+      { _destroy: false },
+      { ownerIds: { $all: [new ObjectId(userId)] } }
+    ]
+
+    const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ $and: queryConditions })
+    
+    if (!board) {
+      throw new Error('Board not found or you do not have permission to delete this board')
+    }
+
+    // Perform soft delete by setting _destroy to true
+    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(boardId) },
+      { 
+        $set: { 
+          _destroy: true,
+          updatedAt: Date.now()
+        } 
+      },
+      { returnDocument: 'after' }
+    )
+
     return result
   } catch (error) { throw new Error(error) }
 }
@@ -254,10 +321,12 @@ export const boardModel = {
   BOARD_COLLECTION_SCHEMA,
   createNew,
   findOneById,
+  findOneByIdInternal,
   getDetails,
   pushColumnOrderIds,
   update,
   pullColumnOrderIds,
   getBoards,
-  pushMemberIds
+  pushMemberIds,
+  deleteBoard
 }

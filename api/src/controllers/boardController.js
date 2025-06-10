@@ -91,11 +91,21 @@ const updateBackground = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+const deleteBoard = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const boardId = req.params.id
+
+    const result = await boardService.deleteBoard(userId, boardId)
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) { next(error) }
+}
+
 export const boardController = {
   createNew,
   getDetails,
   update,
   moveCardToDifferentColumn,
   getBoards,
-  updateBackground
+
 }

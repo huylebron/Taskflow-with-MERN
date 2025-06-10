@@ -49,7 +49,10 @@ const createNew = async (data) => {
 
 const findOneById = async (columnId) => {
   try {
-    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOne({ _id: new ObjectId(columnId) })
+    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOne({ 
+      _id: new ObjectId(columnId),
+      _destroy: false
+    })
     return result
   } catch (error) { throw new Error(error) }
 }
@@ -96,6 +99,24 @@ const deleteOneById = async (columnId) => {
   } catch (error) { throw new Error(error) }
 }
 
+const deleteMany = async (boardId) => {
+  try {
+    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).updateMany(
+      { 
+        boardId: new ObjectId(boardId),
+        _destroy: false
+      },
+      { 
+        $set: { 
+          _destroy: true,
+          updatedAt: Date.now()
+        } 
+      }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 export const columnModel = {
   COLUMN_COLLECTION_NAME,
   COLUMN_COLLECTION_SCHEMA,
@@ -103,5 +124,6 @@ export const columnModel = {
   findOneById,
   pushCardOrderIds,
   update,
-  deleteOneById
+  deleteOneById,
+  deleteMany
 }

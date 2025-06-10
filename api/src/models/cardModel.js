@@ -77,7 +77,10 @@ const createNew = async (data) => {
 
 const findOneById = async (cardId) => {
   try {
-    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOne({ _id: new ObjectId(cardId) })
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOne({ 
+      _id: new ObjectId(cardId),
+      _destroy: false
+    })
     return result
   } catch (error) { throw new Error(error) }
 }
@@ -95,7 +98,10 @@ const update = async (cardId, updateData) => {
     if (updateData.columnId) updateData.columnId = new ObjectId(updateData.columnId)
 
     const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
-      { _id: new ObjectId(cardId) },
+      { 
+        _id: new ObjectId(cardId),
+        _destroy: false  // Only update non-deleted cards
+      },
       { $set: updateData },
       { returnDocument: 'after' } // sẽ trả về kết quả mới sau khi cập nhật
     )
@@ -122,7 +128,10 @@ const deleteManyByColumnId = async (columnId) => {
 const unshiftNewComment = async (cardId, commentData) => {
   try {
     const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
-      { _id: new ObjectId(cardId) },
+      { 
+        _id: new ObjectId(cardId),
+        _destroy: false  // Only update non-deleted cards
+      },
       { $push: { comments: { $each: [commentData], $position: 0 } } },
       { returnDocument: 'after' }
     )
@@ -149,7 +158,10 @@ const updateMembers = async (cardId, incomingMemberInfo) => {
     }
 
     const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
-      { _id: new ObjectId(cardId) },
+      { 
+        _id: new ObjectId(cardId),
+        _destroy: false  // Only update non-deleted cards
+      },
       updateCondition, // truyền cái updateCondition ở đây
       { returnDocument: 'after' }
     )
@@ -264,6 +276,24 @@ const createIndexes = async () => {
   }
 }
 
+const deleteMany = async (boardId) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).updateMany(
+      { 
+        boardId: new ObjectId(boardId),
+        _destroy: false
+      },
+      { 
+        $set: { 
+          _destroy: true,
+          updatedAt: Date.now()
+        } 
+      }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
@@ -271,6 +301,7 @@ export const cardModel = {
   findOneById,
   update,
   deleteManyByColumnId,
+  deleteMany,
   unshiftNewComment,
   updateMembers,
   updateManyComments,

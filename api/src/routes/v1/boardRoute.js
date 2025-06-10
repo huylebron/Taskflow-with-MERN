@@ -20,6 +20,7 @@ Router.route('/')
 Router.route('/:id')
   .get(authMiddleware.isAuthorized, boardController.getDetails)
   .put(authMiddleware.isAuthorized, boardValidation.update, boardController.update)
+  .delete(authMiddleware.isAuthorized, boardValidation.deleteBoard, boardController.deleteBoard)
 
 Router.route('/:id/background')
   .patch(authMiddleware.isAuthorized, upload.single('backgroundUpload'), boardController.updateBackground)
