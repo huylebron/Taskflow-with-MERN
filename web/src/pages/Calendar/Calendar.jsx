@@ -586,15 +586,7 @@ function Calendar() {
           📅 {isBoardCalendar ? `Lịch biểu - ${boardTitle}` : 'Lịch biểu dự án'}
         </Typography>
         
-        {/* Summary Stats */}
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {isBoardCalendar && (
-            <>Board: <strong>{boardTitle}</strong> • </>
-          )}
-          Tổng cộng <strong>{totalCards}</strong> tasks có deadline • 
-          <strong>{labels.length}</strong> labels • 
-          <strong>{users.length}</strong> thành viên
-        </Typography>
+
 
         {/* Labels Legend */}
         {labels.length > 0 && (
@@ -656,19 +648,7 @@ function Calendar() {
         </Stack>
       </Box>
 
-      {/* Debug Info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <Box sx={{ mb: 2, p: 2, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
-          <Typography variant="body2" gutterBottom>
-            Debug Info: {events.length} events loaded, Loading: {loading.toString()}, Error: {error || 'None'}
-          </Typography>
-          {events.length > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              Sample event: {events[0]?.title} - {events[0]?.start}
-            </Typography>
-          )}
-        </Box>
-      )}
+
 
       {/* Calendar Container */}
       <Paper 
