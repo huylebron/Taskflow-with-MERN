@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Box from '@mui/material/Box'
 import Modal from '@mui/material/Modal'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
+import TextField from '@mui/material/TextField'
 import CircularProgress from '@mui/material/CircularProgress'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
@@ -25,6 +26,12 @@ import CancelIcon from '@mui/icons-material/Cancel'
 function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false }) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  
+  // State cho confirmation input
+  const [confirmationText, setConfirmationText] = useState('')
+  const [isConfirmationValid, setIsConfirmationValid] = useState(false)
+  
+  const boardTitle = board?.title || ''
 
   // Modal styles
   const modalStyle = {
@@ -32,7 +39,7 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: isMobile ? '90%' : 450,
+    width: isMobile ? '90%' : 500,  // Tăng độ rộng để chứa thêm nội dung
     maxWidth: '95vw',
     maxHeight: '90vh',
     bgcolor: 'background.paper',
@@ -43,8 +50,22 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
     overflow: 'hidden'
   }
 
+  // Reset confirmation text khi modal mở/đóng
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmationText('')
+      setIsConfirmationValid(false)
+    }
+  }, [isOpen])
+
+  // Validate confirmation text
+  useEffect(() => {
+    const isValid = confirmationText.trim() === boardTitle.trim()
+    setIsConfirmationValid(isValid)
+  }, [confirmationText, boardTitle])
+
   const handleConfirm = () => {
-    if (onConfirm && !isLoading) {
+    if (onConfirm && !isLoading && isConfirmationValid) {
       onConfirm()
     }
   }
@@ -53,6 +74,10 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
     if (onClose && !isLoading) {
       onClose()
     }
+  }
+
+  const handleConfirmationTextChange = (event) => {
+    setConfirmationText(event.target.value)
   }
 
   return (
@@ -88,7 +113,7 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
                 component="h2"
                 fontWeight="bold"
               >
-                Delete Board
+                Xóa Board
               </Typography>
             </Box>
           </Box>
@@ -100,7 +125,7 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
               variant="body1"
               sx={{ mb: 2, color: 'text.primary' }}
             >
-              Are you sure you want to delete the board
+              Bạn có chắc chắn muốn xóa board
             </Typography>
             
             <Typography
@@ -108,7 +133,7 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
               sx={{ 
                 mb: 2, 
                 fontWeight: 'bold',
-                color: 'error.main',
+                color: '#000000',  // Font chữ đen để làm nổi bật
                 textAlign: 'center',
                 p: 2,
                 bgcolor: 'error.light',
@@ -117,7 +142,7 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
                 borderColor: 'error.main'
               }}
             >
-              "{board?.title || 'Unknown Board'}"
+              "{board?.title || 'Board không xác định'}"
             </Typography>
 
             <Typography
@@ -128,8 +153,58 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
                 fontStyle: 'italic'
               }}
             >
-              ⚠️ This action cannot be undone. All columns, cards, and attachments will be permanently deleted.
+              ⚠️ Hành động này không thể hoàn tác. Tất cả các cột, thẻ và tệp đính kèm sẽ bị xóa vĩnh viễn.
             </Typography>
+
+            {/* Confirmation Text Input */}
+            <Box sx={{ mb: 3 }}>
+              <Typography
+                variant="body2"
+                sx={{ 
+                  mb: 1, 
+                  color: 'text.primary',
+                  fontWeight: 'medium'
+                }}
+              >
+                Để xác nhận, hãy gõ tên board <strong>"{boardTitle}"</strong> vào ô bên dưới:
+              </Typography>
+              
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder={`Gõ "${boardTitle}" để xác nhận`}
+                value={confirmationText}
+                onChange={handleConfirmationTextChange}
+                disabled={isLoading}
+                error={confirmationText.length > 0 && !isConfirmationValid}
+                helperText={
+                  confirmationText.length > 0 && !isConfirmationValid
+                    ? 'Tên board không khớp. Vui lòng gõ chính xác.'
+                    : isConfirmationValid
+                    ? '✓ Tên board đã khớp'
+                    : ''
+                }
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&.Mui-error': {
+                      '& fieldset': {
+                        borderColor: 'error.main',
+                      },
+                    },
+                    '&.Mui-focused': {
+                      '& fieldset': {
+                        borderColor: isConfirmationValid ? 'success.main' : 'primary.main',
+                      },
+                    },
+                  },
+                  '& .MuiFormHelperText-root': {
+                    color: isConfirmationValid ? 'success.main' : 'error.main',
+                    fontWeight: isConfirmationValid ? 'medium' : 'normal'
+                  }
+                }}
+                autoFocus
+              />
+            </Box>
 
             {/* Action Buttons */}
             <Box
@@ -155,14 +230,14 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
                   }
                 }}
               >
-                Cancel
+                Hủy
               </Button>
               
               <Button
                 variant="contained"
                 color="error"
                 onClick={handleConfirm}
-                disabled={isLoading}
+                disabled={isLoading || !isConfirmationValid}
                 startIcon={
                   isLoading ? (
                     <CircularProgress size={16} color="inherit" />
@@ -174,14 +249,15 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
                   minWidth: 120,
                   bgcolor: 'error.main',
                   '&:hover': {
-                    bgcolor: 'error.dark'
+                    bgcolor: isConfirmationValid ? 'error.dark' : 'error.main'
                   },
                   '&:disabled': {
-                    bgcolor: 'error.light'
+                    bgcolor: 'error.light',
+                    opacity: isConfirmationValid ? 0.7 : 0.3
                   }
                 }}
               >
-                {isLoading ? 'Deleting...' : 'Delete Board'}
+                {isLoading ? 'Đang xóa...' : 'Xóa Board'}
               </Button>
             </Box>
           </Box>
