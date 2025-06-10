@@ -162,3 +162,19 @@ export const updateCardLabelsAPI = async (cardId, labelIds) => {
   const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/cards/${cardId}/labels`, { labelIds })
   return response.data
 }
+
+// Checklist APIs for Card
+export const createChecklistAPI = async (cardId, title) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/cards/${cardId}/checklists`, { title })
+  return response.data
+}
+
+export const addCheckListItemAPI = async (cardId, checklistId, title) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/cards/${cardId}/checklists/${checklistId}/items`, { title })
+  return response.data
+}
+
+export const updateChecklistItemStatusAPI = async (cardId, checklistId, itemId, isCompleted) => {
+  const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/cards/${cardId}/checklists/${checklistId}/items/${itemId}/status`, { isCompleted })
+  return response.data
+}

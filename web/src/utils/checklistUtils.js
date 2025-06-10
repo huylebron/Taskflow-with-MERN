@@ -119,7 +119,7 @@ export const calculateChecklistProgress = (checklist) => {
   }
   
   const total = checklist.items.length
-  const completed = checklist.items.filter(item => item.completed).length
+  const completed = checklist.items.filter(item => item.isCompleted).length
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0
   
   return { completed, total, percentage }
@@ -141,7 +141,7 @@ export const calculateTotalProgress = (checklists) => {
   checklists.forEach(checklist => {
     if (checklist.items && checklist.items.length > 0) {
       totalItems += checklist.items.length
-      completedItems += checklist.items.filter(item => item.completed).length
+      completedItems += checklist.items.filter(item => item.isCompleted).length
     }
   })
   

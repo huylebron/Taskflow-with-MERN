@@ -78,11 +78,72 @@ export const updateCardLabels = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+/**
+ * Tạo checklist mới cho card
+ */
+const createChecklist = async (req, res, next) => {
+  try {
+    const { cardId } = req.params;
+    const { title } = req.body;
+    
+    if (!title) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Checklist title is required'
+      });
+    }
+    
+    const result = await cardService.createChecklist(cardId, title);
+    res.status(StatusCodes.OK).json(result);
+  } catch (error) { next(error); }
+};
+
+/**
+ * Thêm item vào checklist
+ */
+const addChecklistItem = async (req, res, next) => {
+  try {
+    const { cardId, checklistId } = req.params;
+    const { title } = req.body;
+    
+    if (!title) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Item title is required'
+      });
+    }
+    
+    const result = await cardService.addChecklistItem(cardId, checklistId, title);
+    res.status(StatusCodes.OK).json(result);
+  } catch (error) { next(error); }
+};
+
+/**
+ * Cập nhật trạng thái hoàn thành của checklist item
+ */
+const updateChecklistItemStatus = async (req, res, next) => {
+  try {
+    const { cardId, checklistId, itemId } = req.params;
+    const { isCompleted } = req.body;
+    
+    if (typeof isCompleted !== 'boolean') {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'isCompleted must be a boolean value'
+      });
+    }
+    
+    const result = await cardService.updateChecklistItemStatus(cardId, checklistId, itemId, isCompleted);
+    res.status(StatusCodes.OK).json(result);
+  } catch (error) { next(error); }
+};
+
 export const cardController = {
   createNew,
   update,
   getCoverOptions,
   getCardsWithDueDate,
   updateDueDate,
-  updateCardLabels
+  updateCardLabels,
+  // Thêm các API mới để xử lý checklists
+  createChecklist,
+  addChecklistItem,
+  updateChecklistItemStatus
 }

@@ -19,19 +19,19 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
 import Checkbox from '@mui/material/Checkbox'
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
+import { toast } from 'react-toastify'
 
 import { 
-  createNewChecklist,
-  addItemToChecklist,
-  removeItemFromChecklist,
-  toggleItemInChecklist,
-  updateChecklistInList,
-  removeChecklistFromList,
   calculateChecklistProgress,
   formatProgressText,
   getProgressColor
 } from '~/utils/checklistUtils'
 import { CHECKLIST_LIMITS } from '~/utils/checklistConstants'
+import { 
+  createChecklistAPI, 
+  addCheckListItemAPI, 
+  updateChecklistItemStatusAPI 
+} from '~/apis'
 
 /**
  * ChecklistItem Component
@@ -86,7 +86,7 @@ function ChecklistItem({
         </Typography>
         <IconButton 
           size="small" 
-          onClick={() => onRemoveChecklist(checklist.id)}
+          onClick={() => onRemoveChecklist(checklist._id)}
           sx={{
             color: theme => theme.palette.error.main,
             '&:hover': {
@@ -163,8 +163,8 @@ function ChecklistItem({
           <Button
             variant="contained"
             color="primary"
-            disabled={!newItemText || !newItemText.trim() || isMaxItemsReached}
-            onClick={() => onAddItem(newItemText)}
+            disabled={!newItemText || isMaxItemsReached}
+            onClick={() => onAddItem(checklist._id, newItemText)}
             sx={{ 
               minWidth: '44px',
               width: '44px',
@@ -191,7 +191,7 @@ function ChecklistItem({
           <Stack spacing={1}>
             {checklist.items.map(item => (
               <Box 
-                key={item.id}
+                key={item._id}
                 sx={{ 
                   display: 'flex', 
                   alignItems: 'flex-start',
@@ -204,8 +204,8 @@ function ChecklistItem({
                 }}
               >
                 <Checkbox 
-                  checked={item.completed} 
-                  onChange={() => onToggleItem(item.id)}
+                  checked={item.isCompleted} 
+                  onChange={() => onToggleItem(checklist._id, item._id)}
                   size="small"
                   sx={{ 
                     pt: 0,
@@ -224,33 +224,35 @@ function ChecklistItem({
                   <Typography 
                     variant="body2"
                     sx={{ 
-                      textDecoration: item.completed ? 'line-through' : 'none',
-                      color: item.completed ? 'text.secondary' : 'text.primary',
+                      textDecoration: item.isCompleted ? 'line-through' : 'none',
+                      color: item.isCompleted ? 'text.secondary' : 'text.primary',
                       transition: 'all 0.2s ease'
                     }}
                   >
-                    {item.text}
+                    {item.title}
                   </Typography>
-                  <Typography 
-                    variant="caption" 
-                    color="text.secondary"
-                    sx={{ 
-                      display: 'block',
-                      fontSize: '10px',
-                      mt: 0.5,
-                      opacity: 0.7
-                    }}
-                  >
-                    {new Date(item.createdAt).toLocaleDateString('vi-VN', { 
-                      year: 'numeric', 
-                      month: 'short', 
-                      day: 'numeric'
-                    })}
-                  </Typography>
+                  {item.completedAt && (
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary"
+                      sx={{ 
+                        display: 'block',
+                        fontSize: '10px',
+                        mt: 0.5,
+                        opacity: 0.7
+                      }}
+                    >
+                      {new Date(item.completedAt).toLocaleDateString('vi-VN', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric'
+                      })}
+                    </Typography>
+                  )}
                 </Box>
                 <IconButton 
                   size="small"
-                  onClick={() => onRemoveItem(item.id)}
+                  onClick={() => onRemoveItem(checklist._id, item._id)}
                   sx={{ 
                     color: theme => theme.palette.error.main,
                     opacity: 0.6,
@@ -291,7 +293,7 @@ function ChecklistItem({
  * ChecklistDialog Component
  * Hiển thị modal cho phép quản lý checklists của một card
  */
-function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists }) {
+function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists, cardId }) {
   // State for new checklist form
   const [newChecklistTitle, setNewChecklistTitle] = useState('')
 
@@ -299,64 +301,70 @@ function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists 
   const [newItemTexts, setNewItemTexts] = useState({})
 
   // Handler for adding a new checklist
-  const handleAddChecklist = () => {
-    if (!newChecklistTitle.trim()) return
+  const handleAddChecklist = async () => {
+    if (!newChecklistTitle) return
     
-    const newChecklist = createNewChecklist(newChecklistTitle)
-    onUpdateChecklists([...checklists, newChecklist])
-    
-    // Reset form
-    setNewChecklistTitle('')
+    try {
+      const updatedCard = await createChecklistAPI(cardId, newChecklistTitle)
+      onUpdateChecklists(updatedCard.checklists)
+      setNewChecklistTitle('')
+    } catch (error) {
+      console.error('Error creating checklist:', error)
+    }
   }
 
   // Handler for adding a new item to a checklist
-  const handleAddItem = (checklistId, itemText) => {
-    if (!itemText.trim()) return
+  const handleAddItem = async (checklistId, itemText) => {
+    if (!itemText) return
     
-    const updatedChecklists = checklists.map(checklist => {
-      if (checklist.id === checklistId) {
-        return addItemToChecklist(checklist, itemText)
-      }
-      return checklist
-    })
-    
-    onUpdateChecklists(updatedChecklists)
-    
-    // Reset form for this checklist
-    setNewItemTexts({
-      ...newItemTexts,
-      [checklistId]: ''
-    })
+    try {
+      const updatedCard = await addCheckListItemAPI(cardId, checklistId, itemText)
+      onUpdateChecklists(updatedCard.checklists)
+      
+      // Reset form for this checklist
+      setNewItemTexts({
+        ...newItemTexts,
+        [checklistId]: ''
+      })
+    } catch (error) {
+      console.error('Error adding checklist item:', error)
+    }
+  }
+
+  // Handler for toggling an item's completed status
+  const handleToggleItem = async (checklistId, itemId) => {
+    try {
+      // Tìm checklist và item tương ứng
+      const checklist = checklists.find(c => c._id === checklistId)
+      const item = checklist?.items.find(i => i._id === itemId)
+      if (!item) return
+
+      // Gọi API để cập nhật trạng thái
+      const updatedCard = await updateChecklistItemStatusAPI(
+        cardId, 
+        checklistId, 
+        itemId, 
+        !item.isCompleted // Đảo ngược trạng thái hiện tại
+      )
+
+      // Cập nhật state với dữ liệu mới
+      onUpdateChecklists(updatedCard.checklists)
+    } catch (error) {
+      console.error('Error updating checklist item status:', error)
+      toast.error('Có lỗi khi cập nhật trạng thái item!')
+    }
   }
 
   // Handler for removing an item from a checklist
   const handleRemoveItem = (checklistId, itemId) => {
-    const updatedChecklists = checklists.map(checklist => {
-      if (checklist.id === checklistId) {
-        return removeItemFromChecklist(checklist, itemId)
-      }
-      return checklist
-    })
-    
-    onUpdateChecklists(updatedChecklists)
-  }
-
-  // Handler for toggling an item's completed status
-  const handleToggleItem = (checklistId, itemId) => {
-    const updatedChecklists = checklists.map(checklist => {
-      if (checklist.id === checklistId) {
-        return toggleItemInChecklist(checklist, itemId)
-      }
-      return checklist
-    })
-    
-    onUpdateChecklists(updatedChecklists)
+    // TODO: Implement API for removing checklist item
+    console.log('Remove item:', checklistId, itemId)
   }
 
   // Handler for removing a checklist
   const handleRemoveChecklist = (checklistId) => {
-    const updatedChecklists = removeChecklistFromList(checklists, checklistId)
-    onUpdateChecklists(updatedChecklists)
+    // TODO: Implement API for removing checklist
+    console.log('Remove checklist:', checklistId)
   }
 
   // Handler for Enter key press in new checklist form
@@ -503,15 +511,15 @@ function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists 
             
             {checklists.map(checklist => (
               <ChecklistItem
-                key={checklist.id}
+                key={checklist._id}
                 checklist={checklist}
-                onAddItem={(itemText) => handleAddItem(checklist.id, itemText)}
-                onRemoveItem={(itemId) => handleRemoveItem(checklist.id, itemId)}
-                onToggleItem={(itemId) => handleToggleItem(checklist.id, itemId)}
+                onAddItem={handleAddItem}
+                onRemoveItem={handleRemoveItem}
+                onToggleItem={handleToggleItem}
                 onRemoveChecklist={handleRemoveChecklist}
-                newItemText={newItemTexts[checklist.id] || ''}
-                onNewItemTextChange={(text) => handleNewItemTextChange(checklist.id, text)}
-                onItemKeyPress={(e) => handleItemKeyPress(e, checklist.id)}
+                newItemText={newItemTexts[checklist._id] || ''}
+                onNewItemTextChange={(text) => handleNewItemTextChange(checklist._id, text)}
+                onItemKeyPress={(e) => handleItemKeyPress(e, checklist._id)}
               />
             ))}
           </Box>
