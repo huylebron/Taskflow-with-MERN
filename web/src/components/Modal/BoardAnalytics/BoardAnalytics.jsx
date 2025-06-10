@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Dialog, DialogTitle, DialogContent, Typography, Grid, Paper, IconButton, Box } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import {
@@ -16,49 +16,66 @@ import {
   Tooltip,
   Legend
 } from 'recharts'
+import { fetchBoardDetailsAPI } from '~/apis'
 
-function BoardAnalytics({ isOpen, onClose, board }) {
-  console.log('BoardAnalytics rendered', { isOpen, board: board?.title })
-  
-  // Mock data cứng cho demo stakeholder
-  const mockPieData = [
-    { name: 'Bug', value: 8, fill: '#f44336' },
-    { name: 'Feature', value: 12, fill: '#2196f3' },
-    { name: 'Enhancement', value: 6, fill: '#4caf50' },
-    { name: 'Documentation', value: 4, fill: '#ff9800' },
-    { name: 'Design', value: 3, fill: '#9c27b0' }
-  ]
+function BoardAnalytics({ isOpen, onClose, boardId }) {
+  const [board, setBoard] = useState(null)
+  const [loading, setLoading] = useState(false)
 
-  const mockColumnData = [
-    { name: 'To Do', cards: 9 },
-    { name: 'In Progress', cards: 4 },
-    { name: 'Done', cards: 4 },
-    { name: 'Blocked', cards: 2 }
-  ]
+  useEffect(() => {
+    if (isOpen && boardId) {
+      setLoading(true)
+      fetchBoardDetailsAPI(boardId)
+        .then(data => setBoard(data))
+        .finally(() => setLoading(false))
+    }
+  }, [isOpen, boardId])
 
-  const mockDailyData = [
-    { displayDate: '09/12', cards: 2 },
-    { displayDate: '10/12', cards: 1 },
-    { displayDate: '11/12', cards: 3 },
-    { displayDate: '12/12', cards: 4 },
-    { displayDate: '13/12', cards: 2 },
-    { displayDate: '14/12', cards: 5 },
-    { displayDate: '15/12', cards: 3 }
-  ]
+  if (!isOpen) return null
+  if (loading) return (
+    <Dialog open={isOpen} onClose={onClose} maxWidth="lg" fullWidth>
+      <DialogTitle>Đang tải dữ liệu...</DialogTitle>
+    </Dialog>
+  )
+  if (!board) return null
 
-  const mockMemberData = [
-    { name: 'hoa nguyennguyen', cards: 6 },
-    { name: 'hunghung', cards: 4 },
-    { name: 'huyhuy', cards: 5 },
-    { name: 'Phạm Minh fgdfgd', cards: 3 }
-  ]
+  // Tính toán số liệu thực tế từ board
+  const totalCards = board?.columns?.reduce((sum, col) => sum + (col.cards?.length || 0), 0) || 0
+  const totalLabels = board?.labels?.length || 0
+  const activeColumns = board?.columns?.length || 0
+  const activeMembers = (board?.owners?.length || 0) + (board?.members?.length || 0)
 
-  // Stats summary
-  const totalCards = mockPieData.reduce((sum, item) => sum + item.value, 0)
-  const totalLabels = mockPieData.length
-  const activeColumns = mockColumnData.length
-  const activeMembers = mockMemberData.length
-  
+  // Pie chart: cards by label
+  const pieData = board?.labels?.map(label => ({
+    name: label.name,
+    value: board.columns?.reduce((sum, col) =>
+      sum + (col.cards?.filter(card => card.labelIds?.includes(label.id)).length || 0), 0),
+    fill: label.color
+  })) || []
+
+  // Bar chart: cards by column
+  const barColumnData = board?.columns?.map(col => ({
+    name: col.title,
+    cards: col.cards?.length || 0
+  })) || []
+
+  // Bar chart: cards by member
+  const memberMap = {}
+  board?.columns?.forEach(col => {
+    col.cards?.forEach(card => {
+      card.memberIds?.forEach(memberId => {
+        memberMap[memberId] = (memberMap[memberId] || 0) + 1
+      })
+    })
+  })
+  const memberData = [
+    ...(board?.owners || []),
+    ...(board?.members || [])
+  ].map(user => ({
+    name: user.displayName || user.username || user.email,
+    cards: memberMap[user._id] || 0
+  }))
+
   return (
     <Dialog
       open={isOpen}
@@ -95,7 +112,7 @@ function BoardAnalytics({ isOpen, onClose, board }) {
                 {totalCards}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Tổng số Cards
+                Tổng số thẻ
               </Typography>
             </Paper>
           </Grid>
@@ -105,7 +122,7 @@ function BoardAnalytics({ isOpen, onClose, board }) {
                 {totalLabels}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Labels được sử dụng
+                Số nhãn được sử dụng
               </Typography>
             </Paper>
           </Grid>
@@ -115,7 +132,7 @@ function BoardAnalytics({ isOpen, onClose, board }) {
                 {activeColumns}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Columns hoạt động
+                Số cột đang hoạt động
               </Typography>
             </Paper>
           </Grid>
@@ -144,24 +161,35 @@ function BoardAnalytics({ isOpen, onClose, board }) {
               }}
             >
               <Typography variant="h6" component="h3" gutterBottom>
-                🏷️ Phân bố theo nhãn
+                🏷️ Phân bố thẻ theo nhãn
               </Typography>
               <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={mockPieData}
+                      data={pieData}
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
                       label={({ name, value }) => `${name}: ${value}`}
                     >
-                      {mockPieData.map((entry, index) => (
+                      {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <Paper sx={{ p: 1 }}>
+                            <Typography variant="body2">
+                              {payload[0].name}: {payload[0].value} thẻ
+                            </Typography>
+                          </Paper>
+                        )
+                      }
+                      return null
+                    }} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -180,11 +208,11 @@ function BoardAnalytics({ isOpen, onClose, board }) {
               }}
             >
               <Typography variant="h6" component="h3" gutterBottom>
-                📋 Phân bố theo cột
+                📋 Phân bố thẻ theo cột
               </Typography>
               <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={mockColumnData}>
+                  <BarChart data={barColumnData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="name" 
@@ -192,48 +220,20 @@ function BoardAnalytics({ isOpen, onClose, board }) {
                       interval={0}
                     />
                     <YAxis />
-                    <Tooltip />
+                    <Tooltip content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <Paper sx={{ p: 1 }}>
+                            <Typography variant="body2">
+                              {payload[0].payload.name}: {payload[0].payload.cards} thẻ
+                            </Typography>
+                          </Paper>
+                        )
+                      }
+                      return null
+                    }} />
                     <Bar dataKey="cards" fill="#8884d8" />
                   </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            </Paper>
-          </Grid>
-
-          {/* Line Chart - Cards by Day */}
-          <Grid item xs={12} md={6}>
-            <Paper 
-              sx={{ 
-                p: 2, 
-                height: 350,
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-            >
-              <Typography variant="h6" component="h3" gutterBottom>
-                📅 Cards tạo trong 7 ngày
-              </Typography>
-              <Box sx={{ flexGrow: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockDailyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="displayDate"
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis />
-                    <Tooltip 
-                      labelFormatter={(label) => `Ngày: ${label}`}
-                      formatter={(value) => [value, 'Cards được tạo']}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="cards" 
-                      stroke="#82ca9d" 
-                      strokeWidth={2}
-                      dot={{ fill: '#82ca9d', strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
                 </ResponsiveContainer>
               </Box>
             </Paper>
@@ -250,11 +250,11 @@ function BoardAnalytics({ isOpen, onClose, board }) {
               }}
             >
               <Typography variant="h6" component="h3" gutterBottom>
-                👥 Cards theo thành viên
+                👥 Số thẻ theo thành viên
               </Typography>
               <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={mockMemberData}>
+                  <BarChart data={memberData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="name" 
@@ -265,7 +265,18 @@ function BoardAnalytics({ isOpen, onClose, board }) {
                       height={60}
                     />
                     <YAxis />
-                    <Tooltip />
+                    <Tooltip content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <Paper sx={{ p: 1 }}>
+                            <Typography variant="body2">
+                              {payload[0].payload.name}: {payload[0].payload.cards} thẻ
+                            </Typography>
+                          </Paper>
+                        )
+                      }
+                      return null
+                    }} />
                     <Bar dataKey="cards" fill="#ffc658" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -273,20 +284,6 @@ function BoardAnalytics({ isOpen, onClose, board }) {
             </Paper>
           </Grid>
         </Grid>
-
-        {/* Demo Note */}
-        <Paper sx={{ p: 2, mt: 2, bgcolor: 'primary.50' }}>
-          <Typography variant="body2" color="primary" gutterBottom>
-            📝 <strong>Demo Note:</strong> Đây là mock data để demo cho stakeholder
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            • Pie Chart: 5 labels với 33 cards tổng cộng<br/>
-            • Bar Chart: 4 columns hoạt động<br/>
-            • Line Chart: Trend 7 ngày gần nhất<br/>
-            • Member Chart: 4 thành viên tham gia<br/>
-            → Khi tích hợp backend, data sẽ được lấy từ API thực tế
-          </Typography>
-        </Paper>
       </DialogContent>
     </Dialog>
   )

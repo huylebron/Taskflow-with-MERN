@@ -28,6 +28,9 @@ Router.route('/:id')
     cardController.update
   )
 
+// Label APIs for card
+Router.put('/:cardId/labels', cardController.updateCardLabels)
+
 // ⚠️ CẨN THẬN: Route để lấy card với attachments (nếu cần)
 // Note: Attachment routes đã handle việc lấy attachments của card
 // Route này có thể bổ sung nếu muốn lấy card + attachments trong một API call

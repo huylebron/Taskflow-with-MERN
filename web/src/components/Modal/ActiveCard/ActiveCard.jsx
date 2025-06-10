@@ -70,6 +70,11 @@ import { MOCK_CHECKLISTS } from '~/utils/checklistConstants'
 // Import the new due date API function for optimized calendar operations
 import { updateCardDueDateAPI } from '~/apis'
 import { useCalendarSync } from '~/customHooks/useCalendarSync'
+import {
+  addLabelToBoardAPI,
+  deleteLabelFromBoardAPI,
+  updateCardLabelsAPI
+} from '~/apis'
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -332,51 +337,44 @@ function ActiveCard() {
     setShowLabelDialog(false)
   }
 
-  const onToggleLabel = (labelId) => {
-    // Lấy danh sách labelIds hiện tại, nếu không có thì tạo mảng rỗng
+  const onToggleLabel = async (labelId) => {
     const currentLabelIds = activeCard?.labelIds || []
-    
-    // Toggle label (thêm hoặc xóa label khỏi card)
     const updatedLabelIds = toggleLabel(labelId, currentLabelIds)
-    
     // Cập nhật local state trước (optimistic update)
     const updatedCard = { ...activeCard, labelIds: updatedLabelIds }
     dispatch(updateCurrentActiveCard(updatedCard))
-    
-    // Cập nhật vào store
-    dispatch(updateCardLabels({
-      cardId: activeCard._id,
-      labelIds: updatedLabelIds
-    }))
-    
-    // Gọi API để cập nhật card
-    callApiUpdateCard({ labelIds: updatedLabelIds })
-  }
-
-  const onCreateLabel = (newLabel) => {
-    // Tạo ID cho label mới
-    const labelWithId = {
-      ...newLabel,
-      id: generateLabelId()
+    dispatch(updateCardLabels({ cardId: activeCard._id, labelIds: updatedLabelIds }))
+    // Gọi API để cập nhật labelIds cho card
+    try {
+      await updateCardLabelsAPI(activeCard._id, updatedLabelIds)
+    } catch (err) {
+      toast.error('Có lỗi khi cập nhật label cho card!')
     }
-    
-    // Thêm label mới vào danh sách predefined labels của board
-    dispatch(addLabelToBoard(labelWithId))
-    
-    // Tự động gán label mới vào card hiện tại
-    onToggleLabel(labelWithId.id)
-    
-    toast.success('Tạo label mới thành công!', { position: 'bottom-right' })
   }
 
-  const onDeleteLabel = (labelId) => {
-    // Hiển thị confirm trước khi xóa
+  const onCreateLabel = async (newLabel) => {
+    const labelWithId = { ...newLabel, id: generateLabelId() }
+    // Gọi API để thêm label vào board
+    try {
+      await addLabelToBoardAPI(activeBoard._id, labelWithId)
+      dispatch(addLabelToBoard(labelWithId))
+      // Tự động gán label mới vào card hiện tại
+      await onToggleLabel(labelWithId.id)
+      toast.success('Tạo label mới thành công!', { position: 'bottom-right' })
+    } catch (err) {
+      toast.error('Có lỗi khi tạo label mới!')
+    }
+  }
+
+  const onDeleteLabel = async (labelId) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa label này? Label sẽ bị xóa khỏi tất cả các card.')) {
-      // Xóa label khỏi board và tất cả các card
-      dispatch(deleteLabelFromBoard(labelId))
-      
-      // Thông báo thành công
-      toast.success('Xóa label thành công!', { position: 'bottom-right' })
+      try {
+        await deleteLabelFromBoardAPI(activeBoard._id, labelId)
+        dispatch(deleteLabelFromBoard(labelId))
+        toast.success('Xóa label thành công!', { position: 'bottom-right' })
+      } catch (err) {
+        toast.error('Có lỗi khi xóa label!')
+      }
     }
   }
 

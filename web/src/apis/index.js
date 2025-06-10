@@ -12,6 +12,11 @@ import { toast } from 'react-toastify'
 //   return response.data
 // }
 
+export const fetchBoardDetailsAPI = async (boardId) => {
+  const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/boards/${boardId}`)
+  return response.data
+}
+
 export const updateBoardDetailsAPI = async (boardId, updateData) => {
   const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/boards/${boardId}`, updateData)
   return response.data
@@ -121,5 +126,27 @@ export const inviteUserToBoardAPI = async (data) => {
 export const deleteBoardAPI = async (boardId) => {
   const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/boards/${boardId}`)
   toast.success('Board deleted successfully!')
+  return response.data
+}
+
+/** Label APIs for Board */
+export const addLabelToBoardAPI = async (boardId, label) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/boards/${boardId}/labels`, label)
+  return response.data
+}
+
+export const updateLabelInBoardAPI = async (boardId, labelId, updateData) => {
+  const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/boards/${boardId}/labels/${labelId}`, updateData)
+  return response.data
+}
+
+export const deleteLabelFromBoardAPI = async (boardId, labelId) => {
+  const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/boards/${boardId}/labels/${labelId}`)
+  return response.data
+}
+
+/** Label APIs for Card */
+export const updateCardLabelsAPI = async (cardId, labelIds) => {
+  const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/cards/${cardId}/labels`, { labelIds })
   return response.data
 }
