@@ -107,5 +107,6 @@ export const boardController = {
   update,
   moveCardToDifferentColumn,
   getBoards,
-
+  updateBackground,
+  deleteBoard
 }
