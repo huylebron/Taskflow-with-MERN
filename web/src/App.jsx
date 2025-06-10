@@ -4,6 +4,10 @@ import Board from '~/pages/Boards/_id'
 import NotFound from '~/pages/404/NotFound'
 import Auth from '~/pages/Auth/Auth'
 import AccountVerification from '~/pages/Auth/AccountVerification'
+import ForgotPasswordForm from '~/pages/Auth/ForgotPasswordForm'
+
+import ResetPasswordForm from '~/pages/Auth/ResetPasswordForm'
+
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import Settings from '~/pages/Settings/Settings'
@@ -59,6 +63,8 @@ function App() {
       <Route path='/login' element={<Auth />} />
       <Route path='/register' element={<Auth />} />
       <Route path='/account/verification' element={<AccountVerification />} />
+      <Route path='/forgot-password' element={<ForgotPasswordForm />} />
+      <Route path='/reset-password/:token' element={<ResetPasswordForm />} />
 
       {/* 404 not found page */}
       <Route path='*' element={<NotFound />} />
