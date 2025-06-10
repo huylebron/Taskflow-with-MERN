@@ -3,6 +3,7 @@ import ApiError from '~/utils/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import bcryptjs from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
+import crypto from 'crypto'
 import { pickUser } from '~/utils/formatters'
 import { WEBSITE_DOMAIN } from '~/utils/constants'
 import { env } from '~/config/environment'
@@ -170,10 +171,90 @@ const update = async (userId, reqBody, userAvatarFile) => {
   } catch (error) { throw error }
 }
 
+const forgotPassword = async (reqBody) => {
+  try {
+    const { email } = reqBody
+
+    // Kiểm tra email có tồn tại trong hệ thống không
+    const existUser = await userModel.findOneByEmail(email)
+    if (!existUser) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'No account found with this email address.')
+    }
+
+    // Kiểm tra account đã được activate chưa
+    if (!existUser.isActive) {
+      throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Your account is not active. Please verify your email first.')
+    }
+
+    // Tạo reset token bằng crypto.randomBytes (secure)
+    const resetToken = crypto.randomBytes(32).toString('hex')
+    
+    // Set thời gian hết hạn token (1 giờ từ bây giờ)
+    const resetPasswordExpires = Date.now() + 60 * 60 * 1000 // 1 hour
+
+    // Cập nhật reset token và expiry time vào database
+    await userModel.update(existUser._id, {
+      resetPasswordToken: resetToken,
+      resetPasswordExpires: resetPasswordExpires
+    })
+
+    // Tạo reset password link
+    const resetPasswordLink = `${WEBSITE_DOMAIN}/reset-password/${resetToken}`
+    
+    // Gửi email với reset password link
+    const customSubject = 'Taskflow: Reset Your Password'
+    const htmlContent = emailTemplates.forgotPasswordEmail(resetPasswordLink, existUser.displayName)
+    
+    await NodemailerProvider.sendEmail(existUser.email, customSubject, htmlContent)
+
+    return {
+      message: 'Password reset link has been sent to your email address.'
+    }
+  } catch (error) { 
+    throw error 
+  }
+}
+
+const resetPassword = async (reqBody) => {
+  try {
+    const { token, newPassword } = reqBody
+
+    // Tìm user với reset token hợp lệ và chưa hết hạn
+    const existUser = await userModel.findOneByResetToken(token)
+    if (!existUser) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid or expired reset token.')
+    }
+
+    // Hash password mới
+    const hashedPassword = bcryptjs.hashSync(newPassword, 8)
+
+    // Cập nhật password mới và clear reset token
+    const updatedUser = await userModel.update(existUser._id, {
+      password: hashedPassword,
+      resetPasswordToken: null, // Clear token
+      resetPasswordExpires: null // Clear expiry
+    })
+
+    // Gửi email thông báo password đã được reset thành công
+    const customSubject = 'Taskflow: Password Reset Successful'
+    const htmlContent = emailTemplates.passwordResetSuccessEmail(existUser.displayName)
+    
+    await NodemailerProvider.sendEmail(existUser.email, customSubject, htmlContent)
+
+    return {
+      message: 'Password has been reset successfully. You can now login with your new password.'
+    }
+  } catch (error) { 
+    throw error 
+  }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
   login,
   refreshToken,
-  update
+  update,
+  forgotPassword,
+  resetPassword
 }

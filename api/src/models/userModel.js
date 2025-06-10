@@ -27,6 +27,10 @@ const USER_COLLECTION_SCHEMA = Joi.object({
   isActive: Joi.boolean().default(false),
   verifyToken: Joi.string(),
 
+  // Reset Password fields
+  resetPasswordToken: Joi.string(),
+  resetPasswordExpires: Joi.date().timestamp('javascript'),
+
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
@@ -61,6 +65,16 @@ const findOneByEmail = async (emailValue) => {
   } catch (error) { throw new Error(error) }
 }
 
+const findOneByResetToken = async (resetToken) => {
+  try {
+    const result = await GET_DB().collection(USER_COLLECTION_NAME).findOne({
+      resetPasswordToken: resetToken,
+      resetPasswordExpires: { $gt: Date.now() } // Token chưa hết hạn
+    })
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 const update = async (userId, updateData) => {
   try {
     // Lọc những field mà chúng ta không cho phép cập nhật linh tinh
@@ -86,5 +100,6 @@ export const userModel = {
   createNew,
   findOneById,
   findOneByEmail,
+  findOneByResetToken,
   update
 }
