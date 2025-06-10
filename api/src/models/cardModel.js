@@ -48,6 +48,11 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
   // Add dueDate field to schema - supports both null (no due date) and Date values
   dueDate: Joi.date().timestamp('javascript').allow(null).default(null),
 
+  // Thêm trường labelIds để lưu danh sách id label gán cho card
+  labelIds: Joi.array().items(
+    Joi.string()
+  ).default([]),
+
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)

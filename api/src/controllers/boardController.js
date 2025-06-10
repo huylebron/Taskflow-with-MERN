@@ -101,12 +101,45 @@ const deleteBoard = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+// Thêm label vào board
+export const addLabel = async (req, res, next) => {
+  try {
+    const { boardId } = req.params;
+    const { id, name, color } = req.body;
+    if (!id || !name || !color) return res.status(400).json({ message: 'Thiếu thông tin label' });
+    const result = await boardService.addLabel(boardId, { id, name, color });
+    res.status(200).json(result);
+  } catch (error) { next(error); }
+};
+
+// Sửa label trong board
+export const updateLabel = async (req, res, next) => {
+  try {
+    const { boardId, labelId } = req.params;
+    const { name, color } = req.body;
+    const result = await boardService.updateLabel(boardId, labelId, { name, color });
+    res.status(200).json(result);
+  } catch (error) { next(error); }
+};
+
+// Xoá label khỏi board
+export const deleteLabel = async (req, res, next) => {
+  try {
+    const { boardId, labelId } = req.params;
+    const result = await boardService.deleteLabel(boardId, labelId);
+    res.status(200).json(result);
+  } catch (error) { next(error); }
+};
+
 export const boardController = {
   createNew,
   getDetails,
   update,
   moveCardToDifferentColumn,
   getBoards,
-  updateBackground,
-  deleteBoard
+  deleteBoard,
+  addLabel,
+  updateLabel,
+  deleteLabel,
+  updateBackground
 }

@@ -242,7 +242,7 @@ function BoardBar({ board, boardId }) {
       <BoardAnalytics
         isOpen={isAnalyticsModalOpen}
         onClose={handleCloseAnalyticsModal}
-        board={board}
+        boardId={board._id}
       />
 
       {/* Delete Board Modal */}

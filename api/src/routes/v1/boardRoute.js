@@ -29,4 +29,9 @@ Router.route('/:id/background')
 Router.route('/supports/moving_card')
   .put(authMiddleware.isAuthorized, boardValidation.moveCardToDifferentColumn, boardController.moveCardToDifferentColumn)
 
+// Label APIs
+Router.post('/:boardId/labels', boardController.addLabel)
+Router.put('/:boardId/labels/:labelId', boardController.updateLabel)
+Router.delete('/:boardId/labels/:labelId', boardController.deleteLabel)
+
 export const boardRoute = Router
