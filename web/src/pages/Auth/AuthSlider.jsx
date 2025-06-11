@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Avatar from '@mui/material/Avatar'
@@ -334,6 +334,24 @@ function AuthSlider({ isLogin }) {
           >
             ĐĂNG NHẬP
           </Button>
+
+          {/* Forgot Password Link */}
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
+              <Typography sx={{
+                color: '#f44336',
+                '&:hover': {
+                  color: '#d32f2f',
+                  textDecoration: 'underline'
+                },
+                fontSize: '0.9rem',
+                fontWeight: 500,
+                transition: 'all 0.3s ease'
+              }}>
+                Quên mật khẩu?
+              </Typography>
+            </Link>
+          </Box>
         </form>
       </Box>
 

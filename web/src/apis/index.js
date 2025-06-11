@@ -88,6 +88,18 @@ export const refreshTokenAPI = async () => {
   return response.data
 }
 
+export const forgotPasswordAPI = async (data) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/users/forgot-password`, data)
+  return response.data
+}
+
+export const resetPasswordAPI = async (data) => {
+  const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/users/reset-password/${data.token}`, {
+    newPassword: data.newPassword
+  })
+  return response.data
+}
+
 export const fetchBoardsAPI = async (searchPath) => {
   const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/boards${searchPath}`)
   return response.data
