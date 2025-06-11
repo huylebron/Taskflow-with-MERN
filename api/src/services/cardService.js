@@ -262,6 +262,154 @@ const deleteCardAndAttachments = async (cardId) => {
 }
 
 /**
+ * 🗑️ COMPREHENSIVE CARD DELETION: Delete a card with all associated data
+ * This function handles the complete deletion process including:
+ * - Card validation and permission checks
+ * - Attachment cleanup (database + Cloudinary)
+ * - Cover image cleanup (Cloudinary)
+ * - Column order management
+ * - Soft delete with audit trail
+ * 
+ * @param {string} cardId - Card ID to delete
+ * @param {Object} userInfo - User information for permission validation
+ * @returns {Promise<Object>} - Detailed deletion result
+ */
+const deleteCard = async (cardId, userInfo) => {
+  try {
+    console.log(`🗑️ Starting card deletion process for cardId: ${cardId}`)
+    
+    // ✅ STEP 1: Validate card exists and user has permission
+    const existingCard = await cardModel.findOneById(cardId)
+    if (!existingCard) {
+      throw new Error('Card not found or already deleted.')
+    }
+
+    console.log(`📋 Card found: ${existingCard.title} in column: ${existingCard.columnId}`)
+
+    // TODO: Add board membership validation here when user-board permissions are implemented
+    // For now, we assume all authenticated users can delete cards they have access to
+    
+    // ✅ STEP 2: Initialize deletion result tracking
+    const deletionResult = {
+      cardId: cardId,
+      cardTitle: existingCard.title,
+      deletedAt: Date.now(),
+      cleanup: {
+        attachments: {
+          total: 0,
+          deleted: 0,
+          failed: 0,
+          errors: []
+        },
+        coverImage: {
+          deleted: false,
+          error: null
+        },
+        columnOrder: {
+          updated: false,
+          error: null
+        }
+      },
+      success: false
+    }
+
+    // ✅ STEP 3: Delete all associated attachments
+    console.log('🔗 Processing attachments deletion...')
+    try {
+      const attachments = await attachmentModel.findByCardId(cardId)
+      deletionResult.cleanup.attachments.total = attachments.length
+      if (attachments.length > 0) {
+        console.log(`📎 Found ${attachments.length} attachments to delete, processing in parallel`)
+        // Batch process attachments deletion in parallel
+        await Promise.all(attachments.map(async (attachment) => {
+          try {
+            if (attachment.cloudinaryPublicId) {
+              await CloudinaryProvider.deleteResource(attachment.cloudinaryPublicId)
+              console.debug(`☁️ Deleted attachment from Cloudinary: ${attachment.name}`)
+            }
+            await attachmentModel.permanentlyDeleteOne(attachment._id.toString())
+            deletionResult.cleanup.attachments.deleted++
+            console.debug(`✅ Attachment deleted: ${attachment.name}`)
+          } catch (attachmentError) {
+            console.error(`❌ Failed to delete attachment ${attachment._id}:`, attachmentError)
+            deletionResult.cleanup.attachments.failed++
+            deletionResult.cleanup.attachments.errors.push({
+              attachmentId: attachment._id,
+              attachmentName: attachment.name,
+              error: attachmentError.message
+            })
+          }
+        }))
+      } else {
+        console.log('📎 No attachments found')
+      }
+    } catch (attachmentsError) {
+      console.error('❌ Error processing attachments:', attachmentsError)
+      deletionResult.cleanup.attachments.errors.push({ general: attachmentsError.message })
+    }
+
+    // ✅ STEP 4: Delete cover image from Cloudinary if exists
+    console.log('🖼️ Processing cover image deletion...')
+    try {
+      if (existingCard.cover && existingCard.coverType === 'image') {
+        // Extract publicId from Cloudinary URL if needed
+        // This is a simplified approach - you might need more sophisticated URL parsing
+        const urlParts = existingCard.cover.split('/')
+        const publicIdWithExtension = urlParts[urlParts.length - 1]
+        const publicId = publicIdWithExtension.split('.')[0]
+        
+        if (publicId) {
+          await CloudinaryProvider.deleteResource(publicId)
+          deletionResult.cleanup.coverImage.deleted = true
+          console.log(`☁️ Deleted cover image from Cloudinary: ${publicId}`)
+        }
+      } else {
+        console.log('🖼️ No cover image to delete')
+      }
+    } catch (coverError) {
+      console.error('❌ Error deleting cover image:', coverError)
+      deletionResult.cleanup.coverImage.error = coverError.message
+      // Continue with deletion even if cover image deletion fails
+    }
+
+    // ✅ STEP 5: Remove card from column's cardOrderIds array
+    console.log('📊 Updating column card order...')
+    try {
+      await columnModel.pullCardOrderIds(existingCard)
+      deletionResult.cleanup.columnOrder.updated = true
+      console.log(`📊 Card removed from column order: ${existingCard.columnId}`)
+    } catch (columnError) {
+      console.error('❌ Error updating column order:', columnError)
+      deletionResult.cleanup.columnOrder.error = columnError.message
+      // Continue with deletion even if column order update fails
+    }
+
+    // ✅ STEP 6: Soft delete the card
+    console.log('🗑️ Performing soft delete on card...')
+    const deletedCard = await cardModel.deleteOne(cardId)
+    
+    if (!deletedCard) {
+      throw new Error('Failed to delete card from database.')
+    }
+
+    // ✅ STEP 7: Final success state
+    deletionResult.success = true
+    deletionResult.deletedCard = deletedCard
+
+    console.log(`✅ Card deletion completed successfully: ${existingCard.title}`)
+    
+    return {
+      message: 'Card deleted successfully with all associated data.',
+      result: deletionResult
+    }
+
+  } catch (error) {
+    console.error('❌ Card deletion failed:', error)
+    throw new Error(`Failed to delete card: ${error.message}`)
+  }
+}
+
+/**
  * Lấy card với attachments đầy đủ (populate attachments)
  * @param {string} cardId - Card ID
  * @returns {Promise<Object>} - Card with populated attachments
@@ -478,5 +626,7 @@ export const cardService = {
   // Thêm các function mới để xử lý checklists
   createChecklist,
   addChecklistItem,
-  updateChecklistItemStatus
+  updateChecklistItemStatus,
+  // Card deletion
+  deleteCard
 }

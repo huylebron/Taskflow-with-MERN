@@ -40,9 +40,10 @@ import {
   updateCurrentActiveCard,
   selectIsShowModalActiveCard
 } from '~/redux/activeCard/activeCardSlice'
-import { updateCardDetailsAPI } from '~/apis'
+import { updateCardDetailsAPI, deleteCardAPI, fetchBoardDetailsAPI } from '~/apis'
 import { 
-  updateCardInBoard, 
+  updateCardInBoard,
+  removeCardFromBoard,
   selectCurrentActiveBoard,
   addLabelToBoard,
   deleteLabelFromBoard,
@@ -66,6 +67,7 @@ import Chip from '@mui/material/Chip'
 import LabelChip from '~/components/LabelChip/LabelChip'
 import ChecklistDialog from '../ChecklistDialog/ChecklistDialog'
 import { MOCK_CHECKLISTS } from '~/utils/checklistConstants'
+import ConfirmationDialog from '~/components/ConfirmationDialog/ConfirmationDialog'
 
 // Import the new due date API function for optimized calendar operations
 import { updateCardDueDateAPI } from '~/apis'
@@ -108,6 +110,8 @@ function ActiveCard() {
   const [showCoverLightbox, setShowCoverLightbox] = useState(false)
   const [showCoverOptions, setShowCoverOptions] = useState(false)
   const [showLabelDialog, setShowLabelDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
 
   // Use calendar synchronization hook for due date management
   const { updateDueDate, triggerCalendarRefresh } = useCalendarSync()
@@ -520,6 +524,35 @@ function ActiveCard() {
     }
   }
 
+  // Trigger confirmation dialog for deletion
+  const handleDeleteCardModal = () => {
+    setShowConfirmDelete(true)
+  }
+
+  // Confirm deletion and perform API call
+  const handleConfirmDeleteModal = async () => {
+    setShowConfirmDelete(false)
+    // Optimistic update: remove card immediately
+    dispatch(removeCardFromBoard({ cardId: activeCard._id, columnId: activeCard.columnId }))
+    try {
+      setIsDeleting(true)
+      await deleteCardAPI(activeCard._id)
+      dispatch(clearAndHideCurrentActiveCard())
+      toast.success('Card deleted successfully!', { position: 'bottom-right' })
+    } catch (error) {
+      // Revert optimistic update on failure
+      dispatch(fetchBoardDetailsAPI(activeBoard._id))
+      toast.error('Failed to delete card! Rolling back.', { position: 'bottom-right' })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  // Cancel deletion
+  const handleCancelDeleteModal = () => {
+    setShowConfirmDelete(false)
+  }
+
   return (
     <Modal
       disableScrollLock
@@ -740,6 +773,13 @@ function ActiveCard() {
             </SidebarItem>
             <SidebarItem onClick={onShowChecklistDialog}>
               <TaskAltOutlinedIcon fontSize="small" />Checklist
+            </SidebarItem>
+            <SidebarItem
+              sx={{ color: 'error.light', '&:hover': { color: 'error.dark' } }}
+              onClick={handleDeleteCardModal}
+              disabled={isDeleting}
+            >
+              <DeleteOutlinedIcon fontSize="small" />Delete Card
             </SidebarItem>
 
             {/* "Thêm" Button */}
@@ -1041,6 +1081,23 @@ function ActiveCard() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Confirmation Dialog for deletion */}
+        <ConfirmationDialog
+          open={showConfirmDelete}
+          title="Delete Card"
+          items={[
+            'Checklists',
+            'Cover image',
+            'Attachments',
+            'Comments',
+            'Description',
+            'Due date'
+          ]}
+          loading={isDeleting}
+          onConfirm={handleConfirmDeleteModal}
+          onCancel={handleCancelDeleteModal}
+        />
       </Box>
     </Modal>
   )

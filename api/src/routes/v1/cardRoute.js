@@ -27,6 +27,11 @@ Router.route('/:id')
     cardValidation.update,
     cardController.update
   )
+  .delete(
+    authMiddleware.isAuthorized,
+    cardValidation.deleteCard,
+    cardController.deleteCard
+  )
 
 // Label APIs for card
 Router.put('/:cardId/labels', cardController.updateCardLabels)

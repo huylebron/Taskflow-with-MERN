@@ -69,6 +69,25 @@ const pushCardOrderIds = async (card) => {
   } catch (error) { throw new Error(error) }
 }
 
+/**
+ * Nhiệm vụ của func này là pull một cái giá trị cardId ra khỏi mảng cardOrderIds
+ * @param {Object} card - Card object containing _id and columnId
+ * @returns {Promise<Object>} - Updated column
+ */
+const pullCardOrderIds = async (card) => {
+  try {
+    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOneAndUpdate(
+      { 
+        _id: new ObjectId(card.columnId),
+        _destroy: false  // Only update non-deleted columns
+      },
+      { $pull: { cardOrderIds: new ObjectId(card._id) } },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 const update = async (columnId, updateData) => {
   try {
     // Lọc những field mà chúng ta không cho phép cập nhật linh tinh
@@ -123,6 +142,7 @@ export const columnModel = {
   createNew,
   findOneById,
   pushCardOrderIds,
+  pullCardOrderIds,
   update,
   deleteOneById,
   deleteMany

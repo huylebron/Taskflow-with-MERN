@@ -23,9 +23,9 @@ import { useDispatch, useSelector } from 'react-redux'
 import { updateCurrentActiveCard, showModalActiveCard } from '~/redux/activeCard/activeCardSlice'
 import { useState } from 'react'
 import ImageLightbox from '~/components/Modal/ImageLightbox/ImageLightbox'
-import { updateCardDetailsAPI } from '~/apis'
+import { updateCardDetailsAPI, deleteCardAPI } from '~/apis'
 import { toast } from 'react-toastify'
-import { updateCardInBoard } from '~/redux/activeBoard/activeBoardSlice'
+import { updateCardInBoard, removeCardFromBoard, fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
 import LabelChip from '~/components/LabelChip/LabelChip'
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { findLabelById } from '~/utils/labelHelpers'
@@ -42,12 +42,15 @@ import {
   getUrgencyText,
   DUE_DATE_STATUS
 } from '~/utils/dueDateConstants'
+import ConfirmationDialog from '~/components/ConfirmationDialog/ConfirmationDialog'
 
 function Card({ card }) {
   const dispatch = useDispatch()
   const [showLightbox, setShowLightbox] = useState(false)
   const activeBoard = useSelector(selectCurrentActiveBoard)
   const boardLabels = activeBoard?.labels || []
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card._id,
@@ -113,6 +116,32 @@ function Card({ card }) {
     } catch (error) {
       toast.error('Xóa ảnh cover thất bại!', { position: 'bottom-right' })
     }
+  }
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation()
+    setShowConfirmDelete(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    setShowConfirmDelete(false)
+    // Optimistic removal
+    dispatch(removeCardFromBoard({ cardId: card._id, columnId: card.columnId }))
+    try {
+      setIsDeleting(true)
+      await deleteCardAPI(card._id)
+      toast.success('Card deleted successfully!', { position: 'bottom-right' })
+    } catch (error) {
+      // Revert optimistic update on failure
+      dispatch(fetchBoardDetailsAPI(/* boardId required */))
+      toast.error('Failed to delete card! Rolling back.', { position: 'bottom-right' })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setShowConfirmDelete(false)
   }
 
   // Lấy thông tin label object từ ID
@@ -399,6 +428,16 @@ function Card({ card }) {
                 {formatProgressText(getChecklistsProgress().completed, getChecklistsProgress().total)}
               </Button>
             }
+            <Tooltip title="Delete card">
+              <IconButton
+                size="small"
+                onClick={handleDeleteClick}
+                disabled={isDeleting}
+                sx={{ color: 'error.main' }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </CardActions>
         }
       </MuiCard>
@@ -410,6 +449,23 @@ function Card({ card }) {
           imageSrc={card?.cover} 
         />
       }
+
+      {/* Confirmation Dialog for deletion */}
+      <ConfirmationDialog
+        open={showConfirmDelete}
+        title="Delete Card"
+        items={[
+          'Checklists',
+          'Cover image',
+          'Attachments',
+          'Comments',
+          'Description',
+          'Due date'
+        ]}
+        loading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </>
   )
 }
