@@ -19,10 +19,26 @@ const update = async (req, res, next) => {
     const cardId = req.params.id
     const cardCoverFile = req.file
     const userInfo = req.jwtDecoded
+
+    console.log('🔄 Card update request:', {
+      cardId,
+      hasFile: !!cardCoverFile,
+      fileInfo: cardCoverFile ? {
+        fieldname: cardCoverFile.fieldname,
+        originalname: cardCoverFile.originalname,
+        mimetype: cardCoverFile.mimetype,
+        size: cardCoverFile.size
+      } : null,
+      bodyKeys: Object.keys(req.body)
+    })
+
     const updatedCard = await cardService.update(cardId, req.body, cardCoverFile, userInfo)
 
     res.status(StatusCodes.OK).json(updatedCard)
-  } catch (error) { next(error) }
+  } catch (error) {
+    console.error('❌ Card update error:', error)
+    next(error)
+  }
 }
 
 /**

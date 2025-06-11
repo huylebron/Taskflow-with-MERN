@@ -51,6 +51,19 @@ const createNew = async (reqBody) => {
 
 const update = async (cardId, updateData, cardCoverFile, userInfo) => {
   try {
+    console.log('🔍 Card service update called with:', {
+      cardId,
+      updateDataType: typeof updateData,
+      updateDataKeys: updateData ? Object.keys(updateData) : [],
+      hasFile: !!cardCoverFile,
+      updateDataContent: updateData
+    })
+
+    // Ensure updateData is a plain object
+    if (!updateData || typeof updateData !== 'object') {
+      updateData = {}
+    }
+
     // Add updatedAt to mark when card was last modified
     updateData.updatedAt = Date.now()
     
@@ -62,7 +75,7 @@ const update = async (cardId, updateData, cardCoverFile, userInfo) => {
     })
 
     // Process dueDate field if present (can be null to remove due date)
-    if (updateData.hasOwnProperty('dueDate')) {
+    if (Object.prototype.hasOwnProperty.call(updateData, 'dueDate')) {
       // If dueDate is a valid date string, convert to Date object
       if (updateData.dueDate) {
         try {
@@ -85,11 +98,36 @@ const update = async (cardId, updateData, cardCoverFile, userInfo) => {
     let updatedCard = {}
 
     if (cardCoverFile) {
-      const uploadResult = await CloudinaryProvider.streamUpload(cardCoverFile.buffer, 'card-covers')
-      updatedCard = await cardModel.update(cardId, { 
-        cover: uploadResult.secure_url,
-        coverType: 'image'
+      console.log('🖼️ Processing card cover file upload:', {
+        fieldname: cardCoverFile.fieldname,
+        originalname: cardCoverFile.originalname,
+        mimetype: cardCoverFile.mimetype,
+        size: cardCoverFile.size,
+        hasBuffer: !!cardCoverFile.buffer,
+        bufferLength: cardCoverFile.buffer ? cardCoverFile.buffer.length : 0
       })
+
+      // Validate file buffer exists
+      if (!cardCoverFile.buffer) {
+        throw new Error('File buffer is missing. Upload failed.')
+      }
+
+      if (cardCoverFile.buffer.length === 0) {
+        throw new Error('File buffer is empty. Upload failed.')
+      }
+
+      try {
+        const uploadResult = await CloudinaryProvider.streamUpload(cardCoverFile.buffer, 'card-covers')
+        console.log('✅ Card cover upload successful:', uploadResult.secure_url)
+
+        updatedCard = await cardModel.update(cardId, {
+          cover: uploadResult.secure_url,
+          coverType: 'image'
+        })
+      } catch (uploadError) {
+        console.error('❌ Card cover upload failed:', uploadError)
+        throw new Error(`Failed to upload card cover: ${uploadError.message}`)
+      }
     } else if (updateData.deleteCardCover) {
       // Xóa ảnh cover bằng cách set cover = null
       const currentCard = await cardModel.findOneById(cardId)

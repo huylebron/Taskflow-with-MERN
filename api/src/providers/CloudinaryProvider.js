@@ -20,12 +20,25 @@ const streamUpload = (fileBuffer, folderName) => {
   return new Promise((resolve, reject) => {
     // ⚠️ CẨN THẬN: Validate input parameters
     if (!fileBuffer) {
+      console.error('❌ Cloudinary upload: File buffer is required')
       return reject(new Error('File buffer is required'))
     }
-    
+
     if (!folderName || typeof folderName !== 'string') {
+      console.error('❌ Cloudinary upload: Folder name must be a valid string')
       return reject(new Error('Folder name must be a valid string'))
     }
+
+    if (fileBuffer.length === 0) {
+      console.error('❌ Cloudinary upload: File buffer is empty')
+      return reject(new Error('File buffer is empty'))
+    }
+
+    console.log('🚀 Starting Cloudinary upload:', {
+      folderName,
+      bufferSize: fileBuffer.length,
+      bufferType: typeof fileBuffer
+    })
     
     try {
       // 🔥 QUAN TRỌNG: Enhanced upload options for attachments
