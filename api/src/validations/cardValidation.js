@@ -49,7 +49,24 @@ const update = async (req, res, next) => {
   }
 }
 
+/**
+ * Validate cardId parameter for deletion
+ */
+const deleteCard = async (req, res, next) => {
+  const correctCondition = Joi.object({
+    id: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
+  })
+
+  try {
+    await correctCondition.validateAsync(req.params, { abortEarly: false })
+    next()
+  } catch (error) {
+    next(new ApiError(StatusCodes.BAD_REQUEST, new Error(error).message))
+  }
+}
+
 export const cardValidation = {
   createNew,
-  update
+  update,
+  deleteCard
 }

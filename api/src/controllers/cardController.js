@@ -6,6 +6,7 @@
 import { StatusCodes } from 'http-status-codes'
 import { cardService } from '~/services/cardService'
 import { CARD_COVER_COLORS, CARD_COVER_GRADIENTS } from '~/utils/constants'
+import ApiError from '~/utils/ApiError'
 
 const createNew = async (req, res, next) => {
   try {
@@ -151,6 +152,24 @@ const updateChecklistItemStatus = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+/**
+ * Delete a card and all associated data
+ */
+const deleteCard = async (req, res, next) => {
+  try {
+    const cardId = req.params.id
+    const userInfo = req.jwtDecoded
+    const result = await cardService.deleteCard(cardId, userInfo)
+    return res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    console.error('❌ Card deletion error:', error)
+    if (error.message && error.message.includes('not found')) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, error.message))
+    }
+    return next(new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, error.message))
+  }
+}
+
 export const cardController = {
   createNew,
   update,
@@ -161,5 +180,6 @@ export const cardController = {
   // Thêm các API mới để xử lý checklists
   createChecklist,
   addChecklistItem,
-  updateChecklistItemStatus
+  updateChecklistItemStatus,
+  deleteCard
 }

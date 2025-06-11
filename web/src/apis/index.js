@@ -116,6 +116,15 @@ export const updateCardDetailsAPI = async (cardId, updateData) => {
   return response.data
 }
 
+/**
+ * Delete a card
+ */
+export const deleteCardAPI = async (cardId) => {
+  const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/cards/${cardId}`)
+  toast.success('Card deleted successfully!', { position: 'bottom-right' })
+  return response.data
+}
+
 /** Calendar APIs - Due Date Management */
 export const fetchCardsWithDueDateAPI = async (filters = {}) => {
   const queryParams = new URLSearchParams(filters).toString()

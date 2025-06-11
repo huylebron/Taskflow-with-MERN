@@ -315,6 +315,30 @@ const deleteMany = async (boardId) => {
   } catch (error) { throw new Error(error) }
 }
 
+/**
+ * Soft delete a single card by setting _destroy flag to true
+ * @param {string} cardId - Card ID to delete
+ * @returns {Promise<Object>} - Updated card with _destroy: true
+ */
+const deleteOne = async (cardId) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
+      { 
+        _id: new ObjectId(cardId),
+        _destroy: false  // Only delete non-deleted cards
+      },
+      { 
+        $set: { 
+          _destroy: true,
+          updatedAt: Date.now()
+        } 
+      },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
@@ -323,6 +347,7 @@ export const cardModel = {
   update,
   deleteManyByColumnId,
   deleteMany,
+  deleteOne,
   unshiftNewComment,
   updateMembers,
   updateManyComments,
