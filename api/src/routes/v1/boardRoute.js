@@ -7,6 +7,7 @@ import express from 'express'
 import { boardValidation } from '~/validations/boardValidation'
 import { boardController } from '~/controllers/boardController'
 import { authMiddleware } from '~/middlewares/authMiddleware'
+import { rbacMiddleware } from '~/middlewares/rbacMiddleware'
 import multer from 'multer'
 
 const Router = express.Router()
@@ -20,7 +21,7 @@ Router.route('/')
 Router.route('/:id')
   .get(authMiddleware.isAuthorized, boardController.getDetails)
   .put(authMiddleware.isAuthorized, boardValidation.update, boardController.update)
-  .delete(authMiddleware.isAuthorized, boardValidation.deleteBoard, boardController.deleteBoard)
+  .delete(authMiddleware.isAuthorized, rbacMiddleware.canManageBoard, boardValidation.deleteBoard, boardController.deleteBoard)
 
 Router.route('/:id/background')
   .patch(authMiddleware.isAuthorized, upload.single('backgroundUpload'), boardController.updateBackground)

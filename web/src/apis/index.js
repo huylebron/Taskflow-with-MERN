@@ -88,6 +88,18 @@ export const refreshTokenAPI = async () => {
   return response.data
 }
 
+export const forgotPasswordAPI = async (data) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/users/forgot-password`, data)
+  return response.data
+}
+
+export const resetPasswordAPI = async (data) => {
+  const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/users/reset-password/${data.token}`, {
+    newPassword: data.newPassword
+  })
+  return response.data
+}
+
 export const fetchBoardsAPI = async (searchPath) => {
   const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/boards${searchPath}`)
   return response.data
@@ -101,6 +113,15 @@ export const createNewBoardAPI = async (data) => {
 
 export const updateCardDetailsAPI = async (cardId, updateData) => {
   const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/cards/${cardId}`, updateData)
+  return response.data
+}
+
+/**
+ * Delete a card
+ */
+export const deleteCardAPI = async (cardId) => {
+  const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/cards/${cardId}`)
+  toast.success('Card deleted successfully!', { position: 'bottom-right' })
   return response.data
 }
 

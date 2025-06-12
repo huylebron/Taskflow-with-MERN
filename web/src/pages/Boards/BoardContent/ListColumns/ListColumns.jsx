@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import Box from '@mui/material/Box'
@@ -16,6 +15,7 @@ import {
 } from '~/redux/activeBoard/activeBoardSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { cloneDeep } from 'lodash'
+import { socketIoInstance } from '~/socketClient'
 
 function ListColumns({ columns }) {
   const dispatch = useDispatch()
@@ -41,6 +41,12 @@ function ListColumns({ columns }) {
     const createdColumn = await createNewColumnAPI({
       ...newColumnData,
       boardId: board._id
+    })
+
+    // Emit realtime thêm column
+    socketIoInstance.emit('FE_COLUMN_CREATED', {
+      boardId: board._id,
+      columnId: createdColumn._id
     })
 
     // Khi tạo column mới thì nó sẽ chưa có card, cần xử lý vấn đề kéo thả vào một column rỗng (Nhớ lại video 37.2, code hiện tại là video 69)

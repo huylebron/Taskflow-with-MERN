@@ -12,6 +12,7 @@ import { cardRoute } from '~/routes/v1/cardRoute'
 import { userRoute } from '~/routes/v1/userRoute'
 import { invitationRoute } from '~/routes/v1/invitationRoute'
 import { attachmentRoute } from '~/routes/v1/attachmentRoute'
+import { memberRoutes } from '~/routes/v1/memberRoutes'
 
 const Router = express.Router()
 
@@ -34,6 +35,9 @@ Router.use('/users', userRoute)
 
 /** Invitation APIs */
 Router.use('/invitations', invitationRoute)
+
+/** Member APIs */
+Router.use('/members', memberRoutes)
 
 /** 🚨 CRITICAL: Attachment APIs */
 Router.use('/', attachmentRoute) // Use root path because routes already include the full path

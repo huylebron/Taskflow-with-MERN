@@ -22,6 +22,7 @@ import { useParams } from 'react-router-dom'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
 import ActiveCard from '~/components/Modal/ActiveCard/ActiveCard'
 import { BACKGROUND_TYPES } from '~/utils/backgroundConstants'
+import { socketIoInstance } from '~/socketClient'
 
 function Board() {
   const dispatch = useDispatch()
@@ -38,6 +39,46 @@ function Board() {
   useEffect(() => {
     // Call API
     dispatch(fetchBoardDetailsAPI(boardId))
+    // Join room realtime
+    socketIoInstance.emit('joinBoard', boardId)
+
+    // Lắng nghe mọi event realtime và reload board với delay
+    let reloadTimeout = null
+    const reloadBoardWithDelay = () => {
+      if (reloadTimeout) clearTimeout(reloadTimeout)
+      reloadTimeout = setTimeout(() => {
+        dispatch(fetchBoardDetailsAPI(boardId))
+      }, 500)
+    }
+    const onRealtimeEvent = (data) => {
+      reloadBoardWithDelay()
+    }
+    socketIoInstance.on('BE_CARD_MOVED', onRealtimeEvent)
+    socketIoInstance.on('BE_COLUMN_MOVED', onRealtimeEvent)
+    socketIoInstance.on('BE_NEW_COMMENT', onRealtimeEvent)
+    socketIoInstance.on('BE_COLUMN_UPDATED', onRealtimeEvent)
+    socketIoInstance.on('BE_CARD_UPDATED', onRealtimeEvent)
+    socketIoInstance.on('BE_LABEL_UPDATED', onRealtimeEvent)
+    socketIoInstance.on('BE_CARD_DELETED', onRealtimeEvent)
+    socketIoInstance.on('BE_CARD_CREATED', onRealtimeEvent)
+    socketIoInstance.on('BE_COLUMN_CREATED', onRealtimeEvent)
+    socketIoInstance.on('BE_COLUMN_DELETED', onRealtimeEvent)
+    socketIoInstance.on('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
+    // ... có thể thêm các event khác nếu cần
+    return () => {
+      socketIoInstance.off('BE_CARD_MOVED', onRealtimeEvent)
+      socketIoInstance.off('BE_COLUMN_MOVED', onRealtimeEvent)
+      socketIoInstance.off('BE_NEW_COMMENT', onRealtimeEvent)
+      socketIoInstance.off('BE_COLUMN_UPDATED', onRealtimeEvent)
+      socketIoInstance.off('BE_CARD_UPDATED', onRealtimeEvent)
+      socketIoInstance.off('BE_LABEL_UPDATED', onRealtimeEvent)
+      socketIoInstance.off('BE_CARD_DELETED', onRealtimeEvent)
+      socketIoInstance.off('BE_CARD_CREATED', onRealtimeEvent)
+      socketIoInstance.off('BE_COLUMN_CREATED', onRealtimeEvent)
+      socketIoInstance.off('BE_COLUMN_DELETED', onRealtimeEvent)
+      socketIoInstance.off('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
+      if (reloadTimeout) clearTimeout(reloadTimeout)
+    }
   }, [dispatch, boardId])
 
   /**
@@ -49,7 +90,7 @@ function Board() {
     const dndOrderedColumnsIds = dndOrderedColumns.map(c => c._id)
 
     /**
-    * Trường hợp dùng Spread Operator này thì lại không sao bởi vì ở đây chúng ta không dùng push như ở trên làm thay đổi trực tiếp kiểu mở rộng mảng, mà chỉ đang gán lại toàn bộ giá trị columns và columnOrderIds bằng 2 mảng mới. Tương tự như cách làm concat ở trường hợp createNewColumn thôi :))
+    * Trường hợp dùng Spread Operator này thì lại không sao bởi vì ở đây chúng ta không dùng push như ở trường hợp createNewColumn thôi :))
     */
     const newBoard = { ...board }
     newBoard.columns = dndOrderedColumns
@@ -59,6 +100,11 @@ function Board() {
 
     // Gọi API update Board
     updateBoardDetailsAPI(newBoard._id, { columnOrderIds: dndOrderedColumnsIds })
+    // Emit realtime
+    socketIoInstance.emit('FE_COLUMN_MOVED', {
+      boardId: newBoard._id,
+      columnOrderIds: dndOrderedColumnsIds
+    })
   }
 
   /**
@@ -84,6 +130,12 @@ function Board() {
 
     // Gọi API update Column
     updateColumnDetailsAPI(columnId, { cardOrderIds: dndOrderedCardIds })
+    // Emit realtime di chuyển card trong cùng cột
+    socketIoInstance.emit('FE_CARD_SORTED_IN_COLUMN', {
+      boardId: board._id,
+      columnId,
+      cardOrderIds: dndOrderedCardIds
+    })
   }
 
   /**
@@ -115,6 +167,13 @@ function Board() {
       prevCardOrderIds,
       nextColumnId,
       nextCardOrderIds: dndOrderedColumns.find(c => c._id === nextColumnId)?.cardOrderIds
+    })
+    // Emit realtime
+    socketIoInstance.emit('FE_CARD_MOVED', {
+      boardId: board._id,
+      cardId: currentCardId,
+      fromColumnId: prevColumnId,
+      toColumnId: nextColumnId
     })
   }
 

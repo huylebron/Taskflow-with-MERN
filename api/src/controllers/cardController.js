@@ -6,6 +6,7 @@
 import { StatusCodes } from 'http-status-codes'
 import { cardService } from '~/services/cardService'
 import { CARD_COVER_COLORS, CARD_COVER_GRADIENTS } from '~/utils/constants'
+import ApiError from '~/utils/ApiError'
 
 const createNew = async (req, res, next) => {
   try {
@@ -19,10 +20,26 @@ const update = async (req, res, next) => {
     const cardId = req.params.id
     const cardCoverFile = req.file
     const userInfo = req.jwtDecoded
+
+    console.log('🔄 Card update request:', {
+      cardId,
+      hasFile: !!cardCoverFile,
+      fileInfo: cardCoverFile ? {
+        fieldname: cardCoverFile.fieldname,
+        originalname: cardCoverFile.originalname,
+        mimetype: cardCoverFile.mimetype,
+        size: cardCoverFile.size
+      } : null,
+      bodyKeys: Object.keys(req.body)
+    })
+
     const updatedCard = await cardService.update(cardId, req.body, cardCoverFile, userInfo)
 
     res.status(StatusCodes.OK).json(updatedCard)
-  } catch (error) { next(error) }
+  } catch (error) {
+    console.error('❌ Card update error:', error)
+    next(error)
+  }
 }
 
 /**
@@ -136,6 +153,7 @@ const updateChecklistItemStatus = async (req, res, next) => {
 };
 
 /**
+
  * Cập nhật trạng thái hoàn thành của card
  */
 const updateCardCompletedStatus = async (req, res, next) => {
@@ -169,6 +187,24 @@ const updateCardCompletedStatus = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+ * Delete a card and all associated data
+ */
+const deleteCard = async (req, res, next) => {
+  try {
+    const cardId = req.params.id
+    const userInfo = req.jwtDecoded
+    const result = await cardService.deleteCard(cardId, userInfo)
+    return res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    console.error('❌ Card deletion error:', error)
+    if (error.message && error.message.includes('not found')) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, error.message))
+    }
+    return next(new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, error.message))
+  }
+}
+
+
 export const cardController = {
   createNew,
   update,
@@ -180,6 +216,10 @@ export const cardController = {
   createChecklist,
   addChecklistItem,
   updateChecklistItemStatus,
+
   // Thêm API cập nhật trạng thái hoàn thành của card
   updateCardCompletedStatus
+
+  deleteCard
+
 }

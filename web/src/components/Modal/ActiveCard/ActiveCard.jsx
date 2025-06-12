@@ -36,13 +36,14 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useState, useEffect } from 'react'
 import {
   clearAndHideCurrentActiveCard,
-  selectCurrentActiveCard,
   updateCurrentActiveCard,
   selectIsShowModalActiveCard
 } from '~/redux/activeCard/activeCardSlice'
-import { updateCardDetailsAPI } from '~/apis'
+import { updateCardDetailsAPI, deleteCardAPI } from '~/apis'
+import { fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
 import { 
-  updateCardInBoard, 
+  updateCardInBoard,
+  removeCardFromBoard,
   selectCurrentActiveBoard,
   addLabelToBoard,
   deleteLabelFromBoard,
@@ -66,6 +67,8 @@ import Chip from '@mui/material/Chip'
 import LabelChip from '~/components/LabelChip/LabelChip'
 import ChecklistDialog from '../ChecklistDialog/ChecklistDialog'
 import { MOCK_CHECKLISTS } from '~/utils/checklistConstants'
+import ConfirmationDialog from '~/components/ConfirmationDialog/ConfirmationDialog'
+import { socketIoInstance } from '~/socketClient'
 
 // Import the new due date API function for optimized calendar operations
 import { updateCardDueDateAPI } from '~/apis'
@@ -75,6 +78,7 @@ import {
   deleteLabelFromBoardAPI,
   updateCardLabelsAPI
 } from '~/apis'
+import { selectCardById } from '~/redux/activeBoard/activeBoardSlice'
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -101,13 +105,16 @@ const SidebarItem = styled(Box)(({ theme }) => ({
  */
 function ActiveCard() {
   const dispatch = useDispatch()
-  const activeCard = useSelector(selectCurrentActiveCard)
+  const activeBoard = useSelector(selectCurrentActiveBoard)
+  const activeCardId = useSelector(state => state.activeCard.currentActiveCard?._id)
+  const activeCard = useSelector(selectCardById(activeCardId))
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
   const currentUser = useSelector(selectCurrentUser)
-  const activeBoard = useSelector(selectCurrentActiveBoard)
   const [showCoverLightbox, setShowCoverLightbox] = useState(false)
   const [showCoverOptions, setShowCoverOptions] = useState(false)
   const [showLabelDialog, setShowLabelDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
 
   // Use calendar synchronization hook for due date management
   const { updateDueDate, triggerCalendarRefresh } = useCalendarSync()
@@ -212,8 +219,16 @@ function ActiveCard() {
     return updatedCard
   }
 
-  const onUpdateCardTitle = (newTitle) => {
-    callApiUpdateCard({ title: newTitle.trim() })
+  const onUpdateCardTitle = async (newTitle) => {
+    const updatedCard = await callApiUpdateCard({ title: newTitle.trim() })
+    // Cập nhật lại card active trong modal ngay lập tức
+    dispatch(updateCurrentActiveCard(updatedCard))
+    // Emit realtime cập nhật tên card
+    socketIoInstance.emit('FE_CARD_UPDATED', {
+      boardId: activeBoard._id,
+      cardId: activeCard._id,
+      title: newTitle.trim()
+    })
   }
 
   const onUpdateCardDescription = (newDescription) => {
@@ -252,6 +267,12 @@ function ActiveCard() {
   // Dùng async await ở đây để component con CardActivitySection chờ và nếu thành công thì mới clear thẻ input comment
   const onAddCardComment = async (commentToAdd) => {
     await callApiUpdateCard({ commentToAdd })
+    // Emit realtime
+    socketIoInstance.emit('FE_NEW_COMMENT', {
+      boardId: activeBoard._id,
+      cardId: activeCard._id,
+      comment: commentToAdd
+    })
   }
 
   const onUpdateCardMembers = (incomingMemberInfo) => {
@@ -354,6 +375,12 @@ function ActiveCard() {
     // Gọi API để cập nhật labelIds cho card
     try {
       await updateCardLabelsAPI(activeCard._id, updatedLabelIds)
+      // Emit realtime cập nhật label
+      socketIoInstance.emit('FE_LABEL_UPDATED', {
+        boardId: activeBoard._id,
+        cardId: activeCard._id,
+        labelIds: updatedLabelIds
+      })
     } catch (err) {
       toast.error('Có lỗi khi cập nhật label cho card!')
     }
@@ -519,6 +546,67 @@ function ActiveCard() {
       throw error
     }
   }
+
+  // Trigger confirmation dialog for deletion
+  const handleDeleteCardModal = () => {
+    setShowConfirmDelete(true)
+  }
+
+  // Confirm deletion and perform API call
+  const handleConfirmDeleteModal = async () => {
+    setShowConfirmDelete(false)
+    // Optimistic update: remove card immediately
+    dispatch(removeCardFromBoard({ cardId: activeCard._id, columnId: activeCard.columnId }))
+    try {
+      setIsDeleting(true)
+      await deleteCardAPI(activeCard._id)
+      // Emit realtime xoá card
+      socketIoInstance.emit('FE_CARD_DELETED', {
+        boardId: activeBoard._id,
+        cardId: activeCard._id
+      })
+      dispatch(clearAndHideCurrentActiveCard())
+      toast.success('Card deleted successfully!', { position: 'bottom-right' })
+    } catch (error) {
+      // Revert optimistic update on failure
+      dispatch(fetchBoardDetailsAPI(activeBoard._id))
+      toast.error('Failed to delete card! Rolling back.', { position: 'bottom-right' })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  // Cancel deletion
+  const handleCancelDeleteModal = () => {
+    setShowConfirmDelete(false)
+  }
+
+  useEffect(() => {
+    if (!activeCard?._id || !activeBoard?._id) return
+    // Join room board để nhận realtime comment
+    socketIoInstance.emit('joinBoard', activeBoard._id)
+    // Lắng nghe bình luận mới và xoá card
+    const onNewComment = (data) => {
+      if (data.cardId === activeCard._id) {
+        // Reload lại board khi có bình luận mới, chờ 300ms để server chắc chắn đã lưu xong comment
+        setTimeout(() => {
+          dispatch(fetchBoardDetailsAPI(activeBoard._id))
+        }, 300)
+      }
+    }
+    const onCardDeleted = (data) => {
+      if (data.cardId === activeCard._id) {
+        dispatch(clearAndHideCurrentActiveCard())
+        toast.info('Thẻ này đã bị xoá ở tab khác!', { position: 'bottom-right' })
+      }
+    }
+    socketIoInstance.on('BE_NEW_COMMENT', onNewComment)
+    socketIoInstance.on('BE_CARD_DELETED', onCardDeleted)
+    return () => {
+      socketIoInstance.off('BE_NEW_COMMENT', onNewComment)
+      socketIoInstance.off('BE_CARD_DELETED', onCardDeleted)
+    }
+  }, [activeCard?._id, activeBoard?._id, dispatch])
 
   return (
     <Modal
@@ -740,6 +828,13 @@ function ActiveCard() {
             </SidebarItem>
             <SidebarItem onClick={onShowChecklistDialog}>
               <TaskAltOutlinedIcon fontSize="small" />Checklist
+            </SidebarItem>
+            <SidebarItem
+              sx={{ color: 'error.light', '&:hover': { color: 'error.dark' } }}
+              onClick={handleDeleteCardModal}
+              disabled={isDeleting}
+            >
+              <DeleteOutlinedIcon fontSize="small" />Delete Card
             </SidebarItem>
 
             {/* "Thêm" Button */}
@@ -1041,6 +1136,23 @@ function ActiveCard() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Confirmation Dialog for deletion */}
+        <ConfirmationDialog
+          open={showConfirmDelete}
+          title="Delete Card"
+          items={[
+            'Checklists',
+            'Cover image',
+            'Attachments',
+            'Comments',
+            'Description',
+            'Due date'
+          ]}
+          loading={isDeleting}
+          onConfirm={handleConfirmDeleteModal}
+          onCancel={handleCancelDeleteModal}
+        />
       </Box>
     </Modal>
   )

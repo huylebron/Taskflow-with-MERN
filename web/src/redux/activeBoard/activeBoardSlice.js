@@ -179,6 +179,20 @@ export const activeBoardSlice = createSlice({
           }
         }
       })
+    },
+    /**
+     * Remove a card from the board state optimistically
+     * @param {Object} action.payload - { cardId, columnId }
+     */
+    removeCardFromBoard: (state, action) => {
+      const { cardId, columnId } = action.payload
+      if (!state.currentActiveBoard) return
+      const column = state.currentActiveBoard.columns.find(c => c._id === columnId)
+      if (!column) return
+      // Remove card from cards array
+      column.cards = column.cards.filter(c => c._id !== cardId)
+      // Remove cardId from cardOrderIds
+      column.cardOrderIds = column.cardOrderIds.filter(id => id !== cardId)
     }
   },
   // ExtraReducers: Nơi xử lý dữ liệu bất đồng bộ
@@ -257,7 +271,8 @@ export const {
   deleteLabelFromBoard,
   updateCardLabels,
   updateCardDueDate,
-  syncCalendarToBoard
+  syncCalendarToBoard,
+  removeCardFromBoard
 } = activeBoardSlice.actions
 
 // Selectors: Là nơi dành cho các components bên dưới gọi bằng hook useSelector() để lấy dữ liệu từ trong kho redux store ra sử dụng

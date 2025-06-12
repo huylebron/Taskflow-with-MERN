@@ -5,7 +5,19 @@ import { toast } from 'react-toastify'
 
 // Khởi tạo giá trị State của một cái Slice trong redux
 const initialState = {
-  currentUser: null
+  currentUser: null,
+  // Forgot Password states
+  forgotPassword: {
+    isLoading: false,
+    isSuccess: false,
+    error: null
+  },
+  // Reset Password states  
+  resetPassword: {
+    isLoading: false,
+    isSuccess: false,
+    error: null
+  }
 }
 
 export const logoutUserAPI = createAsyncThunk(
@@ -38,12 +50,57 @@ export const updateUserAPI = createAsyncThunk(
   }
 )
 
+export const forgotPasswordAPI = createAsyncThunk(
+  'user/forgotPasswordAPI',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/users/forgot-password`, data)
+      return response.data
+    } catch (error) {
+      // Trả về error message để handle trong rejected case
+      return rejectWithValue(error.response?.data?.message || 'Something went wrong')
+    }
+  }
+)
+
+export const resetPasswordAPI = createAsyncThunk(
+  'user/resetPasswordAPI', 
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/users/reset-password/${data.token}`, {
+        newPassword: data.newPassword
+      })
+      return response.data
+    } catch (error) {
+      // Trả về error message để handle trong rejected case
+      return rejectWithValue(error.response?.data?.message || 'Something went wrong')
+    }
+  }
+)
+
 // Khởi tạo một cái Slice trong kho lưu trữ - Redux Store
 export const userSlice = createSlice({
   name: 'user',
   initialState,
   // Reducers: Nơi xử lý dữ liệu đồng bộ
-  reducers: {},
+  reducers: {
+    // Reset forgot password state
+    clearForgotPasswordState: (state) => {
+      state.forgotPassword = {
+        isLoading: false,
+        isSuccess: false,
+        error: null
+      }
+    },
+    // Reset reset password state
+    clearResetPasswordState: (state) => {
+      state.resetPassword = {
+        isLoading: false,
+        isSuccess: false,
+        error: null
+      }
+    }
+  },
   // ExtraReducers: Nơi xử lý dữ liệu bất đồng bộ
   extraReducers: (builder) => {
     builder.addCase(loginUserAPI.fulfilled, (state, action) => {
@@ -62,17 +119,62 @@ export const userSlice = createSlice({
       const user = action.payload
       state.currentUser = user
     })
+
+    // Forgot Password Cases
+    builder.addCase(forgotPasswordAPI.pending, (state) => {
+      state.forgotPassword.isLoading = true
+      state.forgotPassword.isSuccess = false
+      state.forgotPassword.error = null
+    })
+    builder.addCase(forgotPasswordAPI.fulfilled, (state, action) => {
+      state.forgotPassword.isLoading = false
+      state.forgotPassword.isSuccess = true
+      state.forgotPassword.error = null
+      // Có thể lưu message từ response nếu cần
+      // state.forgotPassword.message = action.payload.message
+    })
+    builder.addCase(forgotPasswordAPI.rejected, (state, action) => {
+      state.forgotPassword.isLoading = false
+      state.forgotPassword.isSuccess = false
+      state.forgotPassword.error = action.payload || action.error.message
+    })
+
+    // Reset Password Cases
+    builder.addCase(resetPasswordAPI.pending, (state) => {
+      state.resetPassword.isLoading = true
+      state.resetPassword.isSuccess = false
+      state.resetPassword.error = null
+    })
+    builder.addCase(resetPasswordAPI.fulfilled, (state, action) => {
+      state.resetPassword.isLoading = false
+      state.resetPassword.isSuccess = true
+      state.resetPassword.error = null
+      // Có thể lưu message từ response nếu cần
+      // state.resetPassword.message = action.payload.message
+    })
+    builder.addCase(resetPasswordAPI.rejected, (state, action) => {
+      state.resetPassword.isLoading = false
+      state.resetPassword.isSuccess = false
+      state.resetPassword.error = action.payload || action.error.message
+    })
   }
 })
 
 // Action creators are generated for each case reducer function
 // Actions: Là nơi dành cho các components bên dưới gọi bằng dispatch() tới nó để cập nhật lại dữ liệu thông qua reducer (chạy đồng bộ)
-// Để ý ở trên thì không thấy properties actions đâu cả, bởi vì những cái actions này đơn giản là được thằng redux tạo tự động theo tên của reducer nhé.
-// export const {} = userSlice.actions
+export const { clearForgotPasswordState, clearResetPasswordState } = userSlice.actions
 
 // Selectors: Là nơi dành cho các components bên dưới gọi bằng hook useSelector() để lấy dữ liệu từ trong kho redux store ra sử dụng
 export const selectCurrentUser = (state) => {
   return state.user.currentUser
+}
+
+export const selectForgotPasswordState = (state) => {
+  return state.user.forgotPassword
+}
+
+export const selectResetPasswordState = (state) => {
+  return state.user.resetPassword
 }
 
 export const userReducer = userSlice.reducer

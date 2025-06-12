@@ -19,9 +19,13 @@ import cookieParser from 'cookie-parser'
 import http from 'http'
 import socketIo from 'socket.io'
 import { inviteUserToBoardSocket } from '~/sockets/inviteUserToBoardSocket'
+import { boardSocket } from '~/sockets/boardSocket'
+import { cardSocket } from '~/sockets/cardSocket'
 // Import card model for creating indexes
 import { cardModel } from '~/models/cardModel'
 import { changeStatusConfirmedCard } from './sockets/changeStatusConfirmedCard'
+
+let io
 
 const START_SERVER = () => {
   const app = express()
@@ -51,12 +55,20 @@ const START_SERVER = () => {
   // Tạo một cái server mới bọc thằng app của express để làm real-time với socket.io
   const server = http.createServer(app)
   // Khởi tạo biến io với server và cors
+
   const io = socketIo(server, { cors: corsOptions })
   global._io = io;
+
+  io = socketIo(server, { cors: corsOptions })
+
   io.on('connection', (socket) => {
-    // Gọi các socket tùy theo tính năng ở đây.
     inviteUserToBoardSocket(socket)
+
     changeStatusConfirmedCard(socket)
+
+    boardSocket(io, socket)
+    cardSocket(io, socket)
+
     // ...vv
   })
 
@@ -112,3 +124,5 @@ const START_SERVER = () => {
 //     console.error(error)
 //     process.exit(0)
 //   })
+
+export { io }
