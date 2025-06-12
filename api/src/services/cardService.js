@@ -428,6 +428,21 @@ const updateChecklistItemStatus = async (cardId, checklistId, itemId, isComplete
   }
 };
 
+/**
+ * Cập nhật trạng thái hoàn thành của card
+ * @param {string} cardId - Card ID
+ * @param {boolean} isCardCompleted - Trạng thái hoàn thành
+ * @returns {Promise<Object>} - Updated card
+ */
+const updateCardCompletedStatus = async (cardId, isCardCompleted) => {
+  try {
+    const result = await cardModel.updateCardCompletedStatus(cardId, isCardCompleted)
+    return result
+  } catch (error) {
+    throw new Error(`Error updating card completed status: ${error.message}`)
+  }
+}
+
 export const cardService = {
   createNew,
   update,
@@ -440,5 +455,7 @@ export const cardService = {
   // Thêm các function mới để xử lý checklists
   createChecklist,
   addChecklistItem,
-  updateChecklistItemStatus
+  updateChecklistItemStatus,
+  // Thêm function cập nhật trạng thái hoàn thành của card
+  updateCardCompletedStatus
 }

@@ -135,6 +135,40 @@ const updateChecklistItemStatus = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+/**
+ * Cập nhật trạng thái hoàn thành của card
+ */
+const updateCardCompletedStatus = async (req, res, next) => {
+  try {
+    const { cardId } = req.params;
+    const { isCardCompleted } = req.body;
+    if (typeof isCardCompleted !== 'boolean') {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'isCardCompleted must be a boolean value'
+      });
+    }
+    const result = await cardService.updateCardCompletedStatus(cardId, isCardCompleted);
+    // Lấy lại card mới nhất để lấy boardId và columnId
+    let boardId = result.value?.boardId;
+    let columnId = result.value?.columnId;
+    if (!boardId || !columnId) {
+      const { cardModel } = require('../models/cardModel');
+      const card = await cardModel.findOneById(cardId);
+      boardId = card?.boardId?.toString?.() || card?.boardId;
+      columnId = card?.columnId?.toString?.() || card?.columnId;
+    }
+    if (global._io) {
+      global._io.emit('CARD_COMPLETED_STATUS_CHANGED', {
+        cardId,
+        isCardCompleted,
+        boardId,
+        columnId
+      });
+    }
+    res.status(StatusCodes.OK).json(result);
+  } catch (error) { next(error); }
+};
+
 export const cardController = {
   createNew,
   update,
@@ -145,5 +179,7 @@ export const cardController = {
   // Thêm các API mới để xử lý checklists
   createChecklist,
   addChecklistItem,
-  updateChecklistItemStatus
+  updateChecklistItemStatus,
+  // Thêm API cập nhật trạng thái hoàn thành của card
+  updateCardCompletedStatus
 }

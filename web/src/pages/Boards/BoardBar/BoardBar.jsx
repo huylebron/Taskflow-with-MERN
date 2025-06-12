@@ -38,7 +38,7 @@ const MENU_STYLES = {
   }
 }
 
-function BoardBar({ board, boardId }) {
+function BoardBar({ board, boardId, onOpenFilterDrawer }) {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const currentUser = useSelector(selectCurrentUser)
@@ -174,6 +174,7 @@ function BoardBar({ board, boardId }) {
           icon={<FilterListIcon />}
           label="Lọc tổng hợp"
           clickable
+          onClick={onOpenFilterDrawer}
         />
         <Chip
           sx={MENU_STYLES}

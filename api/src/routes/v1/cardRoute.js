@@ -41,6 +41,10 @@ Router.route('/:cardId/checklists/:checklistId/items')
 Router.route('/:cardId/checklists/:checklistId/items/:itemId/status')
   .put(authMiddleware.isAuthorized, cardController.updateChecklistItemStatus)
 
+// API cập nhật trạng thái hoàn thành của card
+Router.route('/:cardId/completed-status')
+  .put(authMiddleware.isAuthorized, cardController.updateCardCompletedStatus)
+
 // ⚠️ CẨN THẬN: Route để lấy card với attachments (nếu cần)
 // Note: Attachment routes đã handle việc lấy attachments của card
 // Route này có thể bổ sung nếu muốn lấy card + attachments trong một API call

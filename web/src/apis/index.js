@@ -166,3 +166,8 @@ export const updateChecklistItemStatusAPI = async (cardId, checklistId, itemId, 
   const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/cards/${cardId}/checklists/${checklistId}/items/${itemId}/status`, { isCompleted })
   return response.data
 }
+
+export const updateCardCompletedStatusAPI = async (cardId, isCardCompleted) => {
+  const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/cards/${cardId}/completed-status`, { isCardCompleted })
+  return response.data
+}

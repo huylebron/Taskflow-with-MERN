@@ -69,6 +69,9 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
     })
   ).default([]),
 
+  //Thêm trường isCardCompleted để lưu trạng thái hoàn thành của card
+  isCardCompleted: Joi.boolean().default(false),
+
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
@@ -315,6 +318,23 @@ const deleteMany = async (boardId) => {
   } catch (error) { throw new Error(error) }
 }
 
+/**
+ * Cập nhật trạng thái hoàn thành của card
+ * @param {string} cardId - Card ID
+ * @param {boolean} isCardCompleted - Trạng thái hoàn thành
+ * @returns {Promise<Object>} - Updated card
+ */
+const updateCardCompletedStatus = async (cardId, isCardCompleted) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(cardId), _destroy: false },
+      { $set: { isCardCompleted, updatedAt: Date.now() } },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
@@ -331,5 +351,7 @@ export const cardModel = {
   pushAttachmentId,
   pullAttachmentId,
   updateAttachmentCount,
-  createIndexes
+  createIndexes,
+  // Thêm hàm cập nhật trạng thái hoàn thành của card
+  updateCardCompletedStatus
 }
