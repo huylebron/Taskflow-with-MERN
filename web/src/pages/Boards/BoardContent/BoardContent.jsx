@@ -25,6 +25,13 @@ import { generatePlaceholderCard } from '~/utils/formatters'
 
 import Column from './ListColumns/Column/Column'
 import Card from './ListColumns/Column/ListCards/Card/Card'
+import { toast } from 'react-toastify'
+import { socketIoInstance } from '~/socketClient'
+import { useSelector, useDispatch } from 'react-redux'
+import { selectCurrentActiveBoard, updateCardInBoard } from '~/redux/activeBoard/activeBoardSlice'
+import FilterDrawer from '~/components/Modal/FilterDrawer'
+import Button from '@mui/material/Button'
+import FilterAltIcon from '@mui/icons-material/FilterAlt'
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',
@@ -46,7 +53,9 @@ function BoardContent({
   board,
   moveColumns,
   moveCardInTheSameColumn,
-  moveCardToDifferentColumn
+  moveCardToDifferentColumn,
+  filterDrawerOpen,
+  setFilterDrawerOpen
 }) {
   // https://docs.dndkit.com/api-documentation/sensors
   // Nếu dùng PointerSensor mặc định thì phải kết hợp thuộc tính CSS touch-action: none ở những phần tử kéo thả - nhưng mà còn bug
@@ -73,10 +82,45 @@ function BoardContent({
   // Điểm va chạm cuối cùng trước đó (xử lý thuật toán phát hiện va chạm, video 37)
   const lastOverId = useRef(null)
 
+  const activeBoard = useSelector(selectCurrentActiveBoard)
+  const dispatch = useDispatch()
+
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [selectedLabels, setSelectedLabels] = useState([])
+  const [selectedMember, setSelectedMember] = useState('')
+  const [dueDateFilter, setDueDateFilter] = useState('all')
+  const [selectedColumn, setSelectedColumn] = useState('')
+  const boardLabels = board?.labels || []
+  const boardMembers = board?.FE_allUsers || []
+  const boardColumns = board?.columns || []
+
   useEffect(() => {
     // Columns đã được sắp xếp ở component cha cao nhất (boards/_id.jsx) (Video 71 đã giải thích lý do)
     setOrderedColumns(board.columns)
   }, [board])
+
+  useEffect(() => {
+    const handleCardStatusChanged = (data) => {
+      if (data.boardId === activeBoard?._id) {
+        // Cập nhật trạng thái card trong board
+        dispatch(updateCardInBoard({
+          _id: data.cardId,
+          isCardCompleted: data.isCardCompleted,
+          columnId: data.columnId
+        }))
+        toast.info(
+          data.isCardCompleted
+            ? 'Một thẻ đã được đánh dấu hoàn thành!'
+            : 'Một thẻ đã bỏ đánh dấu hoàn thành!',
+          { position: 'bottom-right' }
+        )
+      }
+    }
+    socketIoInstance.on('CARD_COMPLETED_STATUS_CHANGED', handleCardStatusChanged)
+    return () => {
+      socketIoInstance.off('CARD_COMPLETED_STATUS_CHANGED', handleCardStatusChanged)
+    }
+  }, [activeBoard?._id, dispatch])
 
   // Tìm một cái Column theo CardId
   const findColumnByCardId = (cardId) => {
@@ -371,33 +415,106 @@ function BoardContent({
     return lastOverId.current ? [{ id: lastOverId.current }] : []
   }, [activeDragItemType, orderedColumns])
 
-  return (
-    <DndContext
-      // Sử dụng collisionDetectionStrategy thay vì closestCorners để tránh bug flickering
-      collisionDetection={collisionDetectionStrategy}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      sensors={sensors}
-    >
-      <Box sx={{
-        bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'inherit' : 'inherit'),
-        width: '100%',
-        height: (theme) => theme.trello.boardContentHeight,
-        p: '10px 0',
-        // Đảm bảo nội dung nằm trên overlay của background
-        position: 'relative',
-        zIndex: 1
-      }}>
-        <ListColumns columns={orderedColumns} />
+  // Hàm lọc card theo trạng thái hoàn thành, label, thành viên, hạn, cột
+  const filterCard = (card, columnId) => {
+    // Lọc trạng thái
+    let statusOk = true
+    if (filterStatus === 'completed') statusOk = card.isCardCompleted
+    if (filterStatus === 'incomplete') statusOk = !card.isCardCompleted
+    // Lọc label
+    let labelOk = true
+    if (selectedLabels.length > 0) {
+      labelOk = card.labelIds?.some(id => selectedLabels.includes(id))
+    }
+    // Lọc thành viên
+    let memberOk = true
+    if (selectedMember) {
+      memberOk = card.memberIds?.includes(selectedMember)
+    }
+    // Lọc hạn
+    let dueDateOk = true
+    if (dueDateFilter !== 'all') {
+      const now = new Date()
+      const due = card.dueDate ? new Date(card.dueDate) : null
+      if (dueDateFilter === 'overdue') dueDateOk = due && due < now
+      if (dueDateFilter === 'soon') {
+        const soon = new Date(now)
+        soon.setDate(now.getDate() + 3)
+        dueDateOk = due && due > now && due <= soon
+      }
+      if (dueDateFilter === 'none') dueDateOk = !due
+    }
+    // Lọc cột
+    let columnOk = true
+    if (selectedColumn) {
+      columnOk = columnId === selectedColumn
+    }
+    return statusOk && labelOk && memberOk && dueDateOk && columnOk
+  }
 
-        <DragOverlay dropAnimation={customDropAnimation}>
-          {!activeDragItemType && null}
-          {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) && <Column column={activeDragItemData} />}
-          {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) && <Card card={activeDragItemData} />}
-        </DragOverlay>
-      </Box>
-    </DndContext>
+  return (
+    <Box>
+      <FilterDrawer
+        open={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        onApply={({ status, labels, member, dueDate, column }) => {
+          setFilterStatus(status)
+          setSelectedLabels(labels)
+          setSelectedMember(member)
+          setDueDateFilter(dueDate)
+          setSelectedColumn(column)
+        }}
+        onClear={() => {
+          setFilterStatus('all')
+          setSelectedLabels([])
+          setSelectedMember('')
+          setDueDateFilter('all')
+          setSelectedColumn('')
+        }}
+        initialStatus={filterStatus}
+        labels={boardLabels}
+        initialSelectedLabels={selectedLabels}
+        members={boardMembers}
+        initialSelectedMember={selectedMember}
+        initialDueDateFilter={dueDateFilter}
+        columns={boardColumns}
+        initialSelectedColumn={selectedColumn}
+      />
+      <DndContext
+        // Sử dụng collisionDetectionStrategy thay vì closestCorners để tránh bug flickering
+        collisionDetection={collisionDetectionStrategy}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        sensors={sensors}
+      >
+        <Box sx={{
+          bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'inherit' : 'inherit'),
+          width: '100%',
+          height: (theme) => theme.trello.boardContentHeight,
+          p: '10px 0',
+          // Đảm bảo nội dung nằm trên overlay của background
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <ListColumns
+            columns={orderedColumns.map(col => ({
+              ...col,
+              cards: col.cards.filter(card => filterCard(card, col._id))
+            }))}
+            moveColumns={moveColumns}
+            moveCardInTheSameColumn={moveCardInTheSameColumn}
+            moveCardToDifferentColumn={moveCardToDifferentColumn}
+          />
+
+          <DragOverlay dropAnimation={customDropAnimation}>
+            {!activeDragItemType && null}
+            {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) && <Column column={activeDragItemData} />}
+            {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) && <Card card={activeDragItemData} />}
+          </DragOverlay>
+        </Box>
+      </DndContext>
+    </Box>
   )
 }
 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Container from '@mui/material/Container'
 import AppBar from '~/components/AppBar/AppBar'
 import BoardBar from './BoardBar/BoardBar'
@@ -33,6 +33,8 @@ function Board() {
   const boardBackground = useSelector(selectBoardBackground)
 
   const { boardId } = useParams()
+
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
 
   useEffect(() => {
     // Call API
@@ -229,13 +231,15 @@ function Board() {
 
       {/* Các thành phần còn lại của Board Details */}
       <AppBar />
-      <BoardBar board={board} boardId={boardId} />
+      <BoardBar board={board} boardId={boardId} onOpenFilterDrawer={() => setFilterDrawerOpen(true)} />
       <BoardContent
         board={board}
         // 3 cái trường hợp move dưới đây thì giữ nguyên để code xử lý kéo thả ở phần BoardContent không bị quá dài mất kiểm soát khi đọc code, maintain.
         moveColumns={moveColumns}
         moveCardInTheSameColumn={moveCardInTheSameColumn}
         moveCardToDifferentColumn={moveCardToDifferentColumn}
+        filterDrawerOpen={filterDrawerOpen}
+        setFilterDrawerOpen={setFilterDrawerOpen}
       />
     </Container>
   )

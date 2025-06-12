@@ -16,6 +16,7 @@ import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import LinearProgress from '@mui/material/LinearProgress'
+import Checkbox from '@mui/material/Checkbox'
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -23,7 +24,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import { updateCurrentActiveCard, showModalActiveCard } from '~/redux/activeCard/activeCardSlice'
 import { useState } from 'react'
 import ImageLightbox from '~/components/Modal/ImageLightbox/ImageLightbox'
+
+import { updateCardDetailsAPI, updateCardCompletedStatusAPI } from '~/apis'
+
 import { updateCardDetailsAPI, deleteCardAPI } from '~/apis'
+
 import { toast } from 'react-toastify'
 import { updateCardInBoard, removeCardFromBoard, fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
 import LabelChip from '~/components/LabelChip/LabelChip'
@@ -50,8 +55,13 @@ function Card({ card }) {
   const [showLightbox, setShowLightbox] = useState(false)
   const activeBoard = useSelector(selectCurrentActiveBoard)
   const boardLabels = activeBoard?.labels || []
+
+  const [hovered, setHovered] = useState(false)
+  const [loadingComplete, setLoadingComplete] = useState(false)
+
   const [isDeleting, setIsDeleting] = useState(false)
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card._id,
@@ -172,12 +182,28 @@ function Card({ card }) {
   const isOverdue = dueDateStatus === DUE_DATE_STATUS.OVERDUE
   const isDueSoon = dueDateStatus === DUE_DATE_STATUS.DUE_SOON
 
+  const handleCardCompletedChange = async (e) => {
+    e.stopPropagation()
+    setLoadingComplete(true)
+    try {
+      const updatedCard = await updateCardCompletedStatusAPI(card._id, !card.isCardCompleted)
+      dispatch(updateCardInBoard(updatedCard))
+      // toast.success(!card.isCardCompleted ? 'Đã đánh dấu hoàn thành!' : 'Đã bỏ đánh dấu hoàn thành!', { position: 'bottom-right' })
+    } catch (error) {
+      toast.error('Cập nhật trạng thái hoàn thành thất bại!', { position: 'bottom-right' })
+    } finally {
+      setLoadingComplete(false)
+    }
+  }
+
   return (
     <>
       <MuiCard
         onClick={setActiveCard}
         ref={setNodeRef} style={dndKitCardStyles} {...attributes} {...listeners}
         className={`due-date-indicator ${isOverdue ? 'overdue' : isDueSoon ? 'due-soon' : ''}`}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         sx={{
           cursor: 'pointer',
           boxShadow: isOverdue 
@@ -220,6 +246,17 @@ function Card({ card }) {
           })
         }}
       >
+        {/* Checkbox hoàn thành hiển thị khi hover */}
+        <Box sx={{ position: 'absolute', top: 0, left: 0, zIndex: 2, display: (card.isCardCompleted || hovered) ? 'block' : 'none' }}>
+          <Tooltip title={card.isCardCompleted ? 'Bỏ đánh dấu hoàn thành' : 'Đánh dấu là hoàn thành'}>
+            <Checkbox
+              checked={!!card.isCardCompleted}
+              onClick={handleCardCompletedChange}
+              disabled={loadingComplete}
+              sx={{ color: card.isCardCompleted ? 'success.main' : 'grey.500' }}
+            />
+          </Tooltip>
+        </Box>
         {card?.cover && 
           <Box sx={{ 
             position: 'relative',
@@ -278,7 +315,7 @@ function Card({ card }) {
             </Tooltip>
           </Box>
         }
-        <CardContent sx={{ p: 1.5, '&:last-child': { p: 1.5 } }}>
+        <CardContent sx={{ p: 1.5, pl: 5, '&:last-child': { p: 1.5, pl: 5 } }}>
           {/* Labels */}
           {cardLabels.length > 0 && (
             <Stack 
