@@ -304,7 +304,7 @@ const deleteBoard = async (userId, boardId) => {
     ]
 
     const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ $and: queryConditions })
-    
+
     if (!board) {
       throw new Error('Board not found or you do not have permission to delete this board')
     }
@@ -312,15 +312,62 @@ const deleteBoard = async (userId, boardId) => {
     // Perform soft delete by setting _destroy to true
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(boardId) },
-      { 
-        $set: { 
+      {
+        $set: {
           _destroy: true,
           updatedAt: Date.now()
-        } 
+        }
       },
       { returnDocument: 'after' }
     )
 
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
+// Check if user is admin of a specific board
+const isUserBoardAdmin = async (boardId, userId) => {
+  try {
+    const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({
+      _id: new ObjectId(boardId),
+      _destroy: false,
+      ownerIds: { $in: [new ObjectId(userId)] }
+    })
+    return !!board // Returns true if user is admin, false otherwise
+  } catch (error) { throw new Error(error) }
+}
+
+// Get user's role in a specific board
+const getMemberRole = async (boardId, userId) => {
+  try {
+    const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({
+      _id: new ObjectId(boardId),
+      _destroy: false,
+      $or: [
+        { ownerIds: { $in: [new ObjectId(userId)] } },
+        { memberIds: { $in: [new ObjectId(userId)] } }
+      ]
+    })
+
+    if (!board) return null
+
+    // Check if user is admin (in ownerIds)
+    const isOwner = board.ownerIds.some(id => id.toString() === userId.toString())
+    return isOwner ? 'admin' : 'member'
+  } catch (error) { throw new Error(error) }
+}
+
+// Remove member from board (admin only)
+const removeMemberFromBoard = async (boardId, memberIdToRemove) => {
+  try {
+    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
+      {
+        _id: new ObjectId(boardId),
+        _destroy: false
+      },
+      { $pull: { memberIds: new ObjectId(memberIdToRemove) } },
+      { returnDocument: 'after' }
+    )
     return result
   } catch (error) { throw new Error(error) }
 }
@@ -337,5 +384,8 @@ export const boardModel = {
   pullColumnOrderIds,
   getBoards,
   pushMemberIds,
-  deleteBoard
+  deleteBoard,
+  isUserBoardAdmin,
+  getMemberRole,
+  removeMemberFromBoard
 }

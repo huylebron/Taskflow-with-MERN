@@ -21,8 +21,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import BoardBackgroundSwitcher from '~/components/Modal/BoardBackgroundSwitcher/BoardBackgroundSwitcher'
 import BoardAnalytics from '~/components/Modal/BoardAnalytics/BoardAnalytics'
 import DeleteBoardModal from '~/components/Modal/DeleteBoardModal/DeleteBoardModal'
+import MemberManagement from '~/components/Modal/MemberManagement/MemberManagement'
 import { deleteBoardAPI } from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
+import PermissionWrapper from '~/components/PermissionWrapper/PermissionWrapper'
 
 const MENU_STYLES = {
   color: 'white',
@@ -55,6 +57,9 @@ function BoardBar({ board, boardId }) {
   // State để quản lý modal delete board
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // State để quản lý modal member management
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false)
   
   // Check if current user is board owner
   const isOwner = board?.ownerIds?.includes(currentUser?._id)
@@ -106,6 +111,16 @@ function BoardBar({ board, boardId }) {
 
   const handleCloseDeleteModal = () => {
     setIsDeleteModalOpen(false)
+  }
+
+  // Handler cho việc mở/đóng member management modal
+  const handleOpenMemberModal = () => {
+    setIsMemberModalOpen(true)
+    handleClose() // Đóng menu sau khi chọn
+  }
+
+  const handleCloseMemberModal = () => {
+    setIsMemberModalOpen(false)
   }
 
   // Handler xác nhận xóa board
@@ -199,15 +214,17 @@ function BoardBar({ board, boardId }) {
           <MenuItem onClick={handleOpenBackgroundModal}>
             <WallpaperIcon /> Thay đổi hình nền
           </MenuItem>
-          <MenuItem onClick={handleClose}>
-            <GroupIcon /> Thành viên
-          </MenuItem>
-          {isOwner && (
-            <MenuItem 
+          <PermissionWrapper adminOnly={true}>
+            <MenuItem onClick={handleOpenMemberModal}>
+              <GroupIcon /> Thành viên
+            </MenuItem>
+          </PermissionWrapper>
+          <PermissionWrapper adminOnly={true}>
+            <MenuItem
               onClick={handleOpenDeleteModal}
               sx={{
                 color: 'error.main',
-                '&:hover': { 
+                '&:hover': {
                   bgcolor: 'error.light',
                   color: 'error.dark'
                 }
@@ -215,7 +232,7 @@ function BoardBar({ board, boardId }) {
             >
               <DeleteForeverIcon /> Xóa Board
             </MenuItem>
-          )}
+          </PermissionWrapper>
         </Menu>
         <Chip
           sx={MENU_STYLES}
@@ -252,6 +269,13 @@ function BoardBar({ board, boardId }) {
         onConfirm={handleConfirmDelete}
         board={board}
         isLoading={isDeleting}
+      />
+
+      {/* Member Management Modal */}
+      <MemberManagement
+        open={isMemberModalOpen}
+        onClose={handleCloseMemberModal}
+        boardId={board?._id}
       />
     </Box>
   )
