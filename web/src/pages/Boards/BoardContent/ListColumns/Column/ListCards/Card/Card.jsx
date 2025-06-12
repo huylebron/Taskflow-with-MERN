@@ -35,14 +35,15 @@ import {
   formatProgressText, 
   getProgressColor 
 } from '~/utils/checklistUtils'
-import { 
-  getDueDateStatus, 
-  formatDueDateDisplay, 
+import {
+  getDueDateStatus,
+  formatDueDateDisplay,
   getDueDateChipStyles,
   getUrgencyText,
   DUE_DATE_STATUS
 } from '~/utils/dueDateConstants'
 import ConfirmationDialog from '~/components/ConfirmationDialog/ConfirmationDialog'
+import PermissionWrapper from '~/components/PermissionWrapper/PermissionWrapper'
 
 function Card({ card }) {
   const dispatch = useDispatch()
@@ -428,16 +429,18 @@ function Card({ card }) {
                 {formatProgressText(getChecklistsProgress().completed, getChecklistsProgress().total)}
               </Button>
             }
-            <Tooltip title="Delete card">
-              <IconButton
-                size="small"
-                onClick={handleDeleteClick}
-                disabled={isDeleting}
-                sx={{ color: 'error.main' }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            <PermissionWrapper adminOnly={true}>
+              <Tooltip title="Delete card">
+                <IconButton
+                  size="small"
+                  onClick={handleDeleteClick}
+                  disabled={isDeleting}
+                  sx={{ color: 'error.main' }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionWrapper>
           </CardActions>
         }
       </MuiCard>

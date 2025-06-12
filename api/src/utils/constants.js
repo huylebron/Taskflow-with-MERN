@@ -86,3 +86,8 @@ export const COLUMN_COLORS = {
   CYAN: '#00bcd4',
   YELLOW: '#f9c74f'
 }
+
+export const BOARD_MEMBER_ROLES = {
+  ADMIN: 'admin',
+  MEMBER: 'member'
+}
