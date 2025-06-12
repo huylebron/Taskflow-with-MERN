@@ -35,6 +35,7 @@ import ColumnColorModal from '~/components/Modal/ColumnColorModal'
 import { getTextColorForBackground } from '~/utils/formatters'
 import { updateColumnInBoard } from '~/redux/activeBoard/activeBoardSlice'
 import CircularProgress from '@mui/material/CircularProgress'
+import { socketIoInstance } from '~/socketClient'
 
 function Column({ column }) {
   const dispatch = useDispatch()
@@ -88,6 +89,13 @@ function Column({ column }) {
     const createdCard = await createNewCardAPI({
       ...newCardData,
       boardId: board._id
+    })
+
+    // Emit realtime thêm card
+    socketIoInstance.emit('FE_CARD_CREATED', {
+      boardId: board._id,
+      columnId: createdCard.columnId,
+      cardId: createdCard._id
     })
 
     // Cập nhật state board
@@ -146,6 +154,11 @@ function Column({ column }) {
       // Gọi API xử lý phía BE
       deleteColumnDetailsAPI(column._id).then(res => {
         toast.success(res?.deleteResult)
+        // Emit realtime xoá column
+        socketIoInstance.emit('FE_COLUMN_DELETED', {
+          boardId: board._id,
+          columnId: column._id
+        })
       })
     }).catch(() => {})
   }
