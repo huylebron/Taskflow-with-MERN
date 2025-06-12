@@ -10,6 +10,7 @@ import { attachmentModel } from '~/models/attachmentModel'
 import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
 import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
+import { io } from '~/server'
 
 // Extract the collection name from cardModel to avoid duplication
 const CARD_COLLECTION_NAME = 'cards'
@@ -166,6 +167,17 @@ const update = async (cardId, updateData, cardCoverFile, userInfo) => {
         userEmail: userInfo.email
       }
       updatedCard = await cardModel.unshiftNewComment(cardId, commentData)
+      // Lấy lại dữ liệu card mới nhất
+      const latestCard = await cardModel.findOneById(cardId)
+      // Emit realtime bình luận mới
+      if (updatedCard?.value?.boardId) {
+        io.to(updatedCard.value.boardId.toString()).emit('BE_NEW_COMMENT', {
+          boardId: updatedCard.value.boardId.toString(),
+          cardId,
+          comment: commentData,
+          card: latestCard
+        })
+      }
     } else if (updateData.incomingMemberInfo) {
       // Trường hợp ADD hoặc REMOVE thành viên ra khỏi Card
       updatedCard = await cardModel.updateMembers(cardId, updateData.incomingMemberInfo)
