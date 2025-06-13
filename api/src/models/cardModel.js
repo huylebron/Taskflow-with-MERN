@@ -16,7 +16,7 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
   boardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
   columnId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
 
-  title: Joi.string().required().min(3).max(50).trim().strict(),
+  title: Joi.string().required().min(3).max(50),
   description: Joi.string().optional(),
 
   cover: Joi.string().default(null),
@@ -53,19 +53,22 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
     Joi.string()
   ).default([]),
 
-  // Thêm trường checklist để lưu danh sách các checklist
+  // Thêm trường checklist để lưu danh sách các checklist với validation cải thiện
   checklists: Joi.array().items(
     Joi.object({
-      _id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-      title: Joi.string().required().min(1).max(100).trim().strict(),
+      _id: Joi.string().required(), // Checklist ID (string, không cần ObjectId pattern)
+      title: Joi.string().required().min(1).max(100),
       items: Joi.array().items(
         Joi.object({
-          _id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-          title: Joi.string().required().min(1).max(200).trim().strict(),
+                      _id: Joi.string().required(), // Item ID (string, không cần ObjectId pattern)
+            title: Joi.string().required().min(1).max(500), // Tăng max length cho item title
           isCompleted: Joi.boolean().default(false),
-          completedAt: Joi.date().timestamp('javascript').allow(null).default(null)
+          completedAt: Joi.date().timestamp('javascript').allow(null).default(null),
+          createdAt: Joi.date().timestamp('javascript').default(Date.now) // Thêm createdAt cho items
         })
-      ).default([])
+      ).default([]),
+      createdAt: Joi.date().timestamp('javascript').default(Date.now), // Thêm createdAt cho checklists
+      updatedAt: Joi.date().timestamp('javascript').default(null) // Thêm updatedAt cho checklists
     })
   ).default([]),
 
@@ -361,6 +364,94 @@ const deleteOne = async (cardId) => {
   } catch (error) { throw new Error(error) }
 }
 
+/**
+ * Validate if checklist exists in card
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID to validate
+ * @returns {Promise<Object|null>} - Checklist object if found, null otherwise
+ */
+const validateChecklistExists = async (cardId, checklistId) => {
+  try {
+    const card = await GET_DB().collection(CARD_COLLECTION_NAME).findOne(
+      { 
+        _id: new ObjectId(cardId),
+        _destroy: false,
+        'checklists._id': checklistId
+      },
+      { projection: { 'checklists.$': 1 } }
+    )
+    
+    return card?.checklists?.[0] || null
+  } catch (error) { throw new Error(error) }
+}
+
+/**
+ * Validate if checklist item exists in card
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID
+ * @param {string} itemId - Item ID to validate
+ * @returns {Promise<Object|null>} - Item object if found, null otherwise
+ */
+const validateChecklistItemExists = async (cardId, checklistId, itemId) => {
+  try {
+    const card = await GET_DB().collection(CARD_COLLECTION_NAME).findOne(
+      { 
+        _id: new ObjectId(cardId),
+        _destroy: false,
+        'checklists._id': checklistId,
+        'checklists.items._id': itemId
+      },
+      { projection: { 'checklists.$': 1 } }
+    )
+    
+    if (!card?.checklists?.[0]) return null
+    
+    const checklist = card.checklists[0]
+    const item = checklist.items.find(item => item._id === itemId)
+    
+    return item || null
+  } catch (error) { throw new Error(error) }
+}
+
+/**
+ * Get checklist statistics for a card
+ * @param {string} cardId - Card ID
+ * @returns {Promise<Object>} - Statistics object
+ */
+const getChecklistStats = async (cardId) => {
+  try {
+    const card = await findOneById(cardId)
+    
+    if (!card?.checklists) {
+      return {
+        totalChecklists: 0,
+        totalItems: 0,
+        completedItems: 0,
+        completionPercentage: 0
+      }
+    }
+    
+    let totalItems = 0
+    let completedItems = 0
+    
+    card.checklists.forEach(checklist => {
+      if (checklist.items) {
+        totalItems += checklist.items.length
+        completedItems += checklist.items.filter(item => item.isCompleted).length
+      }
+    })
+    
+    const completionPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0
+    
+    return {
+      totalChecklists: card.checklists.length,
+      totalItems,
+      completedItems,
+      completionPercentage
+    }
+  } catch (error) { throw new Error(error) }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
@@ -380,5 +471,10 @@ export const cardModel = {
   updateAttachmentCount,
   createIndexes,
   // Thêm hàm cập nhật trạng thái hoàn thành của card
-  updateCardCompletedStatus
+  updateCardCompletedStatus,
+  
+  // Thêm các hàm validation và integrity checks cho checklists
+  validateChecklistExists,
+  validateChecklistItemExists,
+  getChecklistStats
 }

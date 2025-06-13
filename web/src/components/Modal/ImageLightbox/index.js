@@ -1,3 +1,3 @@
 import ImageLightbox from './ImageLightbox'
 
-export default ImageLightbox 
+export default ImageLightbox

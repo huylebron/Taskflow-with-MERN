@@ -627,6 +627,82 @@ const updateChecklistItemStatus = async (cardId, checklistId, itemId, isComplete
 };
 
 /**
+ * Xóa checklist khỏi card
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID cần xóa
+ * @returns {Promise<Object>} - Updated card
+ */
+const deleteChecklist = async (cardId, checklistId) => {
+  try {
+    // Validate checklist exists before attempting to delete
+    const checklist = await cardModel.validateChecklistExists(cardId, checklistId);
+    if (!checklist) {
+      throw new Error('Checklist not found in this card');
+    }
+
+    const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
+      { 
+        _id: new ObjectId(cardId), 
+        _destroy: false,
+        'checklists._id': checklistId // Additional safety check
+      },
+      { 
+        $pull: { checklists: { _id: checklistId } },
+        $set: { updatedAt: Date.now() }
+      },
+      { returnDocument: 'after' }
+    );
+
+    if (!result) {
+      throw new Error('Failed to delete checklist - card may have been modified');
+    }
+
+    return result;
+  } catch (error) {
+    throw new Error(`Error deleting checklist: ${error.message}`);
+  }
+};
+
+/**
+ * Xóa item khỏi checklist
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID
+ * @param {string} itemId - Item ID cần xóa
+ * @returns {Promise<Object>} - Updated card
+ */
+const deleteChecklistItem = async (cardId, checklistId, itemId) => {
+  try {
+    // Validate item exists before attempting to delete
+    const item = await cardModel.validateChecklistItemExists(cardId, checklistId, itemId);
+    if (!item) {
+      throw new Error('Checklist item not found in this card');
+    }
+
+    const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
+      { 
+        _id: new ObjectId(cardId),
+        _destroy: false,
+        'checklists._id': checklistId,
+        'checklists.items._id': itemId // Additional safety check
+      },
+      { 
+        $pull: { 'checklists.$.items': { _id: itemId } },
+        $set: { updatedAt: Date.now() }
+      },
+      { returnDocument: 'after' }
+    );
+
+    if (!result) {
+      throw new Error('Failed to delete checklist item - card may have been modified');
+    }
+
+    return result;
+  } catch (error) {
+    throw new Error(`Error deleting checklist item: ${error.message}`);
+  }
+};
+
+/**
  * Cập nhật trạng thái hoàn thành của card
  * @param {string} cardId - Card ID
  * @param {boolean} isCardCompleted - Trạng thái hoàn thành
@@ -654,6 +730,8 @@ export const cardService = {
   createChecklist,
   addChecklistItem,
   updateChecklistItemStatus,
+  deleteChecklist,
+  deleteChecklistItem,
 
   // Thêm function cập nhật trạng thái hoàn thành của card
   updateCardCompletedStatus,
