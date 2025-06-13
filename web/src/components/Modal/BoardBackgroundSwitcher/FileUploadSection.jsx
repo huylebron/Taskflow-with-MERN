@@ -141,8 +141,57 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
     return null
   }, [ACCEPTED_TYPES, MAX_FILE_SIZE])
 
-  // Process file upload with optimizations
-  const processFile = useCallback((file) => {
+  // Thêm function để compress ảnh trước khi upload
+  const compressImage = useCallback((file, quality = 0.8) => {
+    return new Promise((resolve) => {
+      // Nếu file nhỏ hơn 1MB, không cần compress
+      if (file.size < 1024 * 1024) {
+        resolve(file)
+        return
+      }
+
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+
+      img.onload = () => {
+        // Tính toán kích thước mới (giới hạn max width/height)
+        const maxWidth = 1920
+        const maxHeight = 1080
+        let { width, height } = img
+
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height)
+          width *= ratio
+          height *= ratio
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        // Vẽ ảnh lên canvas với kích thước mới
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // Convert canvas thành blob
+        canvas.toBlob(
+          (blob) => {
+            const compressedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: Date.now()
+            })
+            resolve(compressedFile)
+          },
+          file.type,
+          quality
+        )
+      }
+
+      img.src = URL.createObjectURL(file)
+    })
+  }, [])
+
+  // Sửa lại processFile function để có image compression
+  const processFile = useCallback(async (file) => {
     const validationError = validateFile(file)
     if (validationError) {
       setError(validationError)
@@ -153,49 +202,53 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
     setError('')
     setUploadProgress(0)
 
-    // Clean up previous FileReader if exists
-    if (fileReaderRef.current) {
-      fileReaderRef.current.abort()
-    }
-
-    // Clean up previous preview URL if it's a blob URL
-    if (previewUrl && previewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(previewUrl)
-    }
-
-    const reader = new FileReader()
-    fileReaderRef.current = reader
-
-    // Add progress tracking
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const progress = Math.round((event.loaded / event.total) * 100)
-        setUploadProgress(progress)
+    try {
+      // Clean up previous FileReader if exists
+      if (fileReaderRef.current) {
+        fileReaderRef.current.abort()
       }
-    }
 
-    reader.onload = (e) => {
-      const result = e.target.result
-      setUploadedFile(file)
-      setPreviewUrl(result)
-      setIsLoading(false)
-      setUploadProgress(100)
+      // Clean up previous preview URL if it's a blob URL
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl)
+      }
 
-      // Schedule progress reset after completion animation
-      setTimeout(() => {
+      // Compress image nếu cần
+      setUploadProgress(20)
+      const processedFile = await compressImage(file)
+      setUploadProgress(50)
+
+      const reader = new FileReader()
+      fileReaderRef.current = reader
+
+      reader.onload = (e) => {
+        const result = e.target.result
+        setUploadedFile(processedFile)
+        setPreviewUrl(result)
+        setIsLoading(false)
+        setUploadProgress(100)
+
+        // Schedule progress reset after completion animation
+        setTimeout(() => {
+          setUploadProgress(0)
+        }, 500)
+      }
+
+      reader.onerror = () => {
+        setError('Không thể đọc file. Vui lòng thử lại.')
+        setIsLoading(false)
         setUploadProgress(0)
-      }, 500)
-    }
+        fileReaderRef.current = null
+      }
 
-    reader.onerror = () => {
-      setError('Không thể đọc file. Vui lòng thử lại.')
+      reader.readAsDataURL(processedFile)
+    } catch (compressionError) {
+      setError('Không thể xử lý ảnh. Vui lòng thử file khác.')
       setIsLoading(false)
       setUploadProgress(0)
-      fileReaderRef.current = null
+      console.error('Image compression error:', compressionError)
     }
-
-    reader.readAsDataURL(file)
-  }, [previewUrl, validateFile])
+  }, [previewUrl, validateFile, compressImage])
 
   // Optimize image processing if needed for large files
   const optimizeImageIfNeeded = useCallback((file, callback) => {
@@ -251,6 +304,7 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
   // Apply uploaded image with error handling
   const handleApply = useCallback(() => {
     if (uploadedFile) {
+      // Pass the File object để API có thể upload lên Cloudinary
       onFileSelect(BACKGROUND_TYPES.UPLOAD, uploadedFile)
     }
   }, [uploadedFile, onFileSelect])
@@ -352,6 +406,9 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
             <Typography variant="body2" color="text.secondary">
               Hỗ trợ: JPG, PNG, GIF, WebP (tối đa 5MB)
             </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+              💡 Ảnh lớn sẽ được tự động tối ưu kích thước
+            </Typography>
           </Box>
         )}
 
@@ -451,8 +508,8 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
       <Box sx={{
         mt: 3,
         p: 2,
-        backgroundColor: 'warning.main',
-        color: 'warning.contrastText',
+        backgroundColor: 'info.main',
+        color: 'info.contrastText',
         borderRadius: 1,
         '& .MuiTypography-root': {
           color: 'inherit'
@@ -463,14 +520,16 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
           fontWeight: 500,
           mb: 1
         }}>
-          ⚠️ Lưu ý:
+          💡 Thông tin:
         </Typography>
         <Typography variant="caption" component="div">
-          • File chỉ được lưu trữ trên trình duyệt (không upload lên server)
+          • File sẽ được upload lên cloud storage (Cloudinary)
           <br />
-          • Hình ảnh sẽ mất khi làm mới trang hoặc đóng trình duyệt
+          • Hình ảnh được lưu trữ vĩnh viễn và an toàn
           <br />
-          • Để lưu trữ lâu dài, hãy sử dụng URL từ các dịch vụ lưu trữ ảnh
+          • Hỗ trợ: JPG, PNG, GIF, WebP (tối đa 5MB)
+          <br />
+          • Hình ảnh sẽ được tối ưu hóa tự động
         </Typography>
       </Box>
     </Box>

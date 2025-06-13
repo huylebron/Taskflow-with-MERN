@@ -192,11 +192,12 @@ function Board() {
       return { backgroundColor: boardBackground.value }
     }
 
-    if (boardBackground.type === BACKGROUND_TYPES.IMAGE) {
+    if (boardBackground.type === BACKGROUND_TYPES.IMAGE || boardBackground.type === BACKGROUND_TYPES.UPLOAD) {
       return {
         backgroundImage: `url(${boardBackground.value})`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
       }
     }
 
@@ -221,7 +222,7 @@ function Board() {
         // Apply background từ Redux store
         ...getBackgroundStyles(),
         // Đảm bảo content bên trong vẫn đọc được dễ dàng
-        '&::before': boardBackground?.type === BACKGROUND_TYPES.IMAGE ? {
+        '&::before': (boardBackground?.type === BACKGROUND_TYPES.IMAGE || boardBackground?.type === BACKGROUND_TYPES.UPLOAD) ? {
           content: '""',
           position: 'absolute',
           top: 0,

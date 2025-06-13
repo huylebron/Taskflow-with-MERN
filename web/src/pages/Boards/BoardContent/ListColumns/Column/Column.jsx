@@ -350,14 +350,14 @@ function Column({ column }) {
                 onChange={(e) => setNewCardTitle(e.target.value)}
                 sx={{
                   '& label': {
-                    color: column?.color ? getTextColorForBackground(column.color) : 'text.primary',
+                    color: column?.color ? getTextColorForBackground(column.color) : (theme) => (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)'),
                     fontWeight: 500,
                     fontSize: '0.875rem'
                   },
                   '& input': {
-                    color: column?.color ? getTextColorForBackground(column.color) : (theme) => theme.palette.primary.main,
+                    color: column?.color ? getTextColorForBackground(column.color) : (theme) => (theme.palette.mode === 'dark' ? '#ffffff' : '#000000'),
                     bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#2a2d3a' : 'white'),
-                    fontWeight: 500,
+                    fontWeight: 600,
                     fontSize: '0.875rem'
                   },
                   '& label.Mui-focused': {

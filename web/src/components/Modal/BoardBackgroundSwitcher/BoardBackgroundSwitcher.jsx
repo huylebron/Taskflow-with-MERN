@@ -331,8 +331,12 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
         showNotification(`Đang thử lại (lần ${retryCount.current})...`, 'info')
       }
       const apiPayload = mapBackgroundToApiPayload(selectedBackground)
+      console.log('apiPayload:', apiPayload)
       const response = await updateBoardBackgroundAPI(boardId, apiPayload)
-      if (response.success) {
+      console.log('response:', response)
+      
+      // Backend trả về updatedBoard object, không có success field
+      if (response && response._id) {
         stopProgressSimulation(true)
         // Fetch lại board từ backend để đồng bộ dữ liệu
         await dispatch(fetchBoardDetailsAPI(boardId))
@@ -342,6 +346,8 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
           theme: 'colored'
         })
         onClose()
+      } else {
+        throw new Error('API response không hợp lệ')
       }
     } catch (error) {
       stopProgressSimulation(false)

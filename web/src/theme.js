@@ -253,6 +253,13 @@ const theme = extendTheme({
           },
           '&.Mui-focused fieldset': {
             borderWidth: '2px !important'
+          },
+          '& input': {
+            fontWeight: 500,
+            '&::placeholder': {
+              opacity: 0.7,
+              fontWeight: 400
+            }
           }
         }
       }

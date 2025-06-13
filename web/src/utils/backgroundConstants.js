@@ -6,7 +6,8 @@
 export const BACKGROUND_TYPES = {
   COLOR: 'color',
   IMAGE: 'image',
-  GRADIENT: 'gradient'
+  GRADIENT: 'gradient',
+  UPLOAD: 'upload'
 }
 
 // 20 Preset Colors - HEX codes cho backgrounds
