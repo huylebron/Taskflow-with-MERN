@@ -21,10 +21,10 @@ const ImageBox = styled(Box)(({ theme, isSelected }) => ({
   cursor: 'pointer',
   overflow: 'hidden',
   transition: 'all 0.3s ease',
-  border: isSelected 
-    ? `3px solid ${theme.palette.primary.main}` 
+  border: isSelected
+    ? `3px solid ${theme.palette.primary.main}`
     : '2px solid transparent',
-  boxShadow: isSelected 
+  boxShadow: isSelected
     ? `0 4px 20px ${theme.palette.primary.main}40`
     : '0 2px 8px rgba(0, 0, 0, 0.1)',
   '&:hover': {
@@ -110,7 +110,7 @@ function BackgroundImagePicker({ selectedBackground, onSelectImage }) {
   }
 
   const isImageSelected = (imageUrl) => {
-    return selectedBackground?.type === BACKGROUND_TYPES.IMAGE && 
+    return selectedBackground?.type === BACKGROUND_TYPES.IMAGE &&
            selectedBackground?.value === imageUrl
   }
 
@@ -132,56 +132,56 @@ function BackgroundImagePicker({ selectedBackground, onSelectImage }) {
 
   // Handle loading more images when scrolling to the bottom
   const handleScroll = (e) => {
-    const container = e.target;
+    const container = e.target
     // Check if scrolled near bottom
     if (container.scrollHeight - container.scrollTop - container.clientHeight < 100) {
       // Load more images if we haven't reached the end
       if (visibleItems < BACKGROUND_IMAGES.length) {
-        setVisibleItems(prev => Math.min(prev + 6, BACKGROUND_IMAGES.length));
+        setVisibleItems(prev => Math.min(prev + 6, BACKGROUND_IMAGES.length))
       }
     }
-  };
+  }
 
   // Memoize visible images to avoid unnecessary re-renders
   const visibleImages = useMemo(() => {
-    return BACKGROUND_IMAGES.slice(0, visibleItems);
-  }, [visibleItems]);
+    return BACKGROUND_IMAGES.slice(0, visibleItems)
+  }, [visibleItems])
 
   return (
     <Box>
-      <Typography variant="subtitle1" gutterBottom sx={{ 
+      <Typography variant="subtitle1" gutterBottom sx={{
         fontWeight: 600,
         color: 'text.primary',
         mb: 1
       }}>
         Chọn hình nền
       </Typography>
-      
-      <Typography variant="body2" sx={{ 
+
+      <Typography variant="body2" sx={{
         color: 'text.secondary',
         mb: 2
       }}>
         Chọn một hình ảnh từ bộ sưu tập để làm nền cho board
       </Typography>
 
-      <Box 
-        sx={{ 
-          maxHeight: '400px', 
+      <Box
+        sx={{
+          maxHeight: '400px',
           overflow: 'auto',
           scrollBehavior: 'smooth',
           '&::-webkit-scrollbar': {
-            width: '8px',
+            width: '8px'
           },
           '&::-webkit-scrollbar-track': {
-            background: theme.palette.background.default,
+            background: theme.palette.background.default
           },
           '&::-webkit-scrollbar-thumb': {
             background: theme.palette.divider,
-            borderRadius: '4px',
+            borderRadius: '4px'
           },
           '&::-webkit-scrollbar-thumb:hover': {
-            background: theme.palette.action.hover,
-          },
+            background: theme.palette.action.hover
+          }
         }}
         onScroll={handleScroll}
       >
@@ -198,8 +198,8 @@ function BackgroundImagePicker({ selectedBackground, onSelectImage }) {
             >
               {/* Loading skeleton */}
               {!isImageLoaded(imageUrl) && !isImageFailed(imageUrl) && (
-                <LoadingSkeleton 
-                  variant="rectangular" 
+                <LoadingSkeleton
+                  variant="rectangular"
                   animation="wave"
                   sx={{
                     position: 'absolute',
@@ -244,7 +244,7 @@ function BackgroundImagePicker({ selectedBackground, onSelectImage }) {
 
               {/* Hover overlay */}
               <ImageOverlay className="image-overlay">
-                <Typography variant="body2" sx={{ 
+                <Typography variant="body2" sx={{
                   color: 'white',
                   fontWeight: 500,
                   textAlign: 'center',
@@ -257,11 +257,11 @@ function BackgroundImagePicker({ selectedBackground, onSelectImage }) {
               {/* Selected indicator */}
               {isImageSelected(imageUrl) && (
                 <SelectedIndicator>
-                  <CheckCircleIcon 
-                    sx={{ 
-                      color: 'white', 
-                      fontSize: '20px' 
-                    }} 
+                  <CheckCircleIcon
+                    sx={{
+                      color: 'white',
+                      fontSize: '20px'
+                    }}
                   />
                 </SelectedIndicator>
               )}
@@ -280,15 +280,15 @@ function BackgroundImagePicker({ selectedBackground, onSelectImage }) {
       </Box>
 
       {/* Info text */}
-      <Box sx={{ 
-        mt: 3, 
-        p: 2, 
+      <Box sx={{
+        mt: 3,
+        p: 2,
         backgroundColor: 'background.default',
         borderRadius: 1,
         border: '1px solid',
         borderColor: 'divider'
       }}>
-        <Typography variant="caption" sx={{ 
+        <Typography variant="caption" sx={{
           color: 'text.secondary',
           display: 'block',
           textAlign: 'center'
@@ -300,4 +300,4 @@ function BackgroundImagePicker({ selectedBackground, onSelectImage }) {
   )
 }
 
-export default BackgroundImagePicker 
+export default BackgroundImagePicker

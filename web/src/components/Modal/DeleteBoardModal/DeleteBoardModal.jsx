@@ -15,7 +15,7 @@ import CancelIcon from '@mui/icons-material/Cancel'
 
 /**
  * DeleteBoardModal - Component xác nhận xóa board
- * 
+ *
  * @param {Object} props - Component props
  * @param {boolean} props.isOpen - Trạng thái hiển thị của modal
  * @param {function} props.onClose - Callback khi đóng modal
@@ -26,11 +26,11 @@ import CancelIcon from '@mui/icons-material/Cancel'
 function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false }) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  
+
   // State cho confirmation input
   const [confirmationText, setConfirmationText] = useState('')
   const [isConfirmationValid, setIsConfirmationValid] = useState(false)
-  
+
   const boardTitle = board?.title || ''
 
   // Modal styles
@@ -39,7 +39,7 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: isMobile ? '90%' : 500,  // Tăng độ rộng để chứa thêm nội dung
+    width: isMobile ? '90%' : 500, // Tăng độ rộng để chứa thêm nội dung
     maxWidth: '95vw',
     maxHeight: '90vh',
     bgcolor: 'background.paper',
@@ -87,7 +87,7 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
       closeAfterTransition
       BackdropComponent={Backdrop}
       BackdropProps={{
-        timeout: 500,
+        timeout: 500
       }}
       aria-labelledby="delete-board-modal-title"
       aria-describedby="delete-board-modal-description"
@@ -127,13 +127,13 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
             >
               Bạn có chắc chắn muốn xóa board
             </Typography>
-            
+
             <Typography
               variant="h6"
-              sx={{ 
-                mb: 2, 
+              sx={{
+                mb: 2,
                 fontWeight: 'bold',
-                color: '#000000',  // Font chữ đen để làm nổi bật
+                color: '#000000', // Font chữ đen để làm nổi bật
                 textAlign: 'center',
                 p: 2,
                 bgcolor: 'error.light',
@@ -147,8 +147,8 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
 
             <Typography
               variant="body2"
-              sx={{ 
-                mb: 3, 
+              sx={{
+                mb: 3,
                 color: 'text.secondary',
                 fontStyle: 'italic'
               }}
@@ -160,15 +160,15 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="body2"
-                sx={{ 
-                  mb: 1, 
+                sx={{
+                  mb: 1,
                   color: 'text.primary',
                   fontWeight: 'medium'
                 }}
               >
                 Để xác nhận, hãy gõ tên board <strong>"{boardTitle}"</strong> vào ô bên dưới:
               </Typography>
-              
+
               <TextField
                 fullWidth
                 variant="outlined"
@@ -181,21 +181,21 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
                   confirmationText.length > 0 && !isConfirmationValid
                     ? 'Tên board không khớp. Vui lòng gõ chính xác.'
                     : isConfirmationValid
-                    ? '✓ Tên board đã khớp'
-                    : ''
+                      ? '✓ Tên board đã khớp'
+                      : ''
                 }
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '&.Mui-error': {
                       '& fieldset': {
-                        borderColor: 'error.main',
-                      },
+                        borderColor: 'error.main'
+                      }
                     },
                     '&.Mui-focused': {
                       '& fieldset': {
-                        borderColor: isConfirmationValid ? 'success.main' : 'primary.main',
-                      },
-                    },
+                        borderColor: isConfirmationValid ? 'success.main' : 'primary.main'
+                      }
+                    }
                   },
                   '& .MuiFormHelperText-root': {
                     color: isConfirmationValid ? 'success.main' : 'error.main',
@@ -232,7 +232,7 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
               >
                 Hủy
               </Button>
-              
+
               <Button
                 variant="contained"
                 color="error"
@@ -267,4 +267,4 @@ function DeleteBoardModal({ isOpen, onClose, onConfirm, board, isLoading = false
   )
 }
 
-export default DeleteBoardModal 
+export default DeleteBoardModal

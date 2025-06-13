@@ -66,14 +66,14 @@ export const isLabelAssignedToCard = (labelId, cardLabelIds) => {
  */
 export const toggleLabel = (labelId, currentLabelIds) => {
   if (!labelId || !Array.isArray(currentLabelIds)) return currentLabelIds || []
-  
+
   const isLabelExist = currentLabelIds.includes(labelId)
-  
+
   // Nếu label đã tồn tại, xóa nó khỏi mảng
   if (isLabelExist) {
     return currentLabelIds.filter(id => id !== labelId)
   }
-  
+
   // Nếu label chưa tồn tại, thêm vào mảng
   return [...currentLabelIds, labelId]
 }
@@ -87,9 +87,9 @@ export const toggleLabel = (labelId, currentLabelIds) => {
 export const filterLabelsBySearchTerm = (labelsArray, searchTerm) => {
   if (!Array.isArray(labelsArray)) return []
   if (!searchTerm) return labelsArray
-  
+
   const term = searchTerm.toLowerCase().trim()
-  return labelsArray.filter(label => 
+  return labelsArray.filter(label =>
     label.name.toLowerCase().includes(term)
   )
-} 
+}

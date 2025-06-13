@@ -12,7 +12,7 @@ const initialState = {
     isSuccess: false,
     error: null
   },
-  // Reset Password states  
+  // Reset Password states
   resetPassword: {
     isLoading: false,
     isSuccess: false,
@@ -64,7 +64,7 @@ export const forgotPasswordAPI = createAsyncThunk(
 )
 
 export const resetPasswordAPI = createAsyncThunk(
-  'user/resetPasswordAPI', 
+  'user/resetPasswordAPI',
   async (data, { rejectWithValue }) => {
     try {
       const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/users/reset-password/${data.token}`, {

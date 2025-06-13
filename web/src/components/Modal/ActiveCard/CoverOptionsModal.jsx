@@ -23,7 +23,7 @@ const VisuallyHiddenInput = styled('input')({
   bottom: 0,
   left: 0,
   whiteSpace: 'nowrap',
-  width: 1,
+  width: 1
 })
 
 function CoverOptionsModal({ isOpen, onClose, onSelectColor, onUploadCover }) {
@@ -62,7 +62,7 @@ function CoverOptionsModal({ isOpen, onClose, onSelectColor, onUploadCover }) {
       toast.error(error)
       return
     }
-    
+
     onUploadCover(file)
     onClose()
   }
@@ -92,16 +92,16 @@ function CoverOptionsModal({ isOpen, onClose, onSelectColor, onUploadCover }) {
         }}>
           <CancelIcon color="error" sx={{ '&:hover': { color: 'error.light' } }} onClick={onClose} />
         </Box>
-        
+
         <Typography id="cover-options-modal-title" variant="h6" component="h2" gutterBottom>
           Tùy chọn ảnh bìa
         </Typography>
-        
+
         <Tabs value={tabIndex} onChange={handleTabChange} aria-label="cover options tabs" sx={{ mb: 2 }}>
           <Tab label="Màu sắc" />
           <Tab label="Upload" />
         </Tabs>
-        
+
         {tabIndex === 0 && (
           <Box>
             {isLoading ? (
@@ -109,34 +109,34 @@ function CoverOptionsModal({ isOpen, onClose, onSelectColor, onUploadCover }) {
             ) : (
               <>
                 <Typography variant="subtitle1" gutterBottom>Màu cơ bản</Typography>
-                <ColorPicker 
-                  colors={Object.values(coverOptions.colors)} 
+                <ColorPicker
+                  colors={Object.values(coverOptions.colors)}
                   onSelectColor={(color) => {
                     onSelectColor(color, 'color')
                     onClose()
-                  }} 
+                  }}
                 />
-                
+
                 <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>Gradient</Typography>
-                <ColorPicker 
-                  colors={Object.values(coverOptions.gradients)} 
+                <ColorPicker
+                  colors={Object.values(coverOptions.gradients)}
                   isGradient={true}
                   onSelectColor={(gradient) => {
                     onSelectColor(gradient, 'gradient')
                     onClose()
-                  }} 
+                  }}
                 />
               </>
             )}
           </Box>
         )}
-        
+
         {tabIndex === 1 && (
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="body1" gutterBottom>
               Tải lên ảnh bìa mới cho thẻ
             </Typography>
-            
+
             <Button
               component="label"
               variant="contained"
@@ -144,13 +144,13 @@ function CoverOptionsModal({ isOpen, onClose, onSelectColor, onUploadCover }) {
               sx={{ mt: 2 }}
             >
               Chọn ảnh
-              <VisuallyHiddenInput 
-                type="file" 
+              <VisuallyHiddenInput
+                type="file"
                 onChange={handleFileUpload}
                 accept="image/*"
               />
             </Button>
-            
+
             <Typography variant="caption" display="block" sx={{ mt: 2, color: 'text.secondary' }}>
               Hỗ trợ định dạng JPG, PNG, GIF. Kích thước tối đa 10MB.
             </Typography>
@@ -161,4 +161,4 @@ function CoverOptionsModal({ isOpen, onClose, onSelectColor, onUploadCover }) {
   )
 }
 
-export default CoverOptionsModal 
+export default CoverOptionsModal

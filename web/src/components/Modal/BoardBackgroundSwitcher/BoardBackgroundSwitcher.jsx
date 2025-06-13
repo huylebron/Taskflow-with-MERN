@@ -1,12 +1,12 @@
 /**
  * BoardBackgroundSwitcher Component
- * 
+ *
  * Cho phép người dùng thay đổi hình nền cho board với các tùy chọn:
  * - Chọn màu từ danh sách preset
  * - Chọn hình ảnh từ danh sách preset
  * - Nhập URL hình ảnh tùy chỉnh
  * - Tải lên file hình ảnh từ máy tính
- * 
+ *
  * Features:
  * - Live preview: Hiển thị background ngay trên board khi chọn
  * - Responsive UI: Hiển thị tối ưu trên mobile và desktop
@@ -46,16 +46,16 @@ import BackgroundImagePicker from './BackgroundImagePicker'
 import CustomUrlInput from './CustomUrlInput'
 import FileUploadSection from './FileUploadSection'
 
-import { 
-  selectBoardBackground, 
+import {
+  selectBoardBackground,
   updateBoardBackground,
   fetchBoardDetailsAPI
 } from '~/redux/activeBoard/activeBoardSlice'
 import { updateBoardBackgroundAPI } from '~/apis'
-import { 
-  BACKGROUND_TYPES, 
+import {
+  BACKGROUND_TYPES,
   formatBackgroundData,
-  DEFAULT_BACKGROUND 
+  DEFAULT_BACKGROUND
 } from '~/utils/backgroundConstants'
 
 // Tab values cho navigation
@@ -74,11 +74,11 @@ const ERROR_STATES = {
   TIMEOUT: 'timeout',
   DATA: 'data',
   UNKNOWN: 'unknown'
-};
+}
 
 /**
  * BoardBackgroundSwitcher - Component chính để thay đổi background của board
- * 
+ *
  * @param {Object} props - Component props
  * @param {boolean} props.isOpen - Trạng thái hiển thị của modal
  * @param {function} props.onClose - Callback khi đóng modal
@@ -88,10 +88,10 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
   const theme = useTheme()
   const dispatch = useDispatch()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  
+
   // Get current background từ Redux store
   const currentBackground = useSelector(selectBoardBackground)
-  
+
   // Local state management
   const [activeTab, setActiveTab] = useState(TAB_VALUES.COLORS)
   const [selectedBackground, setSelectedBackground] = useState(currentBackground)
@@ -104,7 +104,7 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastSeverity, setToastSeverity] = useState('info')
-  
+
   // Refs for retrying
   const retryCount = useRef(0)
   const progressTimerRef = useRef(null)
@@ -127,10 +127,10 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
   useEffect(() => {
     return () => {
       if (progressTimerRef.current) {
-        clearInterval(progressTimerRef.current);
+        clearInterval(progressTimerRef.current)
       }
-    };
-  }, []);
+    }
+  }, [])
 
   // Live preview - cập nhật background real-time
   useEffect(() => {
@@ -148,8 +148,8 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    */
   const handleTabChange = useCallback((event, newValue) => {
     // Nếu đang loading, không cho phép đổi tab
-    if (isLoading) return;
-    
+    if (isLoading) return
+
     setActiveTab(newValue)
   }, [isLoading])
 
@@ -160,8 +160,8 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    */
   const handleBackgroundSelect = useCallback((type, value) => {
     // Nếu đang loading, không cho phép thay đổi background
-    if (isLoading) return;
-    
+    if (isLoading) return
+
     const backgroundData = formatBackgroundData(type, value)
     setSelectedBackground(backgroundData)
   }, [isLoading])
@@ -182,23 +182,23 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    */
   const startProgressSimulation = useCallback(() => {
     // Reset progress
-    setLoadingProgress(0);
-    
+    setLoadingProgress(0)
+
     // Clear any existing timer
     if (progressTimerRef.current) {
-      clearInterval(progressTimerRef.current);
+      clearInterval(progressTimerRef.current)
     }
-    
+
     // Start progress simulation
     progressTimerRef.current = setInterval(() => {
       setLoadingProgress(prev => {
         // Slowly increase up to 90%, then API response will complete it
-        const increment = prev < 30 ? 5 : prev < 60 ? 3 : prev < 85 ? 1 : 0.5;
-        const next = Math.min(prev + increment, 90);
-        return next;
-      });
-    }, 200);
-  }, []);
+        const increment = prev < 30 ? 5 : prev < 60 ? 3 : prev < 85 ? 1 : 0.5
+        const next = Math.min(prev + increment, 90)
+        return next
+      })
+    }, 200)
+  }, [])
 
   /**
    * Stop progress simulation
@@ -206,20 +206,20 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    */
   const stopProgressSimulation = useCallback((success = true) => {
     if (progressTimerRef.current) {
-      clearInterval(progressTimerRef.current);
-      progressTimerRef.current = null;
+      clearInterval(progressTimerRef.current)
+      progressTimerRef.current = null
     }
-    
+
     // Complete the progress bar
-    setLoadingProgress(success ? 100 : 0);
-    
+    setLoadingProgress(success ? 100 : 0)
+
     // Reset progress after animation completes
     if (success) {
       setTimeout(() => {
-        setLoadingProgress(0);
-      }, 500);
+        setLoadingProgress(0)
+      }, 500)
     }
-  }, []);
+  }, [])
 
   /**
    * Show toast notification
@@ -227,20 +227,20 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    * @param {string} severity - Severity level (info, success, warning, error)
    */
   const showNotification = useCallback((message, severity = 'info') => {
-    setToastMessage(message);
-    setToastSeverity(severity);
-    setShowToast(true);
-  }, []);
+    setToastMessage(message)
+    setToastSeverity(severity)
+    setShowToast(true)
+  }, [])
 
   /**
    * Handle closing toast
    */
   const handleCloseToast = useCallback((event, reason) => {
     if (reason === 'clickaway') {
-      return;
+      return
     }
-    setShowToast(false);
-  }, []);
+    setShowToast(false)
+  }, [])
 
   /**
    * Map error code to error state
@@ -249,18 +249,18 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    */
   const mapErrorCodeToState = useCallback((code) => {
     switch (code) {
-      case 'NETWORK_ERROR':
-        return ERROR_STATES.NETWORK;
-      case 'SERVER_ERROR':
-        return ERROR_STATES.SERVER;
-      case 'TIMEOUT':
-        return ERROR_STATES.TIMEOUT;
-      case 'DATA_ERROR':
-        return ERROR_STATES.DATA;
-      default:
-        return ERROR_STATES.UNKNOWN;
+    case 'NETWORK_ERROR':
+      return ERROR_STATES.NETWORK
+    case 'SERVER_ERROR':
+      return ERROR_STATES.SERVER
+    case 'TIMEOUT':
+      return ERROR_STATES.TIMEOUT
+    case 'DATA_ERROR':
+      return ERROR_STATES.DATA
+    default:
+      return ERROR_STATES.UNKNOWN
     }
-  }, []);
+  }, [])
 
   /**
    * Handle cancel - restore original background
@@ -269,16 +269,16 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
   const handleCancel = useCallback(() => {
     // Nếu đang có lỗi, xóa lỗi khi cancel
     if (errorState !== ERROR_STATES.NONE) {
-      setErrorState(ERROR_STATES.NONE);
-      setErrorMessage('');
+      setErrorState(ERROR_STATES.NONE)
+      setErrorMessage('')
     }
-    
+
     // Đặt cờ để ngăn useEffect cập nhật background khi đang lưu
     setIsSaving(true)
-    
+
     // Restore original background
     dispatch(updateBoardBackground(originalBackground))
-    
+
     // Đóng modal sau khi cập nhật xong
     setTimeout(() => {
       onClose()
@@ -292,15 +292,15 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    */
   const handleRetry = useCallback(() => {
     // Increment retry count
-    retryCount.current += 1;
-    
+    retryCount.current += 1
+
     // Reset error state
-    setErrorState(ERROR_STATES.NONE);
-    setErrorMessage('');
-    
+    setErrorState(ERROR_STATES.NONE)
+    setErrorMessage('')
+
     // Try save again
-    handleSave();
-  }, []);
+    handleSave()
+  }, [])
 
   // Thêm hàm chuyển đổi background FE sang payload backend
   function mapBackgroundToApiPayload(selectedBackground) {
@@ -325,15 +325,15 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
     setIsLoading(true)
     setErrorState(ERROR_STATES.NONE)
     setErrorMessage('')
-    startProgressSimulation();
+    startProgressSimulation()
     try {
       if (retryCount.current > 0) {
-        showNotification(`Đang thử lại (lần ${retryCount.current})...`, 'info');
+        showNotification(`Đang thử lại (lần ${retryCount.current})...`, 'info')
       }
       const apiPayload = mapBackgroundToApiPayload(selectedBackground)
       const response = await updateBoardBackgroundAPI(boardId, apiPayload)
       if (response.success) {
-        stopProgressSimulation(true);
+        stopProgressSimulation(true)
         // Fetch lại board từ backend để đồng bộ dữ liệu
         await dispatch(fetchBoardDetailsAPI(boardId))
         toast.success('Background đã được cập nhật thành công!', {
@@ -344,11 +344,11 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
         onClose()
       }
     } catch (error) {
-      stopProgressSimulation(false);
-      console.error('Error updating background:', error);
-      const errorStateValue = mapErrorCodeToState(error.code);
-      setErrorState(errorStateValue);
-      setErrorMessage(error.message || 'Có lỗi xảy ra khi cập nhật background');
+      stopProgressSimulation(false)
+      console.error('Error updating background:', error)
+      const errorStateValue = mapErrorCodeToState(error.code)
+      setErrorState(errorStateValue)
+      setErrorMessage(error.message || 'Có lỗi xảy ra khi cập nhật background')
       dispatch(updateBoardBackground(originalBackground))
       toast.error(error.message || 'Có lỗi xảy ra khi cập nhật background!', {
         position: 'bottom-right',
@@ -367,9 +367,9 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    */
   const hasChanges = useCallback(() => {
     if (!selectedBackground || !originalBackground) return false
-    
+
     return (
-      selectedBackground.type !== originalBackground.type || 
+      selectedBackground.type !== originalBackground.type ||
       selectedBackground.value !== originalBackground.value
     )
   }, [selectedBackground, originalBackground])
@@ -379,49 +379,49 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    * @returns {JSX.Element|null} Error message component
    */
   const renderErrorMessage = () => {
-    if (errorState === ERROR_STATES.NONE) return null;
-    
+    if (errorState === ERROR_STATES.NONE) return null
+
     const getErrorTitle = () => {
       switch (errorState) {
-        case ERROR_STATES.NETWORK:
-          return 'Lỗi kết nối mạng';
-        case ERROR_STATES.SERVER:
-          return 'Lỗi máy chủ';
-        case ERROR_STATES.TIMEOUT:
-          return 'Hết thời gian chờ';
-        case ERROR_STATES.DATA:
-          return 'Lỗi dữ liệu';
-        default:
-          return 'Đã xảy ra lỗi';
+      case ERROR_STATES.NETWORK:
+        return 'Lỗi kết nối mạng'
+      case ERROR_STATES.SERVER:
+        return 'Lỗi máy chủ'
+      case ERROR_STATES.TIMEOUT:
+        return 'Hết thời gian chờ'
+      case ERROR_STATES.DATA:
+        return 'Lỗi dữ liệu'
+      default:
+        return 'Đã xảy ra lỗi'
       }
-    };
+    }
 
     const getErrorAction = () => {
       switch (errorState) {
-        case ERROR_STATES.NETWORK:
-        case ERROR_STATES.SERVER:
-        case ERROR_STATES.TIMEOUT:
-          return (
-            <Button 
-              color="error" 
-              size="small" 
-              variant="outlined" 
-              onClick={handleRetry}
-              sx={{ mt: 1 }}
-            >
+      case ERROR_STATES.NETWORK:
+      case ERROR_STATES.SERVER:
+      case ERROR_STATES.TIMEOUT:
+        return (
+          <Button
+            color="error"
+            size="small"
+            variant="outlined"
+            onClick={handleRetry}
+            sx={{ mt: 1 }}
+          >
               Thử lại
-            </Button>
-          );
-        default:
-          return null;
+          </Button>
+        )
+      default:
+        return null
       }
-    };
-    
+    }
+
     return (
-      <Alert 
-        severity="error" 
+      <Alert
+        severity="error"
         variant="filled"
-        sx={{ 
+        sx={{
           mb: 2,
           '& .MuiAlert-message': {
             width: '100%'
@@ -432,8 +432,8 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
             color="inherit"
             size="small"
             onClick={() => {
-              setErrorState(ERROR_STATES.NONE);
-              setErrorMessage('');
+              setErrorState(ERROR_STATES.NONE)
+              setErrorMessage('')
             }}
           >
             <CloseIcon fontSize="inherit" />
@@ -444,8 +444,8 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
         {errorMessage}
         {getErrorAction()}
       </Alert>
-    );
-  };
+    )
+  }
 
   /**
    * Render tab content based on activeTab
@@ -453,39 +453,39 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
    */
   const renderTabContent = () => {
     switch (activeTab) {
-      case TAB_VALUES.COLORS:
-        return (
-          <BackgroundColorPicker 
-            selectedBackground={selectedBackground}
-            onSelectColor={(color) => handleBackgroundSelect(BACKGROUND_TYPES.COLOR, color)}
-          />
-        )
-      case TAB_VALUES.IMAGES:
-        return (
-          <BackgroundImagePicker 
-            selectedBackground={selectedBackground}
-            onSelectImage={(imageUrl) => handleBackgroundSelect(BACKGROUND_TYPES.IMAGE, imageUrl)}
-          />
-        )
-      case TAB_VALUES.CUSTOM_URL:
-        return (
-          <CustomUrlInput 
-            selectedBackground={selectedBackground}
-            onApplyUrl={(type, value) => handleBackgroundSelect(type, value)}
-          />
-        )
-      case TAB_VALUES.FILE_UPLOAD:
-        return (
-          <FileUploadSection 
-            selectedBackground={selectedBackground}
-            onFileSelect={(type, value) => {
-              console.log('onFileSelect:', type, value)
-              handleBackgroundSelect(type, value)
-            }}
-          />
-        )
-      default:
-        return null
+    case TAB_VALUES.COLORS:
+      return (
+        <BackgroundColorPicker
+          selectedBackground={selectedBackground}
+          onSelectColor={(color) => handleBackgroundSelect(BACKGROUND_TYPES.COLOR, color)}
+        />
+      )
+    case TAB_VALUES.IMAGES:
+      return (
+        <BackgroundImagePicker
+          selectedBackground={selectedBackground}
+          onSelectImage={(imageUrl) => handleBackgroundSelect(BACKGROUND_TYPES.IMAGE, imageUrl)}
+        />
+      )
+    case TAB_VALUES.CUSTOM_URL:
+      return (
+        <CustomUrlInput
+          selectedBackground={selectedBackground}
+          onApplyUrl={(type, value) => handleBackgroundSelect(type, value)}
+        />
+      )
+    case TAB_VALUES.FILE_UPLOAD:
+      return (
+        <FileUploadSection
+          selectedBackground={selectedBackground}
+          onFileSelect={(type, value) => {
+            console.log('onFileSelect:', type, value)
+            handleBackgroundSelect(type, value)
+          }}
+        />
+      )
+    default:
+      return null
     }
   }
 
@@ -506,8 +506,8 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
           backdrop: {
             timeout: 500,
             sx: {
-              backgroundColor: theme.palette.mode === 'dark' 
-                ? 'rgba(0, 0, 0, 0.8)' 
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(0, 0, 0, 0.8)'
                 : 'rgba(0, 0, 0, 0.6)'
             }
           }
@@ -536,10 +536,10 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
           >
             {/* Progress Bar */}
             {isLoading && (
-              <LinearProgress 
-                variant="determinate" 
-                value={loadingProgress} 
-                sx={{ 
+              <LinearProgress
+                variant="determinate"
+                value={loadingProgress}
+                sx={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
@@ -549,7 +549,7 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
                 }}
               />
             )}
-            
+
             {/* Header */}
             <Box sx={{
               display: 'flex',
@@ -562,51 +562,51 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
               <Typography variant="h6" component="h2">
                 Thay đổi hình nền Board
               </Typography>
-              
-              <CancelIcon 
-                color="error" 
-                sx={{ 
+
+              <CancelIcon
+                color="error"
+                sx={{
                   cursor: 'pointer',
-                  '&:hover': { color: 'error.light' } 
-                }} 
+                  '&:hover': { color: 'error.light' }
+                }}
                 onClick={handleCancel}
-                aria-label="Đóng dialog" 
+                aria-label="Đóng dialog"
               />
             </Box>
 
             {/* Tabs Navigation */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs 
-                value={activeTab} 
+              <Tabs
+                value={activeTab}
                 onChange={handleTabChange}
                 variant={isMobile ? 'scrollable' : 'fullWidth'}
                 scrollButtons={isMobile ? 'auto' : false}
                 aria-label="Background options tabs"
               >
-                <Tab 
-                  icon={<ColorLensIcon />} 
-                  label={isMobile ? '' : 'Màu sắc'} 
+                <Tab
+                  icon={<ColorLensIcon />}
+                  label={isMobile ? '' : 'Màu sắc'}
                   value={TAB_VALUES.COLORS}
                   aria-label="Chọn màu background"
                   disabled={isLoading}
                 />
-                <Tab 
-                  icon={<ImageIcon />} 
-                  label={isMobile ? '' : 'Hình ảnh'} 
+                <Tab
+                  icon={<ImageIcon />}
+                  label={isMobile ? '' : 'Hình ảnh'}
                   value={TAB_VALUES.IMAGES}
                   aria-label="Chọn hình ảnh background"
                   disabled={isLoading}
                 />
-                <Tab 
-                  icon={<LinkIcon />} 
-                  label={isMobile ? '' : 'URL'} 
+                <Tab
+                  icon={<LinkIcon />}
+                  label={isMobile ? '' : 'URL'}
                   value={TAB_VALUES.CUSTOM_URL}
                   aria-label="Nhập URL hình ảnh"
                   disabled={isLoading}
                 />
-                <Tab 
-                  icon={<CloudUploadIcon />} 
-                  label={isMobile ? '' : 'Tải lên'} 
+                <Tab
+                  icon={<CloudUploadIcon />}
+                  label={isMobile ? '' : 'Tải lên'}
                   value={TAB_VALUES.FILE_UPLOAD}
                   aria-label="Tải lên file hình ảnh"
                   disabled={isLoading}
@@ -623,10 +623,10 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
             }}>
               {/* Error Messages */}
               {renderErrorMessage()}
-              
+
               {/* Loading Overlay */}
               {isLoading && (
-                <Box 
+                <Box
                   sx={{
                     position: 'absolute',
                     top: 0,
@@ -643,14 +643,14 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
                 >
                   <CircularProgress size={60} />
                   <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
-                    {loadingProgress < 30 
-                      ? 'Đang kết nối...' 
-                      : loadingProgress < 70 
+                    {loadingProgress < 30
+                      ? 'Đang kết nối...'
+                      : loadingProgress < 70
                         ? 'Đang xử lý...'
                         : 'Sắp hoàn thành...'}
                   </Typography>
-                  <Box sx={{ 
-                    width: '60%', 
+                  <Box sx={{
+                    width: '60%',
                     mt: 1,
                     display: 'flex',
                     alignItems: 'center',
@@ -662,7 +662,7 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
                   </Box>
                 </Box>
               )}
-              
+
               {renderTabContent()}
             </Box>
 
@@ -675,16 +675,16 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
               borderTop: '1px solid',
               borderColor: 'divider'
             }}>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 onClick={handleCancel}
                 disabled={isLoading}
               >
                 Hủy
               </Button>
-              
-              <Button 
-                variant="contained" 
+
+              <Button
+                variant="contained"
                 onClick={handleSave}
                 // disabled={isLoading || !hasChanges()}
                 startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : null}
@@ -703,9 +703,9 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
         onClose={handleCloseToast}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Alert 
-          onClose={handleCloseToast} 
-          severity={toastSeverity} 
+        <Alert
+          onClose={handleCloseToast}
+          severity={toastSeverity}
           sx={{ width: '100%' }}
           variant="filled"
         >
@@ -716,4 +716,4 @@ function BoardBackgroundSwitcher({ isOpen, onClose, boardId }) {
   )
 }
 
-export default BoardBackgroundSwitcher 
+export default BoardBackgroundSwitcher

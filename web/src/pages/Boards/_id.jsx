@@ -51,6 +51,9 @@ function Board() {
       }, 500)
     }
     const onRealtimeEvent = (data) => {
+      // For checklist operations, we don't need to show additional toasts
+      // since the user who performed the action already sees the toast
+      console.log('🔄 Real-time event received:', data)
       reloadBoardWithDelay()
     }
     socketIoInstance.on('BE_CARD_MOVED', onRealtimeEvent)
@@ -64,6 +67,8 @@ function Board() {
     socketIoInstance.on('BE_COLUMN_CREATED', onRealtimeEvent)
     socketIoInstance.on('BE_COLUMN_DELETED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
+    socketIoInstance.on('BE_CHECKLIST_DELETED', onRealtimeEvent)
+    socketIoInstance.on('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
     // ... có thể thêm các event khác nếu cần
     return () => {
       socketIoInstance.off('BE_CARD_MOVED', onRealtimeEvent)
@@ -77,6 +82,8 @@ function Board() {
       socketIoInstance.off('BE_COLUMN_CREATED', onRealtimeEvent)
       socketIoInstance.off('BE_COLUMN_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
+      socketIoInstance.off('BE_CHECKLIST_DELETED', onRealtimeEvent)
+      socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
       if (reloadTimeout) clearTimeout(reloadTimeout)
     }
   }, [dispatch, boardId])
@@ -180,13 +187,13 @@ function Board() {
   // Lấy background style dựa trên boardBackground từ Redux
   const getBackgroundStyles = () => {
     if (!boardBackground) return {}
-    
+
     if (boardBackground.type === BACKGROUND_TYPES.COLOR) {
       return { backgroundColor: boardBackground.value }
     }
-    
+
     if (boardBackground.type === BACKGROUND_TYPES.IMAGE) {
-      return { 
+      return {
         backgroundImage: `url(${boardBackground.value})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
@@ -197,7 +204,7 @@ function Board() {
     if (boardBackground.type === BACKGROUND_TYPES.GRADIENT) {
       return { background: boardBackground.value }
     }
-    
+
     return {}
   }
 
@@ -206,10 +213,10 @@ function Board() {
   }
 
   return (
-    <Container 
-      disableGutters 
-      maxWidth={false} 
-      sx={{ 
+    <Container
+      disableGutters
+      maxWidth={false}
+      sx={{
         height: '100vh',
         // Apply background từ Redux store
         ...getBackgroundStyles(),

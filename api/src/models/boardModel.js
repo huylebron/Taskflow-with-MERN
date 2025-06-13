@@ -17,9 +17,9 @@ import { pagingSkipValue } from '~/utils/algorithms'
 // Define Collection (Name & Schema)
 const BOARD_COLLECTION_NAME = 'boards'
 const BOARD_COLLECTION_SCHEMA = Joi.object({
-  title: Joi.string().required().min(3).max(50).trim().strict(),
-  slug: Joi.string().required().min(3).trim().strict(),
-  description: Joi.string().required().min(3).max(255).trim().strict(),
+  title: Joi.string().required().min(3).max(50),
+  slug: Joi.string().required().min(3),
+  description: Joi.string().required().min(3).max(255),
 
 
   backgroundType: Joi.string().valid('color', 'image', 'url', 'upload').default('color'),

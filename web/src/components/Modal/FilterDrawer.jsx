@@ -1,62 +1,62 @@
-import React, { useState } from 'react';
-import Drawer from '@mui/material/Drawer';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Checkbox from '@mui/material/Checkbox';
-import Chip from '@mui/material/Chip';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
-import Avatar from '@mui/material/Avatar';
-import ListAltIcon from '@mui/icons-material/ListAlt';
+import React, { useState } from 'react'
+import Drawer from '@mui/material/Drawer'
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import Radio from '@mui/material/Radio'
+import RadioGroup from '@mui/material/RadioGroup'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Button from '@mui/material/Button'
+import Divider from '@mui/material/Divider'
+import Checkbox from '@mui/material/Checkbox'
+import Chip from '@mui/material/Chip'
+import Select from '@mui/material/Select'
+import MenuItem from '@mui/material/MenuItem'
+import InputLabel from '@mui/material/InputLabel'
+import FormControl from '@mui/material/FormControl'
+import Avatar from '@mui/material/Avatar'
+import ListAltIcon from '@mui/icons-material/ListAlt'
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Tất cả' },
   { value: 'completed', label: 'Đã hoàn thành' },
   { value: 'incomplete', label: 'Chưa hoàn thành' }
-];
+]
 
 const DUE_DATE_OPTIONS = [
   { value: 'all', label: 'Tất cả' },
   { value: 'overdue', label: 'Quá hạn' },
   { value: 'soon', label: 'Sắp đến hạn (3 ngày tới)' },
   { value: 'none', label: 'Không có hạn' }
-];
+]
 
 export default function FilterDrawer({ open, onClose, onApply, onClear, initialStatus = 'all', labels = [], initialSelectedLabels = [], members = [], initialSelectedMember = '', initialDueDateFilter = 'all', columns = [], initialSelectedColumn = '' }) {
-  const [status, setStatus] = useState(initialStatus);
-  const [selectedLabels, setSelectedLabels] = useState(initialSelectedLabels);
-  const [selectedMember, setSelectedMember] = useState(initialSelectedMember);
-  const [dueDateFilter, setDueDateFilter] = useState(initialDueDateFilter);
-  const [selectedColumn, setSelectedColumn] = useState(initialSelectedColumn);
+  const [status, setStatus] = useState(initialStatus)
+  const [selectedLabels, setSelectedLabels] = useState(initialSelectedLabels)
+  const [selectedMember, setSelectedMember] = useState(initialSelectedMember)
+  const [dueDateFilter, setDueDateFilter] = useState(initialDueDateFilter)
+  const [selectedColumn, setSelectedColumn] = useState(initialSelectedColumn)
 
   const handleApply = () => {
-    onApply({ status, labels: selectedLabels, member: selectedMember, dueDate: dueDateFilter, column: selectedColumn });
-    onClose();
-  };
+    onApply({ status, labels: selectedLabels, member: selectedMember, dueDate: dueDateFilter, column: selectedColumn })
+    onClose()
+  }
 
   const handleClear = () => {
-    setStatus('all');
-    setSelectedLabels([]);
-    setSelectedMember('');
-    setDueDateFilter('all');
-    setSelectedColumn('');
-    onClear && onClear();
-  };
+    setStatus('all')
+    setSelectedLabels([])
+    setSelectedMember('')
+    setDueDateFilter('all')
+    setSelectedColumn('')
+    onClear && onClear()
+  }
 
   const handleToggleLabel = (labelId) => {
     setSelectedLabels(prev =>
       prev.includes(labelId)
         ? prev.filter(id => id !== labelId)
         : [...prev, labelId]
-    );
-  };
+    )
+  }
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
@@ -111,7 +111,7 @@ export default function FilterDrawer({ open, onClose, onApply, onClear, initialS
                   <Avatar src={user.avatar} sx={{ width: 24, height: 24 }}>{user.displayName?.[0]}</Avatar>
                   <span>{user.displayName || user.name || user.email}</span>
                 </Box>
-              ) : 'Chọn thành viên';
+              ) : 'Chọn thành viên'
             }}
           >
             <MenuItem value=""><em>Tất cả</em></MenuItem>
@@ -152,7 +152,7 @@ export default function FilterDrawer({ open, onClose, onApply, onClear, initialS
                   <ListAltIcon fontSize="small" />
                   <span>{col.title}</span>
                 </Box>
-              ) : 'Tất cả';
+              ) : 'Tất cả'
             }}
           >
             <MenuItem value=""><em>Tất cả</em></MenuItem>
@@ -172,5 +172,5 @@ export default function FilterDrawer({ open, onClose, onApply, onClear, initialS
         </Box>
       </Box>
     </Drawer>
-  );
-} 
+  )
+}

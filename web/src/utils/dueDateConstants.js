@@ -14,34 +14,34 @@ export const DUE_DATE_STATUS = {
 // Color scheme for due date statuses
 export const DUE_DATE_COLORS = {
   [DUE_DATE_STATUS.OVERDUE]: {
-    primary: '#d32f2f',      // Strong red
-    secondary: '#ffebee',    // Light red background
-    text: '#ffffff',         // White text for contrast
-    border: '#b71c1c',       // Darker red border
+    primary: '#d32f2f', // Strong red
+    secondary: '#ffebee', // Light red background
+    text: '#ffffff', // White text for contrast
+    border: '#b71c1c', // Darker red border
     glow: 'rgba(211, 47, 47, 0.3)', // Red glow effect
     gradient: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)'
   },
   [DUE_DATE_STATUS.DUE_SOON]: {
-    primary: '#f57c00',      // Orange
-    secondary: '#fff8e1',    // Light orange background
-    text: '#bf360c',         // Dark orange text (better contrast)
-    border: '#ef6c00',       // Orange border
+    primary: '#f57c00', // Orange
+    secondary: '#fff8e1', // Light orange background
+    text: '#bf360c', // Dark orange text (better contrast)
+    border: '#ef6c00', // Orange border
     glow: 'rgba(245, 124, 0, 0.3)', // Orange glow effect
     gradient: 'linear-gradient(135deg, #f57c00 0%, #ef6c00 100%)'
   },
   [DUE_DATE_STATUS.UPCOMING]: {
-    primary: '#388e3c',      // Green
-    secondary: '#e8f5e8',    // Light green background
-    text: '#1b5e20',         // Dark green text (better contrast)
-    border: '#4caf50',       // Green border
+    primary: '#388e3c', // Green
+    secondary: '#e8f5e8', // Light green background
+    text: '#1b5e20', // Dark green text (better contrast)
+    border: '#4caf50', // Green border
     glow: 'rgba(56, 142, 60, 0.3)', // Green glow effect
     gradient: 'linear-gradient(135deg, #388e3c 0%, #4caf50 100%)'
   },
   [DUE_DATE_STATUS.NORMAL]: {
-    primary: '#1976d2',      // Blue
-    secondary: '#e3f2fd',    // Light blue background
-    text: '#0d47a1',         // Dark blue text (better contrast)
-    border: '#2196f3',       // Blue border
+    primary: '#1976d2', // Blue
+    secondary: '#e3f2fd', // Light blue background
+    text: '#0d47a1', // Dark blue text (better contrast)
+    border: '#2196f3', // Blue border
     glow: 'rgba(25, 118, 210, 0.3)', // Blue glow effect
     gradient: 'linear-gradient(135deg, #1976d2 0%, #2196f3 100%)'
   }
@@ -49,9 +49,9 @@ export const DUE_DATE_COLORS = {
 
 // Time thresholds in hours
 export const DUE_DATE_THRESHOLDS = {
-  OVERDUE: 0,           // Less than 0 hours (past due)
-  DUE_SOON: 24,         // Within 24 hours
-  UPCOMING: 168         // Within 7 days (168 hours)
+  OVERDUE: 0, // Less than 0 hours (past due)
+  DUE_SOON: 24, // Within 24 hours
+  UPCOMING: 168 // Within 7 days (168 hours)
 }
 
 /**
@@ -61,11 +61,11 @@ export const DUE_DATE_THRESHOLDS = {
  */
 export const getDueDateStatus = (dueDate) => {
   if (!dueDate) return DUE_DATE_STATUS.NORMAL
-  
+
   const now = new Date()
   const due = new Date(dueDate)
   const diffInHours = (due - now) / (1000 * 60 * 60)
-  
+
   if (diffInHours < DUE_DATE_THRESHOLDS.OVERDUE) {
     return DUE_DATE_STATUS.OVERDUE
   } else if (diffInHours <= DUE_DATE_THRESHOLDS.DUE_SOON) {
@@ -103,15 +103,15 @@ export const getDueDateColor = (dueDate) => {
  */
 export const formatDueDateDisplay = (dueDate) => {
   if (!dueDate) return ''
-  
+
   const due = new Date(dueDate)
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate())
-  
+
   const diffInDays = Math.ceil((dueDay - today) / (1000 * 60 * 60 * 24))
   const timeString = due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-  
+
   if (diffInDays === 0) {
     return `Hôm nay ${timeString}`
   } else if (diffInDays === 1) {
@@ -123,8 +123,8 @@ export const formatDueDateDisplay = (dueDate) => {
   } else if (diffInDays <= 7) {
     return `${diffInDays} ngày nữa`
   } else {
-    return due.toLocaleDateString('vi-VN', { 
-      day: '2-digit', 
+    return due.toLocaleDateString('vi-VN', {
+      day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     })
@@ -138,14 +138,14 @@ export const formatDueDateDisplay = (dueDate) => {
  */
 export const getUrgencyText = (status) => {
   switch (status) {
-    case DUE_DATE_STATUS.OVERDUE:
-      return 'Quá hạn - Cần xử lý ngay'
-    case DUE_DATE_STATUS.DUE_SOON:
-      return 'Sắp hết hạn - Ưu tiên cao'
-    case DUE_DATE_STATUS.UPCOMING:
-      return 'Sắp đến hạn - Theo dõi'
-    default:
-      return 'Bình thường'
+  case DUE_DATE_STATUS.OVERDUE:
+    return 'Quá hạn - Cần xử lý ngay'
+  case DUE_DATE_STATUS.DUE_SOON:
+    return 'Sắp hết hạn - Ưu tiên cao'
+  case DUE_DATE_STATUS.UPCOMING:
+    return 'Sắp đến hạn - Theo dõi'
+  default:
+    return 'Bình thường'
   }
 }
 
@@ -156,7 +156,7 @@ export const getUrgencyText = (status) => {
  */
 export const getDueDateChipStyles = (status) => {
   const colors = getDueDateColors(status)
-  
+
   const baseStyles = {
     fontSize: '11px',
     height: '24px',
@@ -179,75 +179,75 @@ export const getDueDateChipStyles = (status) => {
   }
 
   switch (status) {
-    case DUE_DATE_STATUS.OVERDUE:
-      return {
-        ...baseStyles,
-        backgroundColor: colors.primary,
-        color: colors.text,
-        border: `1px solid ${colors.border}`,
-        '& .MuiChip-icon': {
-          ...baseStyles['& .MuiChip-icon'],
-          color: colors.text
-        },
-        animation: 'pulse 2s infinite'
+  case DUE_DATE_STATUS.OVERDUE:
+    return {
+      ...baseStyles,
+      backgroundColor: colors.primary,
+      color: colors.text,
+      border: `1px solid ${colors.border}`,
+      '& .MuiChip-icon': {
+        ...baseStyles['& .MuiChip-icon'],
+        color: colors.text
+      },
+      animation: 'pulse 2s infinite'
+    }
+  case DUE_DATE_STATUS.DUE_SOON:
+    return {
+      ...baseStyles,
+      backgroundColor: (theme) => theme.palette.mode === 'dark'
+        ? 'rgba(245, 124, 0, 0.2)'
+        : colors.secondary,
+      color: (theme) => theme.palette.mode === 'dark'
+        ? '#ffb74d'
+        : colors.text,
+      border: (theme) => theme.palette.mode === 'dark'
+        ? '1px solid #ff9800'
+        : `1px solid ${colors.primary}`,
+      '& .MuiChip-icon': {
+        ...baseStyles['& .MuiChip-icon'],
+        color: (theme) => theme.palette.mode === 'dark'
+          ? '#ffb74d'
+          : colors.text
       }
-    case DUE_DATE_STATUS.DUE_SOON:
-      return {
-        ...baseStyles,
-        backgroundColor: (theme) => theme.palette.mode === 'dark' 
-          ? 'rgba(245, 124, 0, 0.2)' 
-          : colors.secondary,
-        color: (theme) => theme.palette.mode === 'dark' 
-          ? '#ffb74d' 
-          : colors.text,
-        border: (theme) => theme.palette.mode === 'dark' 
-          ? '1px solid #ff9800' 
-          : `1px solid ${colors.primary}`,
-        '& .MuiChip-icon': {
-          ...baseStyles['& .MuiChip-icon'],
-          color: (theme) => theme.palette.mode === 'dark' 
-            ? '#ffb74d' 
-            : colors.text
-        }
+    }
+  case DUE_DATE_STATUS.UPCOMING:
+    return {
+      ...baseStyles,
+      backgroundColor: (theme) => theme.palette.mode === 'dark'
+        ? 'rgba(56, 142, 60, 0.2)'
+        : colors.secondary,
+      color: (theme) => theme.palette.mode === 'dark'
+        ? '#81c784'
+        : colors.text,
+      border: (theme) => theme.palette.mode === 'dark'
+        ? '1px solid #4caf50'
+        : `1px solid ${colors.primary}`,
+      '& .MuiChip-icon': {
+        ...baseStyles['& .MuiChip-icon'],
+        color: (theme) => theme.palette.mode === 'dark'
+          ? '#81c784'
+          : colors.text
       }
-    case DUE_DATE_STATUS.UPCOMING:
-      return {
-        ...baseStyles,
-        backgroundColor: (theme) => theme.palette.mode === 'dark' 
-          ? 'rgba(56, 142, 60, 0.2)' 
-          : colors.secondary,
-        color: (theme) => theme.palette.mode === 'dark' 
-          ? '#81c784' 
-          : colors.text,
-        border: (theme) => theme.palette.mode === 'dark' 
-          ? '1px solid #4caf50' 
-          : `1px solid ${colors.primary}`,
-        '& .MuiChip-icon': {
-          ...baseStyles['& .MuiChip-icon'],
-          color: (theme) => theme.palette.mode === 'dark' 
-            ? '#81c784' 
-            : colors.text
-        }
+    }
+  default:
+    return {
+      ...baseStyles,
+      backgroundColor: (theme) => theme.palette.mode === 'dark'
+        ? 'rgba(255, 255, 255, 0.08)'
+        : 'rgba(0, 0, 0, 0.08)',
+      color: (theme) => theme.palette.mode === 'dark'
+        ? 'rgba(255, 255, 255, 0.7)'
+        : 'rgba(0, 0, 0, 0.6)',
+      border: (theme) => theme.palette.mode === 'dark'
+        ? '1px solid rgba(255, 255, 255, 0.12)'
+        : '1px solid rgba(0, 0, 0, 0.12)',
+      '& .MuiChip-icon': {
+        ...baseStyles['& .MuiChip-icon'],
+        color: (theme) => theme.palette.mode === 'dark'
+          ? 'rgba(255, 255, 255, 0.7)'
+          : 'rgba(0, 0, 0, 0.6)'
       }
-    default:
-      return {
-        ...baseStyles,
-        backgroundColor: (theme) => theme.palette.mode === 'dark' 
-          ? 'rgba(255, 255, 255, 0.08)' 
-          : 'rgba(0, 0, 0, 0.08)',
-        color: (theme) => theme.palette.mode === 'dark' 
-          ? 'rgba(255, 255, 255, 0.7)' 
-          : 'rgba(0, 0, 0, 0.6)',
-        border: (theme) => theme.palette.mode === 'dark' 
-          ? '1px solid rgba(255, 255, 255, 0.12)' 
-          : '1px solid rgba(0, 0, 0, 0.12)',
-        '& .MuiChip-icon': {
-          ...baseStyles['& .MuiChip-icon'],
-          color: (theme) => theme.palette.mode === 'dark' 
-            ? 'rgba(255, 255, 255, 0.7)' 
-            : 'rgba(0, 0, 0, 0.6)'
-        }
-      }
+    }
   }
 }
 
@@ -258,7 +258,7 @@ export const getDueDateChipStyles = (status) => {
  */
 export const getCalendarEventStyles = (status) => {
   const colors = getDueDateColors(status)
-  
+
   return {
     backgroundColor: colors.primary,
     borderColor: colors.border,
@@ -316,4 +316,4 @@ export const getDueDateAnimations = () => {
       opacity: 0.1;
     }
   `
-} 
+}

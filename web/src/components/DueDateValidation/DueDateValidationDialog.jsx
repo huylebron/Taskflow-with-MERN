@@ -52,28 +52,28 @@ const DueDateValidationDialog = ({
   // Get icon based on type
   const getDialogIcon = () => {
     switch (type) {
-      case 'warning':
-        return <Warning sx={{ color: '#f57c00', fontSize: '2rem' }} />
-      case 'error':
-        return <Error sx={{ color: '#d32f2f', fontSize: '2rem' }} />
-      case 'success':
-        return <CheckCircle sx={{ color: '#388e3c', fontSize: '2rem' }} />
-      default:
-        return <Schedule sx={{ color: '#1976d2', fontSize: '2rem' }} />
+    case 'warning':
+      return <Warning sx={{ color: '#f57c00', fontSize: '2rem' }} />
+    case 'error':
+      return <Error sx={{ color: '#d32f2f', fontSize: '2rem' }} />
+    case 'success':
+      return <CheckCircle sx={{ color: '#388e3c', fontSize: '2rem' }} />
+    default:
+      return <Schedule sx={{ color: '#1976d2', fontSize: '2rem' }} />
     }
   }
 
   // Get severity color scheme
   const getSeverityColors = () => {
     switch (severity) {
-      case 'critical':
-        return { primary: '#d32f2f', background: '#ffebee' }
-      case 'high':
-        return { primary: '#f57c00', background: '#fff8e1' }
-      case 'medium':
-        return { primary: '#1976d2', background: '#e3f2fd' }
-      default:
-        return { primary: '#757575', background: '#f5f5f5' }
+    case 'critical':
+      return { primary: '#d32f2f', background: '#ffebee' }
+    case 'high':
+      return { primary: '#f57c00', background: '#fff8e1' }
+    case 'medium':
+      return { primary: '#1976d2', background: '#e3f2fd' }
+    default:
+      return { primary: '#757575', background: '#f5f5f5' }
     }
   }
 
@@ -106,7 +106,7 @@ const DueDateValidationDialog = ({
           <CalendarToday fontSize="small" />
           So sánh deadline
         </Typography>
-        
+
         <Stack spacing={2}>
           {/* Current Due Date */}
           {currentDueDate && (
@@ -190,8 +190,8 @@ const DueDateValidationDialog = ({
   const severityColors = getSeverityColors()
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth="sm"
       fullWidth
@@ -202,7 +202,7 @@ const DueDateValidationDialog = ({
         }
       }}
     >
-      <DialogTitle sx={{ 
+      <DialogTitle sx={{
         pb: 1,
         backgroundColor: severityColors.background,
         borderBottom: `3px solid ${severityColors.primary}`
@@ -252,7 +252,7 @@ const DueDateValidationDialog = ({
         {newDueDate && getDueDateStatus(newDueDate) === DUE_DATE_STATUS.OVERDUE && (
           <Alert severity="error" sx={{ mt: 2 }}>
             <Typography variant="body2">
-              ⚠️ <strong>Cảnh báo:</strong> Deadline được chọn đã ở trong quá khứ. 
+              ⚠️ <strong>Cảnh báo:</strong> Deadline được chọn đã ở trong quá khứ.
               Card sẽ được đánh dấu là quá hạn ngay lập tức.
             </Typography>
           </Alert>
@@ -261,7 +261,7 @@ const DueDateValidationDialog = ({
         {newDueDate && getDueDateStatus(newDueDate) === DUE_DATE_STATUS.DUE_SOON && (
           <Alert severity="warning" sx={{ mt: 2 }}>
             <Typography variant="body2">
-              🔔 <strong>Lưu ý:</strong> Deadline được chọn trong vòng 24 giờ tới. 
+              🔔 <strong>Lưu ý:</strong> Deadline được chọn trong vòng 24 giờ tới.
               Bạn sẽ nhận được thông báo nhắc nhở.
             </Typography>
           </Alert>
@@ -297,4 +297,4 @@ const DueDateValidationDialog = ({
   )
 }
 
-export default DueDateValidationDialog 
+export default DueDateValidationDialog

@@ -94,28 +94,28 @@ export const activeBoardSlice = createSlice({
     // Action để thêm label mới vào board
     addLabelToBoard: (state, action) => {
       const newLabel = action.payload
-      
+
       // Đảm bảo currentActiveBoard và labels tồn tại
       if (!state.currentActiveBoard) return
       if (!state.currentActiveBoard.labels) {
         state.currentActiveBoard.labels = []
       }
-      
+
       // Thêm label mới vào đầu mảng
       state.currentActiveBoard.labels.unshift(newLabel)
     },
     // Action để xóa label khỏi board
     deleteLabelFromBoard: (state, action) => {
       const labelId = action.payload
-      
+
       // Đảm bảo currentActiveBoard và labels tồn tại
       if (!state.currentActiveBoard || !state.currentActiveBoard.labels) return
-      
+
       // Xóa label khỏi danh sách labels của board
       state.currentActiveBoard.labels = state.currentActiveBoard.labels.filter(
         label => label.id !== labelId
       )
-      
+
       // Xóa label khỏi tất cả các card
       state.currentActiveBoard.columns.forEach(column => {
         column.cards.forEach(card => {
@@ -128,7 +128,7 @@ export const activeBoardSlice = createSlice({
     // Action để cập nhật card khi thêm/xóa label
     updateCardLabels: (state, action) => {
       const { cardId, labelIds } = action.payload
-      
+
       // Tìm card trong board
       for (const column of state.currentActiveBoard.columns) {
         const card = column.cards.find(c => c._id === cardId)
@@ -142,7 +142,7 @@ export const activeBoardSlice = createSlice({
     // Action to specifically handle due date updates for better calendar synchronization
     updateCardDueDate: (state, action) => {
       const { cardId, dueDate } = action.payload
-      
+
       // Đảm bảo currentActiveBoard tồn tại
       if (!state.currentActiveBoard) return
 
@@ -153,7 +153,7 @@ export const activeBoardSlice = createSlice({
           // Cập nhật due date và timestamp cập nhật
           card.dueDate = dueDate
           card.updatedAt = Date.now()
-          
+
           console.log(`📅 Redux: Updated due date for card "${card.title}" to ${dueDate}`)
           break
         }
@@ -162,7 +162,7 @@ export const activeBoardSlice = createSlice({
     // Action to sync calendar changes back to board view
     syncCalendarToBoard: (state, action) => {
       const { cardUpdates } = action.payload
-      
+
       // Đảm bảo currentActiveBoard tồn tại
       if (!state.currentActiveBoard || !Array.isArray(cardUpdates)) return
 
@@ -193,6 +193,63 @@ export const activeBoardSlice = createSlice({
       column.cards = column.cards.filter(c => c._id !== cardId)
       // Remove cardId from cardOrderIds
       column.cardOrderIds = column.cardOrderIds.filter(id => id !== cardId)
+    },
+
+    // Action to update card checklists in board state
+    updateCardChecklistsInBoard: (state, action) => {
+      const { cardId, checklists } = action.payload
+
+      if (!state.currentActiveBoard) return
+
+      // Find and update card in board
+      for (const column of state.currentActiveBoard.columns) {
+        const card = column.cards.find(c => c._id === cardId)
+        if (card) {
+          card.checklists = checklists
+          card.updatedAt = Date.now()
+          console.log('✅ Board Redux: Updated checklists for card', cardId)
+          break
+        }
+      }
+    },
+
+    // Action to remove checklist from card in board state
+    removeChecklistFromCardInBoard: (state, action) => {
+      const { cardId, checklistId } = action.payload
+
+      if (!state.currentActiveBoard) return
+
+      // Find and update card in board
+      for (const column of state.currentActiveBoard.columns) {
+        const card = column.cards.find(c => c._id === cardId)
+        if (card && card.checklists) {
+          card.checklists = card.checklists.filter(checklist => checklist.id !== checklistId)
+          card.updatedAt = Date.now()
+          console.log('🗑️ Board Redux: Removed checklist', checklistId, 'from card', cardId)
+          break
+        }
+      }
+    },
+
+    // Action to remove item from checklist in card in board state
+    removeItemFromChecklistInCardInBoard: (state, action) => {
+      const { cardId, checklistId, itemId } = action.payload
+
+      if (!state.currentActiveBoard) return
+
+      // Find and update card in board
+      for (const column of state.currentActiveBoard.columns) {
+        const card = column.cards.find(c => c._id === cardId)
+        if (card && card.checklists) {
+          const checklist = card.checklists.find(c => c.id === checklistId)
+          if (checklist && checklist.items) {
+            checklist.items = checklist.items.filter(item => item.id !== itemId)
+            card.updatedAt = Date.now()
+            console.log('🗑️ Board Redux: Removed item', itemId, 'from checklist', checklistId, 'in card', cardId)
+            break
+          }
+        }
+      }
     }
   },
   // ExtraReducers: Nơi xử lý dữ liệu bất đồng bộ
@@ -232,7 +289,7 @@ export const activeBoardSlice = createSlice({
         } else {
           // Sắp xếp thứ tự các cards luôn ở đây trước khi đưa dữ liệu xuống bên dưới các component con (video 71 đã giải thích lý do ở phần Fix bug quan trọng)
           column.cards = mapOrder(column.cards, column.cardOrderIds, '_id')
-          
+
           // Đảm bảo mỗi card có trường labelIds
           column.cards.forEach(card => {
             if (!card.labelIds) {
@@ -251,7 +308,7 @@ export const activeBoardSlice = createSlice({
       // Clear the current active board when it's deleted
       state.currentActiveBoard = null
     })
-    
+
     builder.addCase(deleteBoardAPI.rejected, (state, action) => {
       // Handle delete error - keep the current board state
       console.error('Delete board failed:', action.error.message)
@@ -262,9 +319,9 @@ export const activeBoardSlice = createSlice({
 // Action creators are generated for each case reducer function
 // Actions: Là nơi dành cho các components bên dưới gọi bằng dispatch() tới nó để cập nhật lại dữ liệu thông qua reducer (chạy đồng bộ)
 // Để ý ở trên thì không thấy properties actions đâu cả, bởi vì những cái actions này đơn giản là được thằng redux tạo tự động theo tên của reducer nhé.
-export const { 
-  updateCurrentActiveBoard, 
-  updateCardInBoard, 
+export const {
+  updateCurrentActiveBoard,
+  updateCardInBoard,
   updateColumnInBoard,
   updateBoardBackground,
   addLabelToBoard,
@@ -272,7 +329,10 @@ export const {
   updateCardLabels,
   updateCardDueDate,
   syncCalendarToBoard,
-  removeCardFromBoard
+  removeCardFromBoard,
+  updateCardChecklistsInBoard,
+  removeChecklistFromCardInBoard,
+  removeItemFromChecklistInCardInBoard
 } = activeBoardSlice.actions
 
 // Selectors: Là nơi dành cho các components bên dưới gọi bằng hook useSelector() để lấy dữ liệu từ trong kho redux store ra sử dụng
@@ -294,9 +354,9 @@ export const selectBoardLabels = (state) => {
 export const selectCardsWithDueDate = (state) => {
   const board = state.activeBoard.currentActiveBoard
   if (!board?.columns) return []
-  
+
   const cardsWithDueDate = []
-  
+
   board.columns.forEach(column => {
     if (column.cards) {
       column.cards.forEach(card => {
@@ -311,21 +371,21 @@ export const selectCardsWithDueDate = (state) => {
       })
     }
   })
-  
+
   return cardsWithDueDate
 }
 
 // Selector để lấy cards với due date trong khoảng thời gian nhất định
 export const selectCardsWithDueDateInRange = (startDate, endDate) => (state) => {
   const cardsWithDueDate = selectCardsWithDueDate(state)
-  
+
   if (!startDate && !endDate) return cardsWithDueDate
-  
+
   return cardsWithDueDate.filter(card => {
     const cardDueDate = new Date(card.dueDate)
     const start = startDate ? new Date(startDate) : null
     const end = endDate ? new Date(endDate) : null
-    
+
     if (start && end) {
       return cardDueDate >= start && cardDueDate <= end
     } else if (start) {
@@ -333,7 +393,7 @@ export const selectCardsWithDueDateInRange = (startDate, endDate) => (state) => 
     } else if (end) {
       return cardDueDate <= end
     }
-    
+
     return true
   })
 }
@@ -342,18 +402,18 @@ export const selectCardsWithDueDateInRange = (startDate, endDate) => (state) => 
 export const selectDueDateStats = (state) => {
   const cardsWithDueDate = selectCardsWithDueDate(state)
   const now = new Date()
-  
+
   const stats = {
     total: cardsWithDueDate.length,
     overdue: 0,
     dueSoon: 0, // within 24 hours
     upcoming: 0 // within 7 days
   }
-  
+
   cardsWithDueDate.forEach(card => {
     const dueDate = new Date(card.dueDate)
     const diffInHours = (dueDate - now) / (1000 * 60 * 60)
-    
+
     if (diffInHours < 0) {
       stats.overdue++
     } else if (diffInHours <= 24) {
@@ -362,7 +422,7 @@ export const selectDueDateStats = (state) => {
       stats.upcoming++
     }
   })
-  
+
   return stats
 }
 
@@ -370,7 +430,7 @@ export const selectDueDateStats = (state) => {
 export const selectCardById = (cardId) => (state) => {
   const board = state.activeBoard.currentActiveBoard
   if (!board?.columns) return null
-  
+
   for (const column of board.columns) {
     if (column.cards) {
       const card = column.cards.find(c => c._id === cardId)
@@ -383,7 +443,7 @@ export const selectCardById = (cardId) => (state) => {
       }
     }
   }
-  
+
   return null
 }
 

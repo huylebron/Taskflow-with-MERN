@@ -20,7 +20,7 @@ export const ALLOW_ATTACHMENT_FILE_TYPES = [
   // Images
   'image/jpg', 'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp',
   // Documents
-  'application/pdf', 
+  'application/pdf',
   'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // Word
   'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Excel
   'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', // PowerPoint
@@ -46,22 +46,22 @@ export const multipleFilesValidator = (files) => {
   if (!files || files.length === 0) {
     return 'Please select at least one file.'
   }
-  
+
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
-    
+
     if (!file || !file.name || !file.size || !file.type) {
       return `File #${i + 1} is invalid.`
     }
-    
+
     if (file.size > LIMIT_COMMON_FILE_SIZE) {
       return `File "${file.name}" exceeds maximum size of 10MB.`
     }
-    
+
     if (!ALLOW_ATTACHMENT_FILE_TYPES.includes(file.type)) {
       return `File "${file.name}" is not supported. Allowed types: images, PDF, Office documents, text.`
     }
   }
-  
+
   return null
 }

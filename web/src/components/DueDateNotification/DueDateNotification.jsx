@@ -1,23 +1,23 @@
 import { forwardRef } from 'react'
-import { 
-  Alert, 
-  AlertTitle, 
-  Box, 
-  Chip, 
-  Typography, 
-  IconButton 
+import {
+  Alert,
+  AlertTitle,
+  Box,
+  Chip,
+  Typography,
+  IconButton
 } from '@mui/material'
-import { 
-  CheckCircle, 
-  Error, 
-  Warning, 
-  Info, 
+import {
+  CheckCircle,
+  Error,
+  Warning,
+  Info,
   Close,
   WatchLaterOutlined
 } from '@mui/icons-material'
-import { 
-  getDueDateStatus, 
-  formatDueDateDisplay, 
+import {
+  getDueDateStatus,
+  formatDueDateDisplay,
   getDueDateColors,
   getUrgencyText
 } from '~/utils/dueDateConstants'
@@ -38,24 +38,24 @@ const DueDateNotification = forwardRef(({
 }, ref) => {
   const getIcon = () => {
     switch (type) {
-      case 'success': return <CheckCircle />
-      case 'error': return <Error />
-      case 'warning': return <Warning />
-      default: return <Info />
+    case 'success': return <CheckCircle />
+    case 'error': return <Error />
+    case 'warning': return <Warning />
+    default: return <Info />
     }
   }
 
   const getSeverity = () => {
     switch (type) {
-      case 'success': return 'success'
-      case 'error': return 'error'
-      case 'warning': return 'warning'
-      default: return 'info'
+    case 'success': return 'success'
+    case 'error': return 'error'
+    case 'warning': return 'warning'
+    default: return 'info'
     }
   }
 
   return (
-    <Alert 
+    <Alert
       ref={ref}
       severity={getSeverity()}
       icon={getIcon()}
@@ -75,7 +75,7 @@ const DueDateNotification = forwardRef(({
     >
       {title && <AlertTitle>{title}</AlertTitle>}
       <Typography variant="body2">{message}</Typography>
-      
+
       {showDetails && cardTitle && (
         <Box sx={{ mt: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -88,4 +88,4 @@ const DueDateNotification = forwardRef(({
 })
 
 DueDateNotification.displayName = 'DueDateNotification'
-export default DueDateNotification 
+export default DueDateNotification

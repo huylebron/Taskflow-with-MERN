@@ -10,9 +10,9 @@
  */
 export const getCardsWithDueDate = (board) => {
   if (!board || !board.columns) return []
-  
+
   const cardsWithDueDate = []
-  
+
   board.columns.forEach(column => {
     if (column.cards) {
       column.cards.forEach(card => {
@@ -27,7 +27,7 @@ export const getCardsWithDueDate = (board) => {
       })
     }
   })
-  
+
   return cardsWithDueDate
 }
 
@@ -39,7 +39,7 @@ export const getCardsWithDueDate = (board) => {
  */
 export const getEventColor = (labelIds, labels) => {
   if (!labelIds || labelIds.length === 0) return '#9e9e9e' // Grey default
-  
+
   // Lấy color của label đầu tiên
   const firstLabel = labels.find(label => labelIds.includes(label._id))
   return firstLabel ? firstLabel.color : '#9e9e9e'
@@ -56,7 +56,7 @@ export const getBorderColor = (backgroundColor) => {
   const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - 30)
   const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - 30)
   const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - 30)
-  
+
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
@@ -71,16 +71,16 @@ export const formatCardsToCalendarEvents = (cards, labels = [], users = []) => {
   return cards.map(card => {
     const backgroundColor = getEventColor(card.labelIds, labels)
     const borderColor = getBorderColor(backgroundColor)
-    
+
     // Get member names
-    const memberNames = card.memberIds ? 
+    const memberNames = card.memberIds ?
       card.memberIds.map(memberId => {
         const user = users.find(u => u._id === memberId)
         return user ? user.displayName : 'Unknown'
       }).join(', ') : ''
-    
+
     // Get label names
-    const labelNames = card.labelIds ? 
+    const labelNames = card.labelIds ?
       card.labelIds.map(labelId => {
         const label = labels.find(l => l._id === labelId)
         return label ? label.title : 'Unknown'
@@ -124,7 +124,7 @@ export const getDueDateStatus = (dueDate) => {
   const due = new Date(dueDate)
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate())
-  
+
   if (dueDay < today) return 'overdue'
   if (dueDay.getTime() === today.getTime()) return 'today'
   return 'upcoming'
@@ -137,11 +137,11 @@ export const getDueDateStatus = (dueDate) => {
  */
 export const processCalendarData = (mockData) => {
   if (!mockData || !mockData.board) return { events: [], labels: [], users: [] }
-  
+
   const { board, labels = [], users = [] } = mockData
   const cardsWithDueDate = getCardsWithDueDate(board)
   const events = formatCardsToCalendarEvents(cardsWithDueDate, labels, users)
-  
+
   return {
     events,
     labels,
@@ -158,20 +158,20 @@ export const processCalendarData = (mockData) => {
  */
 export const groupCardsByDate = (cards) => {
   const grouped = {}
-  
+
   cards.forEach(card => {
     if (card.dueDate) {
       const date = new Date(card.dueDate)
       const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-      
+
       if (!grouped[dateKey]) {
         grouped[dateKey] = []
       }
-      
+
       grouped[dateKey].push(card)
     }
   })
-  
+
   return grouped
 }
 
@@ -213,7 +213,7 @@ export const getEventColorByStatus = (status) => {
       color: '#ffffff'
     }
   }
-  
+
   return colors[status] || colors.none
 }
 
@@ -225,22 +225,22 @@ export const getEventColorByStatus = (status) => {
  */
 export const formatDisplayDate = (date, formatType = 'short') => {
   if (!date) return ''
-  
+
   const dateObj = typeof date === 'string' ? new Date(date) : date
-  
+
   switch (formatType) {
-    case 'short':
-      return `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()}`
-    case 'long':
-      return dateObj.toLocaleDateString('vi-VN', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })
-    case 'iso':
-      return dateObj.toISOString().split('T')[0]
-    default:
-      return dateObj.toLocaleDateString()
+  case 'short':
+    return `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()}`
+  case 'long':
+    return dateObj.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  case 'iso':
+    return dateObj.toISOString().split('T')[0]
+  default:
+    return dateObj.toLocaleDateString()
   }
 }
 
@@ -255,10 +255,10 @@ export const canDropCardToDate = (card, targetDate) => {
   // Ví dụ: không cho phép drop vào quá khứ (trừ hôm nay)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
+
   const target = new Date(targetDate)
   target.setHours(0, 0, 0, 0)
-  
+
   // Cho phép drop vào hôm nay và tương lai
   return target >= today
 }
@@ -275,14 +275,14 @@ export const calculateCalendarStats = (cards) => {
     today: 0,
     upcoming: 0
   }
-  
+
   cards.forEach(card => {
     const status = getDueDateStatus(card.dueDate)
     if (stats.hasOwnProperty(status)) {
       stats[status]++
     }
   })
-  
+
   return stats
 }
 
@@ -296,7 +296,7 @@ export const calculateCalendarStats = (cards) => {
 export const filterCardsByDateRange = (cards, startDate, endDate) => {
   return cards.filter(card => {
     if (!card.dueDate) return false
-    
+
     const cardDate = new Date(card.dueDate)
     return cardDate >= startDate && cardDate <= endDate
   })
@@ -310,7 +310,7 @@ export const filterCardsByDateRange = (cards, startDate, endDate) => {
 export const isToday = (date) => {
   const today = new Date()
   const checkDate = new Date(date)
-  
+
   return today.getFullYear() === checkDate.getFullYear() &&
          today.getMonth() === checkDate.getMonth() &&
          today.getDate() === checkDate.getDate()
@@ -324,10 +324,10 @@ export const isToday = (date) => {
 export const isPast = (date) => {
   const now = new Date()
   const checkDate = new Date(date)
-  
+
   // Reset time to compare only dates
   now.setHours(0, 0, 0, 0)
   checkDate.setHours(0, 0, 0, 0)
-  
+
   return checkDate < now
-} 
+}

@@ -12,7 +12,7 @@ const createNew = async (req, res, next) => {
   const correctCondition = Joi.object({
     boardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
     columnId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-    title: Joi.string().required().min(3).max(50).trim().strict(),
+    title: Joi.string().required().min(3).max(50),
     dueDate: Joi.date().allow(null).optional()
   })
 
@@ -27,7 +27,7 @@ const createNew = async (req, res, next) => {
 const update = async (req, res, next) => {
   // Lưu ý không dùng hàm required() trong trường hợp Update
   const correctCondition = Joi.object({
-    title: Joi.string().min(3).max(50).trim().strict(),
+    title: Joi.string().min(3).max(50),
     description: Joi.string().optional(),
     deleteCardCover: Joi.boolean().optional(),
     cloudinaryPublicId: Joi.string().optional(),
@@ -65,8 +65,61 @@ const deleteCard = async (req, res, next) => {
   }
 }
 
+/**
+ * Validate cardId and checklistId parameters for checklist deletion
+ */
+const deleteChecklist = async (req, res, next) => {
+  const correctCondition = Joi.object({
+    cardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+    checklistId: Joi.string().required().min(1).max(100)
+  })
+
+  try {
+    await correctCondition.validateAsync(req.params, { abortEarly: false })
+    
+    // Additional validation: Ensure checklistId is not empty
+    if (!req.params.checklistId || req.params.checklistId.length === 0) {
+      throw new Error('Checklist ID cannot be empty')
+    }
+    
+    next()
+  } catch (error) {
+    next(new ApiError(StatusCodes.BAD_REQUEST, new Error(error).message))
+  }
+}
+
+/**
+ * Validate cardId, checklistId and itemId parameters for checklist item deletion
+ */
+const deleteChecklistItem = async (req, res, next) => {
+  const correctCondition = Joi.object({
+    cardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+    checklistId: Joi.string().required().min(1).max(100),
+    itemId: Joi.string().required().min(1).max(100)
+  })
+
+  try {
+    await correctCondition.validateAsync(req.params, { abortEarly: false })
+    
+    // Additional validation: Ensure IDs are not empty
+    if (!req.params.checklistId || req.params.checklistId.length === 0) {
+      throw new Error('Checklist ID cannot be empty')
+    }
+    
+    if (!req.params.itemId || req.params.itemId.length === 0) {
+      throw new Error('Item ID cannot be empty')
+    }
+    
+    next()
+  } catch (error) {
+    next(new ApiError(StatusCodes.BAD_REQUEST, new Error(error).message))
+  }
+}
+
 export const cardValidation = {
   createNew,
   update,
-  deleteCard
+  deleteCard,
+  deleteChecklist,
+  deleteChecklistItem
 }

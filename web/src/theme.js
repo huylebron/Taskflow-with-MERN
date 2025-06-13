@@ -184,7 +184,7 @@ const theme = extendTheme({
           fontSize: '0.875rem',
           padding: '8px 16px',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': { 
+          '&:hover': {
             borderWidth: '1px',
             transform: 'translateY(-1px)',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.12)'
@@ -218,7 +218,7 @@ const theme = extendTheme({
     },
     MuiInputLabel: {
       styleOverrides: {
-        root: { 
+        root: {
           fontSize: '0.875rem',
           fontWeight: 500
         }
@@ -227,11 +227,11 @@ const theme = extendTheme({
     MuiTypography: {
       styleOverrides: {
         root: {
-          '&.MuiTypography-body1': { 
+          '&.MuiTypography-body1': {
             fontSize: '0.875rem',
             lineHeight: 1.5
           },
-          '&.MuiTypography-body2': { 
+          '&.MuiTypography-body2': {
             fontSize: '0.8125rem',
             lineHeight: 1.4
           }
@@ -243,15 +243,15 @@ const theme = extendTheme({
         root: {
           fontSize: '0.875rem',
           borderRadius: '8px',
-          '& fieldset': { 
+          '& fieldset': {
             borderWidth: '1.5px !important',
             borderColor: 'rgba(0, 0, 0, 0.23)'
           },
-          '&:hover fieldset': { 
+          '&:hover fieldset': {
             borderWidth: '1.5px !important',
             borderColor: 'rgba(0, 0, 0, 0.4)'
           },
-          '&.Mui-focused fieldset': { 
+          '&.Mui-focused fieldset': {
             borderWidth: '2px !important'
           }
         }
@@ -279,12 +279,30 @@ const theme = extendTheme({
       }
     },
     MuiTooltip: {
+      defaultProps: {
+        enterDelay: 0,
+        leaveDelay: 0,
+        enterNextDelay: 0,
+        disableInteractive: true,
+        TransitionProps: { timeout: 0 }
+      },
       styleOverrides: {
         tooltip: {
-          fontSize: '0.75rem',
+          fontSize: '12px',
           fontWeight: 500,
-          borderRadius: '6px',
-          padding: '8px 12px'
+          borderRadius: '4px',
+          padding: '6px 8px',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          color: 'white',
+          maxWidth: '200px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+          transition: 'none !important'
+        },
+        popper: {
+          transition: 'none !important'
+        },
+        tooltipArrow: {
+          display: 'none'
         }
       }
     },

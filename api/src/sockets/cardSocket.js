@@ -19,4 +19,16 @@ export const cardSocket = (io, socket) => {
   socket.on('FE_CARD_CREATED', (data) => {
     socket.to(data.boardId).emit('BE_CARD_CREATED', data)
   })
+
+  // Xóa checklist realtime
+  socket.on('FE_CHECKLIST_DELETED', (data) => {
+    // data: { boardId, cardId, checklistId }
+    socket.to(data.boardId).emit('BE_CHECKLIST_DELETED', data)
+  })
+
+  // Xóa checklist item realtime
+  socket.on('FE_CHECKLIST_ITEM_DELETED', (data) => {
+    // data: { boardId, cardId, checklistId, itemId }
+    socket.to(data.boardId).emit('BE_CHECKLIST_ITEM_DELETED', data)
+  })
 } 

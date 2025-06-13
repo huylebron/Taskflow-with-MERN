@@ -44,30 +44,30 @@ function BoardBar({ board, boardId, onOpenFilterDrawer }) {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const currentUser = useSelector(selectCurrentUser)
-  
+
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
-  
+
   // State để quản lý modal background switcher
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false)
-  
+
   // State để quản lý modal analytics
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false)
-  
+
   // State để quản lý modal delete board
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
   // State để quản lý modal member management
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false)
-  
+
   // Check if current user is board owner
   const isOwner = board?.ownerIds?.includes(currentUser?._id)
-  
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
   }
-  
+
   const handleClose = () => {
     setAnchorEl(null)
   }
@@ -129,16 +129,16 @@ function BoardBar({ board, boardId, onOpenFilterDrawer }) {
 
     try {
       setIsDeleting(true)
-      
+
       // Dispatch delete action
       await dispatch(deleteBoardAPI(board._id)).unwrap()
-      
+
       // Close modal
       setIsDeleteModalOpen(false)
-      
+
       // Navigate to boards list
       navigate('/boards')
-      
+
     } catch (error) {
       console.error('Delete board failed:', error)
       // Error toast is handled by the API function

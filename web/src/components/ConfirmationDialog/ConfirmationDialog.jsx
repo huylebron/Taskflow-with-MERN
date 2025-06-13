@@ -41,4 +41,4 @@ const ConfirmationDialog = ({ open, title, items = [], loading = false, onConfir
   )
 }
 
-export default ConfirmationDialog 
+export default ConfirmationDialog

@@ -187,21 +187,21 @@ function Column({ column }) {
   const handleSelectColumnColor = async (color, type) => {
     try {
       setIsUpdatingColor(true)
-      
+
       // Cập nhật màu column trong state
       const columnToUpdate = {
         ...column,
         color: type === 'default' ? null : color,
         colorType: type === 'default' ? null : type
       }
-      
+
       // Dispatch action để cập nhật trực tiếp vào Redux
       dispatch(updateColumnInBoard(columnToUpdate))
 
       // Gọi API để cập nhật màu column thông qua updateColumnDetailsAPI
-      await updateColumnDetailsAPI(column._id, { 
-        color: columnToUpdate.color, 
-        colorType: columnToUpdate.colorType 
+      await updateColumnDetailsAPI(column._id, {
+        color: columnToUpdate.color,
+        colorType: columnToUpdate.colorType
       })
 
       toast.success('Đã cập nhật màu cột!', { position: 'bottom-right' })
@@ -253,8 +253,8 @@ function Column({ column }) {
                 </Box>
               ) : (
                 <ColorLensIcon
-                  sx={{ 
-                    color: 'text.primary', 
+                  sx={{
+                    color: 'text.primary',
                     cursor: 'pointer',
                     fontSize: '20px',
                     '&:hover': { color: 'primary.main' }
@@ -293,8 +293,8 @@ function Column({ column }) {
               alignItems: 'center',
               justifyContent: 'space-between'
             }}>
-              <Button 
-                startIcon={<AddCardIcon />} 
+              <Button
+                startIcon={<AddCardIcon />}
                 onClick={toggleOpenNewCardForm}
                 sx={{
                   fontWeight: 500,
@@ -304,10 +304,10 @@ function Column({ column }) {
                   padding: '8px 12px',
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
-                    backgroundColor: column?.color 
-                      ? `${column.color}20` 
-                      : (theme) => theme.palette.mode === 'dark' 
-                        ? 'rgba(255, 255, 255, 0.08)' 
+                    backgroundColor: column?.color
+                      ? `${column.color}20`
+                      : (theme) => theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.08)'
                         : 'rgba(0, 0, 0, 0.04)',
                     transform: 'translateY(-1px)',
                     color: column?.color ? getTextColorForBackground(column.color) : 'primary.main'
@@ -320,8 +320,8 @@ function Column({ column }) {
                 Add new card
               </Button>
               <Tooltip title="Drag to move">
-                <DragHandleIcon 
-                  sx={{ 
+                <DragHandleIcon
+                  sx={{
                     cursor: 'pointer',
                     color: column?.color ? getTextColorForBackground(column.color) : 'text.secondary',
                     transition: 'all 0.2s ease',
@@ -329,7 +329,7 @@ function Column({ column }) {
                       color: column?.color ? getTextColorForBackground(column.color) : 'primary.main',
                       transform: 'scale(1.1)'
                     }
-                  }} 
+                  }}
                 />
               </Tooltip>
             </Box>
@@ -349,7 +349,7 @@ function Column({ column }) {
                 value={newCardTitle}
                 onChange={(e) => setNewCardTitle(e.target.value)}
                 sx={{
-                  '& label': { 
+                  '& label': {
                     color: column?.color ? getTextColorForBackground(column.color) : 'text.primary',
                     fontWeight: 500,
                     fontSize: '0.875rem'
@@ -360,28 +360,28 @@ function Column({ column }) {
                     fontWeight: 500,
                     fontSize: '0.875rem'
                   },
-                  '& label.Mui-focused': { 
+                  '& label.Mui-focused': {
                     color: (theme) => theme.palette.primary.main,
                     fontWeight: 600
                   },
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '8px',
                     transition: 'all 0.2s ease',
-                    '& fieldset': { 
-                      borderColor: column?.color 
-                        ? `${column.color}60` 
-                        : (theme) => theme.palette.mode === 'dark' 
-                          ? 'rgba(255, 255, 255, 0.23)' 
+                    '& fieldset': {
+                      borderColor: column?.color
+                        ? `${column.color}60`
+                        : (theme) => theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.23)'
                           : 'rgba(0, 0, 0, 0.23)',
                       borderWidth: '1.5px'
                     },
-                    '&:hover fieldset': { 
-                      borderColor: column?.color 
-                        ? `${column.color}80` 
+                    '&:hover fieldset': {
+                      borderColor: column?.color
+                        ? `${column.color}80`
                         : (theme) => theme.palette.primary.main,
                       borderWidth: '1.5px'
                     },
-                    '&.Mui-focused fieldset': { 
+                    '&.Mui-focused fieldset': {
                       borderColor: (theme) => theme.palette.primary.main,
                       borderWidth: '2px'
                     }
@@ -392,8 +392,8 @@ function Column({ column }) {
                 <Button
                   className="interceptor-loading"
                   onClick={addNewCard}
-                  variant="contained" 
-                  color="success" 
+                  variant="contained"
+                  color="success"
                   size="small"
                   sx={{
                     fontWeight: 600,
@@ -404,7 +404,7 @@ function Column({ column }) {
                     border: '1px solid',
                     borderColor: (theme) => theme.palette.success.main,
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    '&:hover': { 
+                    '&:hover': {
                       bgcolor: (theme) => theme.palette.success.dark,
                       borderColor: (theme) => theme.palette.success.dark,
                       transform: 'translateY(-1px)',
@@ -426,8 +426,8 @@ function Column({ column }) {
                     padding: '4px',
                     transition: 'all 0.2s ease',
                     '&:hover': {
-                      backgroundColor: (theme) => theme.palette.mode === 'dark' 
-                        ? 'rgba(255, 152, 0, 0.1)' 
+                      backgroundColor: (theme) => theme.palette.mode === 'dark'
+                        ? 'rgba(255, 152, 0, 0.1)'
                         : 'rgba(245, 124, 0, 0.1)',
                       color: (theme) => theme.palette.mode === 'dark' ? '#ffb74d' : '#e65100',
                       transform: 'scale(1.1)'

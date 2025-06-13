@@ -14,7 +14,7 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [isFullscreen, setIsFullscreen] = useState(false)
   const imageContainerRef = useRef(null)
-  
+
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
@@ -55,17 +55,15 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
 
   const toggleFullscreen = (e) => {
     e.stopPropagation()
-    
+
     if (!document.fullscreenElement) {
       if (imageContainerRef.current.requestFullscreen) {
         imageContainerRef.current.requestFullscreen()
         setIsFullscreen(true)
       }
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen()
-        setIsFullscreen(false)
-      }
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen()
+      setIsFullscreen(false)
     }
   }
 
@@ -88,7 +86,7 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
     if (isDragging && scale > 1) {
       const newX = e.clientX - dragStart.x
       const newY = e.clientY - dragStart.y
-      
+
       setPosition({
         x: newX,
         y: newY
@@ -115,7 +113,7 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
     if (isDragging && scale > 1) {
       const newX = e.touches[0].clientX - dragStart.x
       const newY = e.touches[0].clientY - dragStart.y
-      
+
       setPosition({
         x: newX,
         y: newY
@@ -156,7 +154,7 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
       window.removeEventListener('touchmove', handleTouchMove)
       window.removeEventListener('touchend', handleTouchEnd)
     }
-    
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
@@ -171,7 +169,7 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)
-    
+
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
     }
@@ -208,13 +206,13 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
           margin: '0 auto'
         }}
       >
-        <Box sx={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          right: 0, 
-          padding: '12px 16px', 
-          display: 'flex', 
+        <Box sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          padding: '12px 16px',
+          display: 'flex',
           justifyContent: 'space-between',
           backgroundColor: 'rgba(0, 0, 0, 0.7)',
           zIndex: 1,
@@ -235,15 +233,15 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
                 <ZoomOutIcon />
               </IconButton>
             </Tooltip>
-            
+
             <Slider
               value={scale}
               min={0.5}
               max={3}
               step={0.1}
               onChange={handleSliderChange}
-              sx={{ 
-                width: isMobile ? '80px' : '200px', 
+              sx={{
+                width: isMobile ? '80px' : '200px',
                 color: 'white',
                 '& .MuiSlider-thumb': {
                   width: isMobile ? 14 : 20,
@@ -257,7 +255,7 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
                 }
               }}
             />
-            
+
             <Tooltip title="Phóng to">
               <IconButton
                 onClick={handleZoomIn}
@@ -302,19 +300,19 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
             </Tooltip>
 
             {!isMobile && (
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  color: 'rgba(255,255,255,0.7)', 
-                  ml: 1, 
-                  fontSize: '0.85rem' 
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'rgba(255,255,255,0.7)',
+                  ml: 1,
+                  fontSize: '0.85rem'
                 }}
               >
                 {Math.round(scale * 100)}%
               </Typography>
             )}
           </Box>
-          
+
           <Tooltip title="Đóng">
             <IconButton
               aria-label="close"
@@ -332,11 +330,11 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
             </IconButton>
           </Tooltip>
         </Box>
-        
-        <Box 
+
+        <Box
           ref={imageContainerRef}
-          sx={{ 
-            overflow: 'hidden', 
+          sx={{
+            overflow: 'hidden',
             flex: 1,
             display: 'flex',
             alignItems: 'center',
@@ -394,4 +392,4 @@ function ImageLightbox({ isOpen, onClose, imageSrc }) {
   )
 }
 
-export default ImageLightbox 
+export default ImageLightbox

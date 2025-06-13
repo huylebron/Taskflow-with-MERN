@@ -1,10 +1,10 @@
 import { usePermissions } from '~/customHooks/usePermissions'
 
-const PermissionWrapper = ({ 
-  children, 
+const PermissionWrapper = ({
+  children,
   adminOnly = false,
   memberOnly = false,
-  fallback = null 
+  fallback = null
 }) => {
   const { isAdmin, isMember } = usePermissions()
 

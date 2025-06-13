@@ -42,8 +42,8 @@ function ToggleFocusInput({ value, onChangedValue, inputFontSize = '16px', ...pr
       // Magic here :D
       sx={{
         '& label': {},
-        '& input': { 
-          fontSize: inputFontSize, 
+        '& input': {
+          fontSize: inputFontSize,
           fontWeight: 600,
           color: 'inherit',
           lineHeight: 1.4
@@ -52,24 +52,24 @@ function ToggleFocusInput({ value, onChangedValue, inputFontSize = '16px', ...pr
           backgroundColor: 'transparent',
           borderRadius: '8px',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          '& fieldset': { 
+          '& fieldset': {
             borderColor: 'transparent',
             borderWidth: '1.5px'
           }
         },
         '& .MuiOutlinedInput-root:hover': {
           borderColor: 'transparent',
-          '& fieldset': { 
+          '& fieldset': {
             borderColor: 'rgba(0, 121, 191, 0.3)',
             borderWidth: '1.5px'
           }
         },
         '& .MuiOutlinedInput-root.Mui-focused': {
           backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2a2d3a' : 'white',
-          boxShadow: (theme) => theme.palette.mode === 'dark' 
-            ? '0 0 0 2px rgba(144, 202, 249, 0.2)' 
+          boxShadow: (theme) => theme.palette.mode === 'dark'
+            ? '0 0 0 2px rgba(144, 202, 249, 0.2)'
             : '0 0 0 2px rgba(0, 121, 191, 0.1)',
-          '& fieldset': { 
+          '& fieldset': {
             borderColor: 'primary.main',
             borderWidth: '2px'
           }

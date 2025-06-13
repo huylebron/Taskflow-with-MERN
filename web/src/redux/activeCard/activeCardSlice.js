@@ -35,11 +35,11 @@ export const activeCardSlice = createSlice({
     // Action to update specific fields in current active card
     updateActiveCardField: (state, action) => {
       const { fieldName, fieldValue } = action.payload
-      
+
       if (state.currentActiveCard) {
         state.currentActiveCard[fieldName] = fieldValue
         state.currentActiveCard.updatedAt = Date.now()
-        
+
         // Log for debugging
         console.log(`📝 ActiveCard Redux: Updated ${fieldName} to`, fieldValue)
       }
@@ -48,15 +48,15 @@ export const activeCardSlice = createSlice({
     // Action specifically for due date updates with validation
     updateActiveCardDueDate: (state, action) => {
       const { dueDate } = action.payload
-      
+
       if (state.currentActiveCard) {
         // Store the previous value for potential rollback
         const previousDueDate = state.currentActiveCard.dueDate
-        
+
         state.currentActiveCard.dueDate = dueDate
         state.currentActiveCard.updatedAt = Date.now()
         state.currentActiveCard._previousDueDate = previousDueDate
-        
+
         console.log(`📅 ActiveCard Redux: Updated due date from ${previousDueDate} to ${dueDate}`)
       }
     },
@@ -67,8 +67,49 @@ export const activeCardSlice = createSlice({
         const previousDueDate = state.currentActiveCard._previousDueDate
         state.currentActiveCard.dueDate = previousDueDate
         delete state.currentActiveCard._previousDueDate
-        
+
         console.log('🔄 ActiveCard Redux: Rolled back due date to', previousDueDate)
+      }
+    },
+
+    // Action to update checklists in active card
+    updateActiveCardChecklists: (state, action) => {
+      const { checklists } = action.payload
+
+      if (state.currentActiveCard) {
+        state.currentActiveCard.checklists = checklists
+        state.currentActiveCard.updatedAt = Date.now()
+
+        console.log('✅ ActiveCard Redux: Updated checklists', checklists.length, 'items')
+      }
+    },
+
+    // Action to remove checklist from active card
+    removeChecklistFromActiveCard: (state, action) => {
+      const { checklistId } = action.payload
+
+      if (state.currentActiveCard && state.currentActiveCard.checklists) {
+        state.currentActiveCard.checklists = state.currentActiveCard.checklists.filter(
+          checklist => checklist.id !== checklistId
+        )
+        state.currentActiveCard.updatedAt = Date.now()
+
+        console.log('🗑️ ActiveCard Redux: Removed checklist', checklistId)
+      }
+    },
+
+    // Action to remove item from checklist in active card
+    removeItemFromChecklistInActiveCard: (state, action) => {
+      const { checklistId, itemId } = action.payload
+
+      if (state.currentActiveCard && state.currentActiveCard.checklists) {
+        const checklist = state.currentActiveCard.checklists.find(c => c.id === checklistId)
+        if (checklist && checklist.items) {
+          checklist.items = checklist.items.filter(item => item.id !== itemId)
+          state.currentActiveCard.updatedAt = Date.now()
+
+          console.log('🗑️ ActiveCard Redux: Removed item', itemId, 'from checklist', checklistId)
+        }
       }
     }
   },
@@ -86,7 +127,10 @@ export const {
   showModalActiveCard,
   updateActiveCardField,
   updateActiveCardDueDate,
-  rollbackActiveCardDueDate
+  rollbackActiveCardDueDate,
+  updateActiveCardChecklists,
+  removeChecklistFromActiveCard,
+  removeItemFromChecklistInActiveCard
 } = activeCardSlice.actions
 
 // Selectors: Là nơi dành cho các components bên dưới gọi bằng hook useSelector() để lấy dữ liệu từ trong kho redux store ra sử dụng

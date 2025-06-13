@@ -37,17 +37,23 @@ import { useState, useEffect } from 'react'
 import {
   clearAndHideCurrentActiveCard,
   updateCurrentActiveCard,
-  selectIsShowModalActiveCard
+  selectIsShowModalActiveCard,
+  removeChecklistFromActiveCard,
+  removeItemFromChecklistInActiveCard,
+  updateActiveCardChecklists
 } from '~/redux/activeCard/activeCardSlice'
 import { updateCardDetailsAPI, deleteCardAPI } from '~/apis'
 import { fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
-import { 
+import {
   updateCardInBoard,
   removeCardFromBoard,
   selectCurrentActiveBoard,
   addLabelToBoard,
   deleteLabelFromBoard,
-  updateCardLabels
+  updateCardLabels,
+  removeChecklistFromCardInBoard,
+  removeItemFromChecklistInCardInBoard,
+  updateCardChecklistsInBoard
 } from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { CARD_MEMBER_ACTIONS } from '~/utils/constants'
@@ -137,14 +143,14 @@ function ActiveCard() {
   }, [activeCard])
 
   // State for "Thêm" button dropdown menu
-  const [anchorEl, setAnchorEl] = useState(null);
-  const openMoreMenu = Boolean(anchorEl);
+  const [anchorEl, setAnchorEl] = useState(null)
+  const openMoreMenu = Boolean(anchorEl)
   const handleMoreMenuClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+    setAnchorEl(event.currentTarget)
+  }
   const handleMoreMenuClose = () => {
-    setAnchorEl(null);
-  };
+    setAnchorEl(null)
+  }
 
   // State for Due Date Picker
   const [showDueDatePicker, setShowDueDatePicker] = useState(false)
@@ -153,14 +159,14 @@ function ActiveCard() {
   // Helper functions cho due date
   const formatDueDateDisplay = (dueDate) => {
     if (!dueDate) return ''
-    
+
     const due = new Date(dueDate)
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate())
-    
+
     const diffInDays = Math.ceil((dueDay - today) / (1000 * 60 * 60 * 24))
-    
+
     if (diffInDays === 0) {
       return `Hôm nay lúc ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
     } else if (diffInDays === 1) {
@@ -172,8 +178,8 @@ function ActiveCard() {
     } else if (diffInDays <= 7) {
       return `${diffInDays} ngày nữa lúc ${due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
     } else {
-      return due.toLocaleString('vi-VN', { 
-        day: '2-digit', 
+      return due.toLocaleString('vi-VN', {
+        day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
@@ -184,11 +190,11 @@ function ActiveCard() {
 
   const getDueDateStatusColor = (dueDate) => {
     if (!dueDate) return 'inherit'
-    
+
     const now = new Date()
     const due = new Date(dueDate)
     const diffInHours = (due - now) / (1000 * 60 * 60)
-    
+
     if (diffInHours < 0) {
       return '#d32f2f' // Đỏ - đã quá hạn
     } else if (diffInHours <= 24) {
@@ -256,7 +262,7 @@ function ActiveCard() {
     try {
       // Gọi API để xóa cover
       await callApiUpdateCard({ deleteCardCover: true })
-      
+
       // Thông báo thành công
       toast.success('Xóa ảnh cover thành công!', { position: 'bottom-right' })
     } catch (error) {
@@ -302,7 +308,7 @@ function ActiveCard() {
         cover: coverValue,
         coverType: coverType
       })
-      
+
       // Thông báo thành công
       toast.success('Cập nhật ảnh bìa thành công!', { position: 'bottom-right' })
     } catch (error) {
@@ -425,15 +431,61 @@ function ActiveCard() {
     try {
       // Update local state
       setChecklists(updatedChecklists)
-      
-      // Update card in Redux store
+
+      // Update card in Redux stores
       const updatedCard = { ...activeCard, checklists: updatedChecklists }
       dispatch(updateCurrentActiveCard(updatedCard))
       dispatch(updateCardInBoard(updatedCard))
       
+      // Update specifically for checklist operations
+      dispatch(updateActiveCardChecklists({ checklists: updatedChecklists }))
+      dispatch(updateCardChecklistsInBoard({ cardId: activeCard._id, checklists: updatedChecklists }))
+
       toast.success('Cập nhật checklist thành công!')
     } catch (error) {
       toast.error('Có lỗi khi cập nhật checklist!')
+    }
+  }
+
+  // Handler for checklist deletion from ActiveCard parent
+  const onChecklistDeleted = (checklistId) => {
+    try {
+      // Update local state
+      const updatedChecklists = checklists.filter(checklist => checklist.id !== checklistId)
+      setChecklists(updatedChecklists)
+
+      // Update Redux stores
+      dispatch(removeChecklistFromActiveCard({ checklistId }))
+      dispatch(removeChecklistFromCardInBoard({ cardId: activeCard._id, checklistId }))
+
+      console.log('✅ ActiveCard: Handled checklist deletion', checklistId)
+    } catch (error) {
+      console.error('❌ ActiveCard: Error handling checklist deletion:', error)
+    }
+  }
+
+  // Handler for checklist item deletion from ActiveCard parent
+  const onChecklistItemDeleted = (checklistId, itemId) => {
+    try {
+      // Update local state
+      const updatedChecklists = checklists.map(checklist => {
+        if (checklist.id === checklistId) {
+          return {
+            ...checklist,
+            items: checklist.items.filter(item => item.id !== itemId)
+          }
+        }
+        return checklist
+      })
+      setChecklists(updatedChecklists)
+
+      // Update Redux stores  
+      dispatch(removeItemFromChecklistInActiveCard({ checklistId, itemId }))
+      dispatch(removeItemFromChecklistInCardInBoard({ cardId: activeCard._id, checklistId, itemId }))
+
+      console.log('✅ ActiveCard: Handled checklist item deletion', checklistId, itemId)
+    } catch (error) {
+      console.error('❌ ActiveCard: Error handling checklist item deletion:', error)
     }
   }
 
@@ -490,17 +542,17 @@ function ActiveCard() {
       }
 
       const dueDate = selectedDate.toISOString()
-      
+
       // Use the synchronization hook for better state management
       await updateDueDate(activeCard._id, dueDate, {
         optimistic: true,
         showToast: true,
         source: 'active-card-modal'
       })
-      
+
       // Trigger calendar refresh to show updated due date
       triggerCalendarRefresh()
-      
+
       onCloseDueDatePicker()
     } catch (error) {
       console.error('Error updating due date:', error)
@@ -521,10 +573,10 @@ function ActiveCard() {
         showToast: true,
         source: 'active-card-modal-remove'
       })
-      
+
       // Trigger calendar refresh to show removed due date
       triggerCalendarRefresh()
-      
+
       onCloseDueDatePicker()
     } catch (error) {
       console.error('Error removing due date:', error)
@@ -639,14 +691,14 @@ function ActiveCard() {
         {activeCard?.cover &&
           <Box sx={{ mb: 4, position: 'relative' }}>
             <img
-              style={{ 
-                width: '100%', 
-                height: '320px', 
-                borderRadius: '6px', 
+              style={{
+                width: '100%',
+                height: '320px',
+                borderRadius: '6px',
                 objectFit: 'cover',
                 cursor: 'zoom-in',
-                ...(activeCard?.coverType === 'color' || activeCard?.coverType === 'gradient' ? { 
-                  display: 'none' 
+                ...(activeCard?.coverType === 'color' || activeCard?.coverType === 'gradient' ? {
+                  display: 'none'
                 } : {})
               }}
               src={activeCard?.cover}
@@ -654,11 +706,11 @@ function ActiveCard() {
               onClick={handleCoverClick}
             />
             {(activeCard?.coverType === 'color' || activeCard?.coverType === 'gradient') && (
-              <Box 
-                sx={{ 
-                  width: '100%', 
-                  height: '160px', 
-                  borderRadius: '6px', 
+              <Box
+                sx={{
+                  width: '100%',
+                  height: '160px',
+                  borderRadius: '6px',
                   background: activeCard?.cover,
                   mb: 2
                 }}
@@ -674,7 +726,7 @@ function ActiveCard() {
                   backgroundColor: 'rgba(0, 0, 0, 0.4)',
                   color: 'white',
                   '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)'
                   }
                 }}
                 size="medium"
@@ -701,7 +753,7 @@ function ActiveCard() {
             {activeCard.labelIds.map(labelId => {
               const label = activeBoard?.labels?.find(l => l.id === labelId)
               if (!label) return null
-              
+
               return (
                 <LabelChip
                   key={label.id}
@@ -727,14 +779,14 @@ function ActiveCard() {
         {activeCard?.dueDate && (
           <Box sx={{ mb: 3 }}>
             <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Due Date</Typography>
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
                 gap: 1,
                 p: 1.5,
                 borderRadius: 1,
-                backgroundColor: (theme) => 
+                backgroundColor: (theme) =>
                   theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
                 border: `1px solid ${getDueDateStatusColor(activeCard.dueDate)}`,
                 color: getDueDateStatusColor(activeCard.dueDate)
@@ -751,11 +803,11 @@ function ActiveCard() {
         {/* Add to card buttons - horizontal layout */}
         <Box sx={{ mb: 3 }}>
           <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Add To Card</Typography>
-          <Stack 
-            direction="row" 
-            spacing={1} 
-            sx={{ 
-              flexWrap: 'wrap', 
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              flexWrap: 'wrap',
               gap: 1,
               '& .MuiBox-root': {
                 minWidth: '120px',
@@ -768,9 +820,9 @@ function ActiveCard() {
                 transition: 'all 0.2s ease',
                 '&:hover': {
                   transform: 'translateY(-1px)',
-                  boxShadow: (theme) => theme.palette.mode === 'dark' 
-                    ? '0 2px 4px rgba(255, 255, 255, 0.1)' 
-                    : '0 2px 4px rgba(0, 0, 0, 0.1)',
+                  boxShadow: (theme) => theme.palette.mode === 'dark'
+                    ? '0 2px 4px rgba(255, 255, 255, 0.1)'
+                    : '0 2px 4px rgba(0, 0, 0, 0.1)'
                 }
               }
             }}
@@ -858,13 +910,13 @@ function ActiveCard() {
               sx={{
                 '& .MuiPaper-root': {
                   borderRadius: '8px',
-                  boxShadow: (theme) => theme.palette.mode === 'dark' 
-                    ? '0 0 8px rgba(255, 255, 255, 0.1)' 
+                  boxShadow: (theme) => theme.palette.mode === 'dark'
+                    ? '0 0 8px rgba(255, 255, 255, 0.1)'
                     : '0 0 8px rgba(0, 0, 0, 0.1)',
-                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2f3542' : '#fff',
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2f3542' : '#fff'
                 },
                 '& .MuiList-root': {
-                  padding: '8px',
+                  padding: '8px'
                 },
                 '& .MuiMenuItem-root': {
                   borderRadius: '4px',
@@ -872,22 +924,22 @@ function ActiveCard() {
                   gap: '8px',
                   transition: 'all 0.2s ease',
                   '&:hover': {
-                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#33485D' : theme.palette.grey[100],
-                  },
-                },
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#33485D' : theme.palette.grey[100]
+                  }
+                }
               }}
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
               TransitionProps={{ timeout: 200 }}
             >
-              <MenuItem 
-                onClick={() => { 
-                  onShowDueDatePicker();
+              <MenuItem
+                onClick={() => {
+                  onShowDueDatePicker()
                 }}
                 sx={{
                   color: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#172b4d',
                   fontSize: '14px',
-                  fontWeight: '600',
+                  fontWeight: '600'
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
@@ -895,15 +947,15 @@ function ActiveCard() {
                   <span>Dates</span>
                 </Box>
               </MenuItem>
-              <MenuItem 
-                onClick={() => { 
-                  toast.info('Tính năng Custom Fields đang được phát triển');
-                  handleMoreMenuClose(); 
+              <MenuItem
+                onClick={() => {
+                  toast.info('Tính năng Custom Fields đang được phát triển')
+                  handleMoreMenuClose()
                 }}
                 sx={{
                   color: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#172b4d',
                   fontSize: '14px',
-                  fontWeight: '600',
+                  fontWeight: '600'
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
@@ -926,24 +978,24 @@ function ActiveCard() {
               </Box>
 
               {/* Feature 03: Xử lý mô tả của Card với scroll */}
-              <Box sx={{ 
-                maxHeight: '400px', 
+              <Box sx={{
+                maxHeight: '400px',
                 overflowY: 'auto',
                 pr: 1,
                 '&::-webkit-scrollbar': {
-                  width: '8px',
+                  width: '8px'
                 },
                 '&::-webkit-scrollbar-track': {
                   backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2f3542' : '#f1f1f1',
-                  borderRadius: '4px',
+                  borderRadius: '4px'
                 },
                 '&::-webkit-scrollbar-thumb': {
                   backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#c1c1c1',
                   borderRadius: '4px',
                   '&:hover': {
-                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#64b5f6' : '#a8a8a8',
-                  },
-                },
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#64b5f6' : '#a8a8a8'
+                  }
+                }
               }}>
                 <CardDescriptionMdEditor
                   cardDescriptionProp={activeCard?.description}
@@ -962,24 +1014,24 @@ function ActiveCard() {
               </Box>
 
               {/* Feature 04: Xử lý các hành động, ví dụ comment vào Card với scroll */}
-              <Box sx={{ 
-                maxHeight: '400px', 
+              <Box sx={{
+                maxHeight: '400px',
                 overflowY: 'auto',
                 pr: 1,
                 '&::-webkit-scrollbar': {
-                  width: '8px',
+                  width: '8px'
                 },
                 '&::-webkit-scrollbar-track': {
                   backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2f3542' : '#f1f1f1',
-                  borderRadius: '4px',
+                  borderRadius: '4px'
                 },
                 '&::-webkit-scrollbar-thumb': {
                   backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#90caf9' : '#c1c1c1',
                   borderRadius: '4px',
                   '&:hover': {
-                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#64b5f6' : '#a8a8a8',
-                  },
-                },
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#64b5f6' : '#a8a8a8'
+                  }
+                }
               }}>
                 <CardActivitySection
                   cardComments={activeCard?.comments}
@@ -990,22 +1042,22 @@ function ActiveCard() {
           </Grid>
         </Grid>
 
-        {activeCard?.cover && activeCard?.coverType === 'image' && 
-          <ImageLightbox 
-            isOpen={showCoverLightbox} 
-            onClose={handleCloseCoverLightbox} 
-            imageSrc={activeCard?.cover} 
+        {activeCard?.cover && activeCard?.coverType === 'image' &&
+          <ImageLightbox
+            isOpen={showCoverLightbox}
+            onClose={handleCloseCoverLightbox}
+            imageSrc={activeCard?.cover}
           />
         }
-        
-        <CoverOptionsModal 
-          isOpen={showCoverOptions} 
-          onClose={onCloseCoverOptions} 
+
+        <CoverOptionsModal
+          isOpen={showCoverOptions}
+          onClose={onCloseCoverOptions}
           onSelectColor={onSelectCoverColor}
           onUploadCover={onUploadCoverFromModal}
         />
 
-        <AttachmentModal 
+        <AttachmentModal
           isOpen={showAttachmentModal}
           onClose={onCloseAttachmentModal}
           cardId={activeCard?._id} // 🚨 CRITICAL: Pass cardId for API calls
@@ -1016,7 +1068,7 @@ function ActiveCard() {
         />
 
         {selectedAttachment && showAttachmentLightbox && (
-          <ImageLightbox 
+          <ImageLightbox
             isOpen={showAttachmentLightbox}
             onClose={onCloseAttachmentLightbox}
             imageSrc={selectedAttachment.url}
@@ -1040,12 +1092,14 @@ function ActiveCard() {
           onClose={onCloseChecklistDialog}
           checklists={checklists}
           onUpdateChecklists={onUpdateChecklists}
+          onChecklistDeleted={onChecklistDeleted}
+          onChecklistItemDeleted={onChecklistItemDeleted}
           cardId={activeCard?._id}
         />
 
         {/* Due Date Picker Dialog */}
-        <Dialog 
-          open={showDueDatePicker} 
+        <Dialog
+          open={showDueDatePicker}
           onClose={onCloseDueDatePicker}
           maxWidth="sm"
           fullWidth
@@ -1056,16 +1110,16 @@ function ActiveCard() {
             }
           }}
         >
-          <DialogTitle sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <DialogTitle sx={{
+            display: 'flex',
+            alignItems: 'center',
             gap: 1,
             pb: 1
           }}>
             <WatchLaterOutlinedIcon />
             <Typography variant="h6">Cài đặt ngày hết hạn</Typography>
           </DialogTitle>
-          
+
           <DialogContent sx={{ pt: 2 }}>
             <TextField
               label="Chọn ngày và giờ"
@@ -1074,7 +1128,7 @@ function ActiveCard() {
               onChange={(e) => setSelectedDateTime(e.target.value)}
               fullWidth
               InputLabelProps={{
-                shrink: true,
+                shrink: true
               }}
               sx={{
                 '& .MuiInputLabel-root': {
@@ -1090,12 +1144,12 @@ function ActiveCard() {
                 }
               }}
             />
-            
+
             {activeCard?.dueDate && (
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  mt: 2, 
+              <Typography
+                variant="body2"
+                sx={{
+                  mt: 2,
                   color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
                   fontStyle: 'italic'
                 }}
@@ -1104,10 +1158,10 @@ function ActiveCard() {
               </Typography>
             )}
           </DialogContent>
-          
+
           <DialogActions sx={{ p: 2, gap: 1 }}>
             {activeCard?.dueDate && (
-              <Button 
+              <Button
                 onClick={onRemoveDueDate}
                 color="error"
                 variant="outlined"
@@ -1116,18 +1170,18 @@ function ActiveCard() {
                 Xóa ngày hết hạn
               </Button>
             )}
-            
+
             <Box sx={{ flex: 1 }} />
-            
-            <Button 
+
+            <Button
               onClick={onCloseDueDatePicker}
               variant="outlined"
               size="small"
             >
               Hủy
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={onSaveDueDate}
               variant="contained"
               size="small"

@@ -1,0 +1,244 @@
+/* Enhanced TaskFlow Styling */
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Improved focus styles */
+*:focus-visible {
+  outline: 2px solid #0079bf;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Enhanced button hover effects */
+.MuiButton-root:hover {
+  transform: translateY(-1px);
+}
+
+.MuiButton-root:active {
+  transform: translateY(0px);
+}
+
+/* Card hover animations */
+.MuiCard-root {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.MuiCard-root:hover {
+  transform: translateY(-2px);
+}
+
+/* Pulse animation for overdue cards */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.due-date-indicator.overdue {
+  animation: pulse 2s infinite;
+}
+
+/* Smooth scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode scrollbar */
+[data-mui-color-scheme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-mui-color-scheme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Enhanced typography */
+body {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Improved input focus states */
+.MuiOutlinedInput-root.Mui-focused {
+  box-shadow: 0 0 0 2px rgba(0, 121, 191, 0.1);
+}
+
+[data-mui-color-scheme="dark"] .MuiOutlinedInput-root.Mui-focused {
+  box-shadow: 0 0 0 2px rgba(144, 202, 249, 0.2);
+}
+
+/* Enhanced chip styling */
+.MuiChip-root {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.MuiChip-root:hover {
+  transform: scale(1.05);
+}
+
+/* Simple tooltip styling */
+.MuiTooltip-tooltip {
+  background: rgba(0, 0, 0, 0.85) !important;
+  color: white !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  padding: 6px 8px !important;
+  max-width: 200px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  transition: opacity 0.15s ease !important;
+  word-wrap: break-word !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Hide tooltip arrows for simplicity */
+.MuiTooltip-arrow {
+  display: none !important;
+}
+
+/* Simplify tooltip positioning */
+.MuiTooltip-popper {
+  z-index: 1500 !important;
+}
+
+.MuiTooltip-popper[data-popper-placement*="bottom"] .MuiTooltip-tooltip {
+  margin-top: 8px !important;
+}
+
+.MuiTooltip-popper[data-popper-placement*="top"] .MuiTooltip-tooltip {
+  margin-bottom: 8px !important;
+}
+
+.MuiTooltip-popper[data-popper-placement*="right"] .MuiTooltip-tooltip {
+  margin-left: 8px !important;
+}
+
+.MuiTooltip-popper[data-popper-placement*="left"] .MuiTooltip-tooltip {
+  margin-right: 8px !important;
+}
+
+[data-mui-color-scheme="dark"] .MuiTooltip-tooltip {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: rgba(0, 0, 0, 0.87) !important;
+}
+
+/* Enhanced modal backdrop */
+.MuiModal-backdrop {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* Improved loading states */
+.interceptor-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.interceptor-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.interceptor-loading:hover::after {
+  left: 100%;
+}
+
+/* Enhanced selection styles */
+::selection {
+  background: rgba(0, 121, 191, 0.2);
+  color: inherit;
+}
+
+[data-mui-color-scheme="dark"] ::selection {
+  background: rgba(144, 202, 249, 0.3);
+}
+
+/* Improved accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Enhanced focus indicators for keyboard navigation */
+.MuiButton-root:focus-visible,
+.MuiIconButton-root:focus-visible,
+.MuiChip-root:focus-visible {
+  outline: 2px solid #0079bf;
+  outline-offset: 2px;
+}
+
+[data-mui-color-scheme="dark"] .MuiButton-root:focus-visible,
+[data-mui-color-scheme="dark"] .MuiIconButton-root:focus-visible,
+[data-mui-color-scheme="dark"] .MuiChip-root:focus-visible {
+  outline-color: #90caf9;
+}
+
+/* Smooth page transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+} 

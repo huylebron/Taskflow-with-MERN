@@ -31,8 +31,8 @@ import LabelPicker from './LabelPicker'
 const DialogWrapper = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
     borderRadius: '8px',
-    boxShadow: theme.palette.mode === 'dark' 
-      ? '0 0 12px rgba(255, 255, 255, 0.15)' 
+    boxShadow: theme.palette.mode === 'dark'
+      ? '0 0 12px rgba(255, 255, 255, 0.15)'
       : '0 0 12px rgba(0, 0, 0, 0.15)',
     backgroundColor: theme.palette.mode === 'dark' ? '#2f3542' : '#fff',
     overflow: 'hidden',
@@ -55,7 +55,7 @@ const CloseButton = styled(IconButton)(({ theme }) => ({
   color: theme.palette.mode === 'dark' ? '#90caf9' : '#172b4d',
   padding: '6px',
   '&:hover': {
-    backgroundColor: theme.palette.mode === 'dark' ? '#33485D' : theme.palette.grey[200],
+    backgroundColor: theme.palette.mode === 'dark' ? '#33485D' : theme.palette.grey[200]
   }
 }))
 
@@ -64,11 +64,11 @@ const LabelListItem = styled(ListItem)(({ theme, selected }) => ({
   marginBottom: '4px',
   padding: '8px 12px',
   cursor: 'pointer',
-  backgroundColor: selected 
+  backgroundColor: selected
     ? theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.2)' : 'rgba(0, 121, 191, 0.1)'
     : 'transparent',
   '&:hover': {
-    backgroundColor: selected 
+    backgroundColor: selected
       ? theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.3)' : 'rgba(0, 121, 191, 0.15)'
       : theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'
   }
@@ -132,7 +132,7 @@ const LabelDialog = ({
     }
 
     onCreateLabel(newLabel)
-    
+
     // Reset form
     setNewLabelName('')
     setSelectedColor(LABEL_COLORS.GREEN)
@@ -178,13 +178,13 @@ const LabelDialog = ({
         <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
           Danh sách nhãn
         </Typography>
-        
+
         <List sx={{ mb: 2 }}>
           {filteredLabels.length > 0 ? (
             filteredLabels.map((label) => {
               const isSelected = isLabelAssignedToCard(label.id, cardLabelIds)
               const textColor = getContrastText(label.color)
-              
+
               return (
                 <LabelListItem
                   key={label.id}
@@ -192,21 +192,21 @@ const LabelDialog = ({
                   onClick={() => onToggleLabel(label.id)}
                 >
                   <ColorCircle color={label.color} />
-                  <ListItemText 
-                    primary={label.name} 
-                    sx={{ 
-                      '& .MuiListItemText-primary': { 
-                        fontWeight: isSelected ? 500 : 400 
-                      } 
+                  <ListItemText
+                    primary={label.name}
+                    sx={{
+                      '& .MuiListItemText-primary': {
+                        fontWeight: isSelected ? 500 : 400
+                      }
                     }}
                   />
                   {isSelected && (
-                    <Box sx={{ 
-                      ml: 1, 
-                      width: 20, 
-                      height: 20, 
-                      display: 'flex', 
-                      alignItems: 'center', 
+                    <Box sx={{
+                      ml: 1,
+                      width: 20,
+                      height: 20,
+                      display: 'flex',
+                      alignItems: 'center',
                       justifyContent: 'center',
                       borderRadius: '50%',
                       bgcolor: label.color,
@@ -222,10 +222,10 @@ const LabelDialog = ({
                       size="small"
                       color="error"
                       onClick={(e) => {
-                        e.stopPropagation(); // Ngăn việc click vào label (toggle)
-                        onDeleteLabel(label.id);
+                        e.stopPropagation() // Ngăn việc click vào label (toggle)
+                        onDeleteLabel(label.id)
                       }}
-                      sx={{ 
+                      sx={{
                         ml: 1,
                         opacity: 0.7,
                         '&:hover': {
@@ -253,7 +253,7 @@ const LabelDialog = ({
         <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
           Tạo nhãn mới
         </Typography>
-        
+
         <Box sx={{ display: 'flex', mb: 2 }}>
           <TextField
             fullWidth
@@ -266,8 +266,8 @@ const LabelDialog = ({
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <LocalOfferOutlinedIcon 
-                    fontSize="small" 
+                  <LocalOfferOutlinedIcon
+                    fontSize="small"
                     sx={{ color: selectedColor }}
                   />
                 </InputAdornment>
@@ -311,4 +311,4 @@ LabelDialog.propTypes = {
   onDeleteLabel: PropTypes.func.isRequired
 }
 
-export default LabelDialog 
+export default LabelDialog

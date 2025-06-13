@@ -18,10 +18,10 @@ const BackgroundColorBox = styled(Box)(({ theme, isSelected }) => ({
   borderRadius: '8px',
   cursor: 'pointer',
   transition: 'all 0.3s ease',
-  border: isSelected 
-    ? `3px solid ${theme.palette.primary.main}` 
-    : theme.palette.mode === 'dark' 
-      ? '2px solid rgba(255, 255, 255, 0.1)' 
+  border: isSelected
+    ? `3px solid ${theme.palette.primary.main}`
+    : theme.palette.mode === 'dark'
+      ? '2px solid rgba(255, 255, 255, 0.1)'
       : '2px solid rgba(0, 0, 0, 0.1)',
   position: 'relative',
   overflow: 'hidden',
@@ -72,16 +72,16 @@ const DefaultColorBox = styled(Box)(({ theme, isSelected }) => ({
   aspectRatio: '1',
   borderRadius: '8px',
   cursor: 'pointer',
-  border: isSelected 
-    ? `3px solid ${theme.palette.primary.main}` 
-    : theme.palette.mode === 'dark' 
-      ? '2px dashed rgba(255, 255, 255, 0.3)' 
+  border: isSelected
+    ? `3px solid ${theme.palette.primary.main}`
+    : theme.palette.mode === 'dark'
+      ? '2px dashed rgba(255, 255, 255, 0.3)'
       : '2px dashed rgba(0, 0, 0, 0.3)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   transition: 'all 0.3s ease',
-  background: theme.palette.mode === 'dark' 
+  background: theme.palette.mode === 'dark'
     ? 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%)'
     : 'linear-gradient(45deg, transparent 30%, rgba(0,0,0,0.1) 50%, transparent 70%)',
   position: 'relative',
@@ -116,7 +116,7 @@ function BackgroundColorPicker({ selectedBackground, onSelectColor }) {
   }
 
   const isColorSelected = (color) => {
-    return selectedBackground?.type === BACKGROUND_TYPES.COLOR && 
+    return selectedBackground?.type === BACKGROUND_TYPES.COLOR &&
            selectedBackground?.value === color
   }
 
@@ -126,15 +126,15 @@ function BackgroundColorPicker({ selectedBackground, onSelectColor }) {
 
   return (
     <Box>
-      <Typography variant="subtitle1" gutterBottom sx={{ 
+      <Typography variant="subtitle1" gutterBottom sx={{
         fontWeight: 600,
         color: 'text.primary',
         mb: 1
       }}>
         Chọn màu nền
       </Typography>
-      
-      <Typography variant="body2" sx={{ 
+
+      <Typography variant="body2" sx={{
         color: 'text.secondary',
         mb: 2
       }}>
@@ -171,17 +171,17 @@ function BackgroundColorPicker({ selectedBackground, onSelectColor }) {
           </BackgroundColorBox>
         ))}
       </BackgroundColorGrid>
-      
+
       {/* Default/Reset Option */}
       <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Typography variant="subtitle2" gutterBottom sx={{ 
+        <Typography variant="subtitle2" gutterBottom sx={{
           fontWeight: 600,
           color: 'text.primary',
           mb: 2
         }}>
           Mặc định
         </Typography>
-        
+
         <Box sx={{ width: isMobile ? '100px' : '120px' }}>
           <DefaultColorBox
             isSelected={isDefaultSelected()}
@@ -192,8 +192,8 @@ function BackgroundColorPicker({ selectedBackground, onSelectColor }) {
             onKeyDown={handleDefaultSelect}
           >
             {isDefaultSelected() && <SelectedIndicator />}
-            <Typography variant="caption" sx={{ 
-              fontSize: '11px', 
+            <Typography variant="caption" sx={{
+              fontSize: '11px',
               color: 'text.secondary',
               fontWeight: 500,
               zIndex: 1
@@ -207,4 +207,4 @@ function BackgroundColorPicker({ selectedBackground, onSelectColor }) {
   )
 }
 
-export default BackgroundColorPicker 
+export default BackgroundColorPicker

@@ -17,14 +17,8 @@ const createNew = async (req, res, next) => {
    * Và thông thường trong thực tế, điều tốt nhất cho hệ thống là hãy luôn validate dữ liệu ở cả Back-end và Front-end nhé.
    */
   const correctCondition = Joi.object({
-    title: Joi.string().required().min(3).max(50).trim().strict().messages({
-      'any.required': 'Title is required (trungquandev)',
-      'string.empty': 'Title is not allowed to be empty (trungquandev)',
-      'string.min': 'Title length must be at least 3 characters long (trungquandev)',
-      'string.max': 'Title length must be less than or equal to 5 characters long (trungquandev)',
-      'string.trim': 'Title must not have leading or trailing whitespace (trungquandev)'
-    }),
-    description: Joi.string().required().min(3).max(255).trim().strict(),
+    title: Joi.string().required().min(3).max(50),
+    description: Joi.string().required().min(3).max(255),
 
     /**
      * Tips: Thay vì gọi lần lượt tất cả type của board để cho vào hàm valid() thì có thể viết gọn lại bằng Object.values() kết hợp Spread Operator của JS. Cụ thể: .valid(...Object.values(BOARD_TYPES))
@@ -47,8 +41,8 @@ const createNew = async (req, res, next) => {
 const update = async (req, res, next) => {
   // Lưu ý không dùng hàm required() trong trường hợp Update
   const correctCondition = Joi.object({
-    title: Joi.string().min(3).max(50).trim().strict(),
-    description: Joi.string().min(3).max(255).trim().strict(),
+    title: Joi.string().min(3).max(50),
+    description: Joi.string().min(3).max(255),
     // type: Joi.string().valid(BOARD_TYPES.PUBLIC, BOARD_TYPES.PRIVATE),
     type: Joi.string().valid(...Object.values(BOARD_TYPES)),
     columnOrderIds: Joi.array().items(

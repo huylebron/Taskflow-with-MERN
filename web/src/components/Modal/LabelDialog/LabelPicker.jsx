@@ -20,10 +20,10 @@ const ColorBox = styled(Box)(({ theme, selected }) => ({
   borderRadius: '4px',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
-  border: selected 
+  border: selected
     ? `2px solid ${theme.palette.common.white}`
-    : theme.palette.mode === 'dark' 
-      ? '1px solid rgba(255, 255, 255, 0.2)' 
+    : theme.palette.mode === 'dark'
+      ? '1px solid rgba(255, 255, 255, 0.2)'
       : '1px solid rgba(0, 0, 0, 0.1)',
   position: 'relative',
   display: 'flex',
@@ -32,7 +32,7 @@ const ColorBox = styled(Box)(({ theme, selected }) => ({
   boxShadow: selected ? '0 0 0 2px #000' : 'none',
   '&:hover': {
     transform: 'scale(1.05)',
-    boxShadow: selected 
+    boxShadow: selected
       ? '0 0 0 2px #000'
       : '0 2px 6px rgba(0, 0, 0, 0.2)',
     opacity: 0.9
@@ -52,7 +52,7 @@ const ColorBox = styled(Box)(({ theme, selected }) => ({
  * @param {Function} props.onColorSelect - Callback khi chọn màu
  * @returns {JSX.Element} - LabelPicker component
  */
-const LabelPicker = ({ 
+const LabelPicker = ({
   colors = Object.values(LABEL_COLORS),
   selectedColor,
   onColorSelect
@@ -76,7 +76,7 @@ const LabelPicker = ({
         {colors.map((color, index) => {
           const isSelected = color === selectedColor
           const textColor = getContrastText(color)
-          
+
           return (
             <ColorBox
               key={index}
@@ -89,9 +89,9 @@ const LabelPicker = ({
               onKeyDown={(e) => handleKeyDown(e, color)}
             >
               {isSelected && (
-                <Box 
-                  component="span" 
-                  sx={{ 
+                <Box
+                  component="span"
+                  sx={{
                     color: textColor,
                     fontSize: '16px',
                     fontWeight: 'bold'
@@ -114,4 +114,4 @@ LabelPicker.propTypes = {
   onColorSelect: PropTypes.func.isRequired
 }
 
-export default LabelPicker 
+export default LabelPicker

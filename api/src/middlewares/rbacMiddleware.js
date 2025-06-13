@@ -94,9 +94,73 @@ const canDeleteColumns = async (req, res, next) => {
   }
 }
 
+// Check if user can manage checklists (board member required)
+const canManageChecklists = async (req, res, next) => {
+  try {
+    const { cardId } = req.params
+    const userId = req.jwtDecoded._id
+
+    // Get the card to extract its boardId
+    const card = await cardModel.findOneById(cardId)
+
+    if (!card) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Card not found')
+    }
+
+    const boardId = card.boardId.toString()
+    const userRole = await boardModel.getMemberRole(boardId, userId)
+    
+    if (!userRole) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'You must be a board member to manage checklists')
+    }
+
+    // Store card and board info for potential use in controllers
+    req.card = card
+    req.boardId = boardId
+    req.userRole = userRole
+    
+    next()
+  } catch (error) {
+    next(error)
+  }
+}
+
+// Check if user can delete checklists (board member required) 
+const canDeleteChecklists = async (req, res, next) => {
+  try {
+    const { cardId } = req.params
+    const userId = req.jwtDecoded._id
+
+    // Get the card to extract its boardId
+    const card = await cardModel.findOneById(cardId)
+
+    if (!card) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Card not found')
+    }
+
+    const boardId = card.boardId.toString()
+    const userRole = await boardModel.getMemberRole(boardId, userId)
+    
+    if (!userRole) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'You must be a board member to delete checklists')
+    }
+
+    // Store card and board info for potential use in controllers
+    req.card = card
+    req.boardId = boardId
+    req.userRole = userRole
+    
+    next()
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const rbacMiddleware = {
   isMemberOfBoard,
   canManageBoard,
   canDeleteCards,
-  canDeleteColumns
+  canDeleteColumns,
+  canManageChecklists,
+  canDeleteChecklists
 }

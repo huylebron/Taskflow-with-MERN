@@ -32,11 +32,11 @@ import { updateCardInBoard, removeCardFromBoard, fetchBoardDetailsAPI } from '~/
 import LabelChip from '~/components/LabelChip/LabelChip'
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { findLabelById } from '~/utils/labelHelpers'
-import { 
-  calculateTotalProgress, 
-  shouldShowChecklistProgress, 
-  formatProgressText, 
-  getProgressColor 
+import {
+  calculateTotalProgress,
+  shouldShowChecklistProgress,
+  formatProgressText,
+  getProgressColor
 } from '~/utils/checklistUtils'
 import {
   getDueDateStatus,
@@ -73,7 +73,7 @@ function Card({ card }) {
   }
 
   const shouldShowCardActions = () => {
-    return !!card?.memberIds?.length || !!card?.comments?.length || !!card?.attachments?.length || 
+    return !!card?.memberIds?.length || !!card?.comments?.length || !!card?.attachments?.length ||
            (card?.checklists && shouldShowChecklistProgress(card.checklists))
   }
 
@@ -82,14 +82,14 @@ function Card({ card }) {
     if (!card?.checklists || !Array.isArray(card.checklists) || card.checklists.length === 0) {
       return null
     }
-    
+
     const progress = calculateTotalProgress(card.checklists)
-    
+
     // Chỉ hiển thị nếu có ít nhất một item
     if (progress.total === 0) {
       return null
     }
-    
+
     return progress
   }
 
@@ -114,12 +114,12 @@ function Card({ card }) {
 
   const handleDeleteCover = async (e) => {
     e.stopPropagation()
-    
+
     try {
-      const updatedCard = await updateCardDetailsAPI(card._id, { 
-        deleteCardCover: true 
+      const updatedCard = await updateCardDetailsAPI(card._id, {
+        deleteCardCover: true
       })
-      
+
       dispatch(updateCardInBoard(updatedCard))
       toast.success('Xóa ảnh cover thành công!', { position: 'bottom-right' })
     } catch (error) {
@@ -156,7 +156,7 @@ function Card({ card }) {
   // Lấy thông tin label object từ ID
   const getCardLabels = () => {
     if (!card?.labelIds?.length || !boardLabels.length) return []
-    
+
     // Giới hạn hiển thị tối đa 3 labels
     const displayLimit = 6
     const labelIdsToShow = card.labelIds.slice(0, displayLimit)
@@ -204,28 +204,28 @@ function Card({ card }) {
         onMouseLeave={() => setHovered(false)}
         sx={{
           cursor: 'pointer',
-          boxShadow: isOverdue 
-            ? '0 2px 8px rgba(211, 47, 47, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2)' 
-            : isDueSoon 
-            ? '0 2px 8px rgba(245, 124, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.2)'
-            : '0 1px 1px rgba(0, 0, 0, 0.2)',
+          boxShadow: isOverdue
+            ? '0 2px 8px rgba(211, 47, 47, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2)'
+            : isDueSoon
+              ? '0 2px 8px rgba(245, 124, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.2)'
+              : '0 1px 1px rgba(0, 0, 0, 0.2)',
           overflow: 'unset',
           display: card?.FE_PlaceholderCard ? 'none' : 'block',
-          border: isOverdue 
-            ? '2px solid #d32f2f' 
-            : isDueSoon 
-            ? '1px solid #f57c00' 
-            : '1px solid transparent',
+          border: isOverdue
+            ? '2px solid #d32f2f'
+            : isDueSoon
+              ? '1px solid #f57c00'
+              : '1px solid transparent',
           position: 'relative',
           transition: 'all 0.3s ease-in-out',
-          '&:hover': { 
+          '&:hover': {
             borderColor: (theme) => theme.palette.primary.main,
             transform: 'translateY(-2px)',
-            boxShadow: isOverdue 
-              ? '0 4px 16px rgba(211, 47, 47, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2)' 
-              : isDueSoon 
-              ? '0 4px 16px rgba(245, 124, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)'
-              : '0 4px 16px rgba(0, 0, 0, 0.15)'
+            boxShadow: isOverdue
+              ? '0 4px 16px rgba(211, 47, 47, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2)'
+              : isDueSoon
+                ? '0 4px 16px rgba(245, 124, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)'
+                : '0 4px 16px rgba(0, 0, 0, 0.15)'
           },
           // Add urgency indicator for overdue cards
           ...(isOverdue && {
@@ -255,36 +255,36 @@ function Card({ card }) {
             />
           </Tooltip>
         </Box>
-        {card?.cover && 
-          <Box sx={{ 
+        {card?.cover &&
+          <Box sx={{
             position: 'relative',
             '&:hover .delete-button': {
               opacity: 1
             }
           }}>
             {card?.coverType === 'image' && (
-              <CardMedia 
-                sx={{ 
-                  height: 140, 
+              <CardMedia
+                sx={{
+                  height: 140,
                   cursor: 'zoom-in',
                   '&:hover': { opacity: 0.9 }
-                }} 
-                image={card?.cover} 
+                }}
+                image={card?.cover}
                 onClick={handleCoverClick}
               />
             )}
-            
+
             {(card?.coverType === 'color' || card?.coverType === 'gradient') && (
-              <Box 
-                sx={{ 
-                  height: 80, 
+              <Box
+                sx={{
+                  height: 80,
                   background: card?.cover,
                   borderTopLeftRadius: 'inherit',
                   borderTopRightRadius: 'inherit'
-                }} 
+                }}
               />
             )}
-            
+
             <Tooltip title="Xóa ảnh cover">
               <IconButton
                 className="delete-button"
@@ -316,11 +316,11 @@ function Card({ card }) {
         <CardContent sx={{ p: 1.5, pl: 5, '&:last-child': { p: 1.5, pl: 5 } }}>
           {/* Labels */}
           {cardLabels.length > 0 && (
-            <Stack 
-              direction="row" 
-              spacing={0.5} 
-              sx={{ 
-                flexWrap: 'wrap', 
+            <Stack
+              direction="row"
+              spacing={0.5}
+              sx={{
+                flexWrap: 'wrap',
                 gap: '4px',
                 mb: 1
               }}
@@ -330,10 +330,10 @@ function Card({ card }) {
                   key={label.id}
                   label={label}
                   size="small"
-                  sx={{ 
+                  sx={{
                     height: '8px',
                     maxWidth: '40px',
-                    '& .MuiChip-label': { 
+                    '& .MuiChip-label': {
                       p: '0 4px',
                       lineHeight: 1.2,
                       fontSize: '8px'
@@ -341,30 +341,30 @@ function Card({ card }) {
                   }}
                 />
               ))}
-              
+
               {remainingLabelsCount > 0 && (
                 <Chip
                   size="small"
                   label={`+${remainingLabelsCount}`}
-                  sx={{ 
+                  sx={{
                     height: '8px',
-                    '& .MuiChip-label': { 
+                    '& .MuiChip-label': {
                       p: '0 4px',
                       lineHeight: 1.2,
                       fontSize: '8px'
                     },
-                    backgroundColor: (theme) => 
+                    backgroundColor: (theme) =>
                       theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'
                   }}
                 />
               )}
             </Stack>
           )}
-          
+
           {/* Enhanced Due Date Badge */}
           {card?.dueDate && (
             <Box sx={{ mb: 1 }}>
-              <Tooltip title={getUrgencyText(dueDateStatus)} arrow>
+              <Tooltip title={getUrgencyText(dueDateStatus)}>
                 <Chip
                   icon={<WatchLaterOutlinedIcon />}
                   label={formatDueDateDisplay(card.dueDate)}
@@ -392,53 +392,53 @@ function Card({ card }) {
               )}
             </Box>
           )}
-          
+
           {/* Checklist Progress */}
           {shouldDisplayChecklistProgress() && (
             <Box sx={{ mb: 1 }}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '4px',
                   mb: 0.5
                 }}
               >
-                <TaskAltOutlinedIcon 
-                  fontSize="small" 
-                  sx={{ 
+                <TaskAltOutlinedIcon
+                  fontSize="small"
+                  sx={{
                     fontSize: '14px',
-                    color: theme => theme.palette.mode === 'dark' ? '#90caf9' : '#0079bf' 
-                  }} 
+                    color: theme => theme.palette.mode === 'dark' ? '#90caf9' : '#0079bf'
+                  }}
                 />
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
+                <Typography
+                  variant="caption"
+                  sx={{
                     fontSize: '11px',
-                    color: theme => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)' 
+                    color: theme => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)'
                   }}
                 >
                   {formatProgressText(getChecklistsProgress().completed, getChecklistsProgress().total)}
                 </Typography>
               </Box>
-              <LinearProgress 
-                variant="determinate" 
+              <LinearProgress
+                variant="determinate"
                 value={getChecklistsProgress().percentage}
-                sx={{ 
-                  height: 4, 
+                sx={{
+                  height: 4,
                   borderRadius: 2,
-                  backgroundColor: theme => 
+                  backgroundColor: theme =>
                     theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
                   '& .MuiLinearProgress-bar': {
                     backgroundColor: getProgressColor(getChecklistsProgress().percentage)
                   }
-                }} 
+                }}
               />
             </Box>
           )}
-          
-          <Typography 
-            sx={{ 
+
+          <Typography
+            sx={{
               fontSize: '0.875rem',
               fontWeight: 500,
               lineHeight: 1.4,
@@ -453,8 +453,8 @@ function Card({ card }) {
         {shouldShowCardActions() &&
           <CardActions sx={{ p: '0 4px 8px 4px' }}>
             {!!card?.memberIds?.length &&
-              <Button 
-                size="small" 
+              <Button
+                size="small"
                 startIcon={<GroupIcon />}
                 sx={{
                   fontSize: '0.75rem',
@@ -464,8 +464,8 @@ function Card({ card }) {
                   padding: '2px 6px',
                   borderRadius: '6px',
                   '&:hover': {
-                    backgroundColor: (theme) => theme.palette.mode === 'dark' 
-                      ? 'rgba(255, 255, 255, 0.08)' 
+                    backgroundColor: (theme) => theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
                       : 'rgba(0, 0, 0, 0.04)',
                     color: 'primary.main'
                   },
@@ -479,8 +479,8 @@ function Card({ card }) {
               </Button>
             }
             {!!card?.comments?.length &&
-              <Button 
-                size="small" 
+              <Button
+                size="small"
                 startIcon={<CommentIcon />}
                 sx={{
                   fontSize: '0.75rem',
@@ -490,8 +490,8 @@ function Card({ card }) {
                   padding: '2px 6px',
                   borderRadius: '6px',
                   '&:hover': {
-                    backgroundColor: (theme) => theme.palette.mode === 'dark' 
-                      ? 'rgba(255, 255, 255, 0.08)' 
+                    backgroundColor: (theme) => theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
                       : 'rgba(0, 0, 0, 0.04)',
                     color: 'primary.main'
                   },
@@ -505,8 +505,8 @@ function Card({ card }) {
               </Button>
             }
             {!!card?.attachments?.length &&
-              <Button 
-                size="small" 
+              <Button
+                size="small"
                 startIcon={<AttachmentIcon />}
                 sx={{
                   fontSize: '0.75rem',
@@ -516,8 +516,8 @@ function Card({ card }) {
                   padding: '2px 6px',
                   borderRadius: '6px',
                   '&:hover': {
-                    backgroundColor: (theme) => theme.palette.mode === 'dark' 
-                      ? 'rgba(255, 255, 255, 0.08)' 
+                    backgroundColor: (theme) => theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
                       : 'rgba(0, 0, 0, 0.04)',
                     color: 'primary.main'
                   },
@@ -531,9 +531,9 @@ function Card({ card }) {
               </Button>
             }
             {shouldDisplayChecklistProgress() &&
-              <Button 
-                size="small" 
-                startIcon={<TaskAltOutlinedIcon />} 
+              <Button
+                size="small"
+                startIcon={<TaskAltOutlinedIcon />}
                 sx={{
                   color: getProgressColor(getChecklistsProgress().percentage) + ' !important',
                   '& .MuiButton-startIcon': {
@@ -560,11 +560,11 @@ function Card({ card }) {
         }
       </MuiCard>
 
-      {card?.cover && card?.coverType === 'image' && 
-        <ImageLightbox 
-          isOpen={showLightbox} 
-          onClose={handleCloseLightbox} 
-          imageSrc={card?.cover} 
+      {card?.cover && card?.coverType === 'image' &&
+        <ImageLightbox
+          isOpen={showLightbox}
+          onClose={handleCloseLightbox}
+          imageSrc={card?.cover}
         />
       }
 

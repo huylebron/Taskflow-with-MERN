@@ -28,9 +28,9 @@ function ColorPicker({ colors, isGradient = false, onSelectColor }) {
           isGradient={isGradient}
           sx={{
             background: color,
-            border: theme => 
-              theme.palette.mode === 'dark' 
-                ? '1px solid rgba(255, 255, 255, 0.2)' 
+            border: theme =>
+              theme.palette.mode === 'dark'
+                ? '1px solid rgba(255, 255, 255, 0.2)'
                 : '1px solid rgba(0, 0, 0, 0.1)'
           }}
           onClick={() => onSelectColor(color)}
@@ -40,4 +40,4 @@ function ColorPicker({ colors, isGradient = false, onSelectColor }) {
   )
 }
 
-export default ColorPicker 
+export default ColorPicker

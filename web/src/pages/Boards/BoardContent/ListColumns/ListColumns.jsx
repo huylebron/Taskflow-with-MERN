@@ -162,32 +162,32 @@ function ListColumns({ columns }) {
               value={newColumnTitle}
               onChange={(e) => setNewColumnTitle(e.target.value)}
               sx={{
-                '& label': { 
+                '& label': {
                   color: 'rgba(255, 255, 255, 0.9)',
                   fontWeight: 500,
                   fontSize: '0.875rem'
                 },
-                '& input': { 
+                '& input': {
                   color: 'white',
                   fontWeight: 500,
                   fontSize: '0.875rem'
                 },
-                '& label.Mui-focused': { 
+                '& label.Mui-focused': {
                   color: 'white',
                   fontWeight: 600
                 },
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '8px',
                   transition: 'all 0.2s ease',
-                  '& fieldset': { 
+                  '& fieldset': {
                     borderColor: 'rgba(255, 255, 255, 0.5)',
                     borderWidth: '1.5px'
                   },
-                  '&:hover fieldset': { 
+                  '&:hover fieldset': {
                     borderColor: 'rgba(255, 255, 255, 0.8)',
                     borderWidth: '1.5px'
                   },
-                  '&.Mui-focused fieldset': { 
+                  '&.Mui-focused fieldset': {
                     borderColor: 'white',
                     borderWidth: '2px'
                   }
@@ -198,8 +198,8 @@ function ListColumns({ columns }) {
               <Button
                 className="interceptor-loading"
                 onClick={addNewColumn}
-                variant="contained" 
-                color="success" 
+                variant="contained"
+                color="success"
                 size="small"
                 sx={{
                   fontWeight: 600,
@@ -210,7 +210,7 @@ function ListColumns({ columns }) {
                   border: '1px solid',
                   borderColor: (theme) => theme.palette.success.main,
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  '&:hover': { 
+                  '&:hover': {
                     bgcolor: (theme) => theme.palette.success.dark,
                     borderColor: (theme) => theme.palette.success.dark,
                     transform: 'translateY(-1px)',
@@ -231,7 +231,7 @@ function ListColumns({ columns }) {
                   borderRadius: '4px',
                   padding: '4px',
                   transition: 'all 0.2s ease',
-                  '&:hover': { 
+                  '&:hover': {
                     color: '#ffb74d',
                     backgroundColor: 'rgba(255, 183, 77, 0.1)',
                     transform: 'scale(1.1)'

@@ -42,8 +42,14 @@ Router.put('/:cardId/labels', cardController.updateCardLabels)
 Router.route('/:cardId/checklists')
   .post(authMiddleware.isAuthorized, cardController.createChecklist)
 
+Router.route('/:cardId/checklists/:checklistId')
+  .delete(authMiddleware.isAuthorized, rbacMiddleware.canDeleteChecklists, cardValidation.deleteChecklist, cardController.deleteChecklist)
+
 Router.route('/:cardId/checklists/:checklistId/items')
-  .post(authMiddleware.isAuthorized, cardController.addChecklistItem)
+  .post(authMiddleware.isAuthorized, rbacMiddleware.canManageChecklists, cardController.addChecklistItem)
+
+Router.route('/:cardId/checklists/:checklistId/items/:itemId')
+  .delete(authMiddleware.isAuthorized, rbacMiddleware.canDeleteChecklists, cardValidation.deleteChecklistItem, cardController.deleteChecklistItem)
 
 Router.route('/:cardId/checklists/:checklistId/items/:itemId/status')
   .put(authMiddleware.isAuthorized, cardController.updateChecklistItemStatus)

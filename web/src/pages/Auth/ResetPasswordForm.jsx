@@ -187,95 +187,95 @@ function ResetPasswordForm() {
             }}>
               <Avatar sx={{ bgcolor: 'info.main' }}><LockResetIcon /></Avatar>
             </Box>
-          <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', color: theme => theme.palette.grey[500] }}>
+            <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', color: theme => theme.palette.grey[500] }}>
             Author: huylebron
-          </Box>
-          <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', flexDirection: 'column', padding: '0 1em' }}>
-            <Typography variant="h5" sx={{ textAlign: 'center', fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
-              Reset Your Password
-            </Typography>
-            <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary', mb: 2 }}>
-              Please enter your new password below. Make sure it's strong and secure!
-            </Typography>
-            {error && (
-              <Alert severity="error" sx={{ mt: 1, mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-          </Box>
-          <Box sx={{ padding: '0 1em 1em 1em' }}>
-            <Box sx={{ marginTop: '1em' }}>
-              <TextField
-                autoFocus
-                fullWidth
-                label="New Password"
-                type={showPassword ? 'text' : 'password'}
-                variant="outlined"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                disabled={isLoading}
-                sx={{ mb: 2 }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={togglePasswordVisibility}
-                        edge="end"
-                        disabled={isLoading}
-                      >
-                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Confirm New Password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                variant="outlined"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={isLoading}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle confirm password visibility"
-                        onClick={toggleConfirmPasswordVisibility}
-                        edge="end"
-                        disabled={isLoading}
-                      >
-                        {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
             </Box>
-          </Box>
-          <CardActions sx={{ padding: '0 1em 1em 1em' }}>
-            <Button
-              className="interceptor-loading"
-              type="submit"
-              variant="contained"
-              color="primary"
-              size="large"
-              fullWidth
-              disabled={isLoading}
-            >
-              {isLoading ? 'Updating...' : 'Update Password'}
-            </Button>
-          </CardActions>
-          <Box sx={{ padding: '0 1em 1em 1em', textAlign: 'center' }}>
-            <Typography>Remember your password?</Typography>
-            <Link to="/login" style={{ textDecoration: 'none' }}>
-              <Typography sx={{ color: 'primary.main', '&:hover': { color: '#ffbb39' } }}>
-                Back to Login
+            <Box sx={{ marginTop: '1em', display: 'flex', justifyContent: 'center', flexDirection: 'column', padding: '0 1em' }}>
+              <Typography variant="h5" sx={{ textAlign: 'center', fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
+              Reset Your Password
               </Typography>
-            </Link>
-          </Box>
+              <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary', mb: 2 }}>
+              Please enter your new password below. Make sure it's strong and secure!
+              </Typography>
+              {error && (
+                <Alert severity="error" sx={{ mt: 1, mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+            </Box>
+            <Box sx={{ padding: '0 1em 1em 1em' }}>
+              <Box sx={{ marginTop: '1em' }}>
+                <TextField
+                  autoFocus
+                  fullWidth
+                  label="New Password"
+                  type={showPassword ? 'text' : 'password'}
+                  variant="outlined"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={isLoading}
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={togglePasswordVisibility}
+                          edge="end"
+                          disabled={isLoading}
+                        >
+                          {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Confirm New Password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  variant="outlined"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isLoading}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle confirm password visibility"
+                          onClick={toggleConfirmPasswordVisibility}
+                          edge="end"
+                          disabled={isLoading}
+                        >
+                          {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+              </Box>
+            </Box>
+            <CardActions sx={{ padding: '0 1em 1em 1em' }}>
+              <Button
+                className="interceptor-loading"
+                type="submit"
+                variant="contained"
+                color="primary"
+                size="large"
+                fullWidth
+                disabled={isLoading}
+              >
+                {isLoading ? 'Updating...' : 'Update Password'}
+              </Button>
+            </CardActions>
+            <Box sx={{ padding: '0 1em 1em 1em', textAlign: 'center' }}>
+              <Typography>Remember your password?</Typography>
+              <Link to="/login" style={{ textDecoration: 'none' }}>
+                <Typography sx={{ color: 'primary.main', '&:hover': { color: '#ffbb39' } }}>
+                Back to Login
+                </Typography>
+              </Link>
+            </Box>
           </MuiCard>
         </Zoom>
       </form>

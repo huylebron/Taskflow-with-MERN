@@ -107,7 +107,7 @@ const updateAttachment = async (req, res, next) => {
 
   // Validate body - chỉ cho phép cập nhật một số field nhất định
   const bodyCondition = Joi.object({
-    name: Joi.string().optional().trim().min(1).max(255),
+    name: Joi.string().optional().min(1).max(255),
     // Không cho phép cập nhật url, type, size, cardId, cloudinaryPublicId vì đây là metadata quan trọng
   })
 

@@ -1,14 +1,14 @@
 import { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { 
-  updateCardInBoard, 
-  updateCardDueDate, 
+import {
+  updateCardInBoard,
+  updateCardDueDate,
   syncCalendarToBoard,
   selectCardsWithDueDate,
   selectCardById
 } from '~/redux/activeBoard/activeBoardSlice'
-import { 
-  updateActiveCardDueDate, 
+import {
+  updateActiveCardDueDate,
   rollbackActiveCardDueDate,
   selectCurrentActiveCard,
   updateCurrentActiveCard
@@ -27,8 +27,8 @@ export const useCalendarSync = () => {
 
   // Update due date with optimistic update and error handling
   const updateDueDate = useCallback(async (cardId, newDueDate, options = {}) => {
-    const { 
-      optimistic = true, 
+    const {
+      optimistic = true,
       showToast = true,
       source = 'unknown'
     } = options
@@ -39,7 +39,7 @@ export const useCalendarSync = () => {
       // Optimistic update - update Redux state immediately
       if (optimistic) {
         dispatch(updateCardDueDate({ cardId, dueDate: newDueDate }))
-        
+
         // If this card is currently active, update active card state too
         if (currentActiveCard?._id === cardId) {
           dispatch(updateActiveCardDueDate({ dueDate: newDueDate }))
@@ -48,18 +48,18 @@ export const useCalendarSync = () => {
 
       // Call API to update backend
       const response = await updateCardDueDateAPI(cardId, newDueDate)
-      
+
       if (!optimistic) {
         // Non-optimistic update - only update state after successful API call
         dispatch(updateCardInBoard(response))
-        
+
         if (currentActiveCard?._id === cardId) {
           dispatch(updateCurrentActiveCard(response))
         }
       }
 
       if (showToast) {
-        toast.success(`Due date updated successfully`)
+        toast.success('Due date updated successfully')
       }
 
       console.log(`✅ Due date update completed for card ${cardId}`)
@@ -67,13 +67,13 @@ export const useCalendarSync = () => {
 
     } catch (error) {
       console.error(`❌ Failed to update due date for card ${cardId}:`, error)
-      
+
       // Rollback optimistic update on error
       if (optimistic) {
         // For board state - we need to find the original card and restore its due date
         // This is a simple rollback, in a real app you might want to store the previous state
         console.log('🔄 Rolling back optimistic update...')
-        
+
         if (currentActiveCard?._id === cardId) {
           dispatch(rollbackActiveCardDueDate())
         }
@@ -91,18 +91,18 @@ export const useCalendarSync = () => {
   const syncMultipleCards = useCallback(async (cardUpdates) => {
     try {
       console.log(`🔄 Syncing ${cardUpdates.length} cards...`)
-      
+
       // Optimistic update
       dispatch(syncCalendarToBoard({ cardUpdates }))
-      
+
       // API calls for each card
-      const promises = cardUpdates.map(({ cardId, updates }) => 
+      const promises = cardUpdates.map(({ cardId, updates }) =>
         updateCardDueDateAPI(cardId, updates.dueDate)
       )
-      
+
       await Promise.all(promises)
       console.log('✅ Batch sync completed')
-      
+
     } catch (error) {
       console.error('❌ Batch sync failed:', error)
       // In a real app, you'd want to rollback all changes
@@ -136,12 +136,12 @@ export const useCalendarSync = () => {
     getCardById,
     shouldRefreshCalendar,
     triggerCalendarRefresh,
-    
+
     // Selectors
     cardsWithDueDate,
     currentActiveCard,
-    
+
     // State indicators
     isActiveCardOpen: !!currentActiveCard
   }
-} 
+}

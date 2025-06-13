@@ -21,7 +21,7 @@ const MemberManagement = ({ open, onClose, boardId }) => {
 
   const fetchMembers = async () => {
     if (!boardId) return
-    
+
     try {
       setLoading(true)
       const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/members/${boardId}`)
@@ -43,7 +43,7 @@ const MemberManagement = ({ open, onClose, boardId }) => {
 
   const handleRemoveMember = async (memberId) => {
     if (!boardId || !memberId) return
-    
+
     try {
       setLoading(true)
       await authorizedAxiosInstance.delete(`${API_ROOT}/v1/members/${boardId}/${memberId}`)
@@ -67,22 +67,22 @@ const MemberManagement = ({ open, onClose, boardId }) => {
           <List>
             {owners.map(owner => (
               <ListItem key={owner._id}>
-                <ListItemText 
-                  primary={owner.displayName} 
-                  secondary={owner.email} 
+                <ListItemText
+                  primary={owner.displayName}
+                  secondary={owner.email}
                 />
                 <Chip label="Admin" color="primary" size="small" />
               </ListItem>
             ))}
             {members.map(member => (
               <ListItem key={member._id}>
-                <ListItemText 
-                  primary={member.displayName} 
-                  secondary={member.email} 
+                <ListItemText
+                  primary={member.displayName}
+                  secondary={member.email}
                 />
                 <Chip label="Member" color="default" size="small" />
-                <Button 
-                  color="error" 
+                <Button
+                  color="error"
                   onClick={() => handleRemoveMember(member._id)}
                   disabled={loading}
                   sx={{ ml: 1 }}

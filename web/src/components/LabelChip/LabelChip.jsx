@@ -36,7 +36,7 @@ const LabelChip = ({ label, size = 'small', variant = 'filled', showTooltip = tr
   if (!label || !label.color) return null
 
   const textColor = getContrastText(label.color)
-  
+
   const chipContent = (
     <StyledChip
       size={size}
@@ -75,4 +75,4 @@ LabelChip.propTypes = {
   sx: PropTypes.object
 }
 
-export default LabelChip 
+export default LabelChip

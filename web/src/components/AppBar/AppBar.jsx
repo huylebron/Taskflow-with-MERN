@@ -22,11 +22,11 @@ import GroupIcon from '@mui/icons-material/Group'
 function AppBar() {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
-  
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
   }
-  
+
   const handleClose = () => {
     setAnchorEl(null)
   }
@@ -53,8 +53,8 @@ function AppBar() {
 
       </Box>
 
-      <Box sx={{ 
-        display: 'flex', 
+      <Box sx={{
+        display: 'flex',
         flex: 1,
         justifyContent: 'center'
       }}>

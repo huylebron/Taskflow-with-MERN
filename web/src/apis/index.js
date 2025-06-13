@@ -3,7 +3,6 @@ import { API_ROOT } from '~/utils/constants'
 import { toast } from 'react-toastify'
 
 
-
 /** Boards */
 // Đã move vào redux
 // export const fetchBoardDetailsAPI = async (boardId) => {
@@ -186,6 +185,87 @@ export const addCheckListItemAPI = async (cardId, checklistId, title) => {
 export const updateChecklistItemStatusAPI = async (cardId, checklistId, itemId, isCompleted) => {
   const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/cards/${cardId}/checklists/${checklistId}/items/${itemId}/status`, { isCompleted })
   return response.data
+}
+
+/**
+ * Delete checklist from card
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID to delete
+ * @returns {Promise<Object>} - Updated card data
+ */
+export const deleteChecklistAPI = async (cardId, checklistId) => {
+  try {
+    // Validate input parameters
+    if (!cardId || !checklistId) {
+      throw new Error('Card ID and Checklist ID are required')
+    }
+
+    const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/cards/${cardId}/checklists/${checklistId}`)
+
+    // Success toast notification
+    toast.success('Checklist deleted successfully!', {
+      position: 'bottom-right',
+      autoClose: 3000
+    })
+
+    return response.data
+  } catch (error) {
+    // Enhanced error handling
+    console.error('❌ Delete checklist API error:', error)
+
+    // Extract meaningful error message
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to delete checklist'
+
+    // Error toast notification
+    toast.error(errorMessage, {
+      position: 'bottom-right',
+      autoClose: 5000
+    })
+
+    // Re-throw error for component handling
+    throw error
+  }
+}
+
+/**
+ * Delete checklist item from checklist
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID
+ * @param {string} itemId - Item ID to delete
+ * @returns {Promise<Object>} - Updated card data
+ */
+export const deleteChecklistItemAPI = async (cardId, checklistId, itemId) => {
+  try {
+    // Validate input parameters
+    if (!cardId || !checklistId || !itemId) {
+      throw new Error('Card ID, Checklist ID, and Item ID are required')
+    }
+
+    const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/cards/${cardId}/checklists/${checklistId}/items/${itemId}`)
+
+    // Success toast notification
+    toast.success('Checklist item deleted successfully!', {
+      position: 'bottom-right',
+      autoClose: 3000
+    })
+
+    return response.data
+  } catch (error) {
+    // Enhanced error handling
+    console.error('❌ Delete checklist item API error:', error)
+
+    // Extract meaningful error message
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to delete checklist item'
+
+    // Error toast notification
+    toast.error(errorMessage, {
+      position: 'bottom-right',
+      autoClose: 5000
+    })
+
+    // Re-throw error for component handling
+    throw error
+  }
 }
 
 export const updateCardCompletedStatusAPI = async (cardId, isCardCompleted) => {

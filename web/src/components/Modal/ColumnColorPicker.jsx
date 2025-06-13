@@ -16,8 +16,8 @@ const ColumnColorBox = styled(Box)(({ theme, isGradient }) => ({
   borderRadius: '4px',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
-  border: theme.palette.mode === 'dark' 
-    ? '1px solid rgba(255, 255, 255, 0.2)' 
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.2)'
     : '1px solid rgba(0, 0, 0, 0.1)',
   '&:hover': {
     transform: 'scale(1.1)', // hover effect nhẹ hơn
@@ -62,4 +62,4 @@ function ColumnColorPicker({ colors, isGradient = false, onSelectColor }) {
   )
 }
 
-export default ColumnColorPicker 
+export default ColumnColorPicker

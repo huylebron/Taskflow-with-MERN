@@ -13,13 +13,13 @@ const ATTACHMENT_COLLECTION_NAME = 'attachments'
 const ATTACHMENT_COLLECTION_SCHEMA = Joi.object({
   cardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
   
-  name: Joi.string().required().trim().strict(),
-  url: Joi.string().required().trim().uri().strict(),
-  type: Joi.string().required().trim().strict(), // mimetype
+  name: Joi.string().required(),
+  url: Joi.string().required().uri(),
+  type: Joi.string().required(), // mimetype
   size: Joi.number().required().min(0), // file size in bytes
   
   // MANDATORY: lưu cloudinaryPublicId để có thể xóa file trên Cloudinary sau này
-  cloudinaryPublicId: Joi.string().required().trim().strict(),
+  cloudinaryPublicId: Joi.string().required(),
   
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),

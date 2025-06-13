@@ -153,6 +153,61 @@ const updateChecklistItemStatus = async (req, res, next) => {
 };
 
 /**
+ * Xóa checklist khỏi card
+ */
+const deleteChecklist = async (req, res, next) => {
+  try {
+    const { cardId, checklistId } = req.params;
+    
+    const result = await cardService.deleteChecklist(cardId, checklistId);
+    
+    // Emit real-time event for checklist deletion
+    if (global._io && result.boardId) {
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_DELETED', {
+        boardId: result.boardId.toString(),
+        cardId,
+        checklistId,
+        message: 'Checklist đã được xóa'
+      });
+      console.log('🔄 Socket: Emitted checklist deletion event for board', result.boardId);
+    }
+    
+    res.status(StatusCodes.OK).json(result);
+  } catch (error) { 
+    console.error('❌ Delete checklist error:', error);
+    next(error); 
+  }
+};
+
+/**
+ * Xóa item khỏi checklist
+ */
+const deleteChecklistItem = async (req, res, next) => {
+  try {
+    const { cardId, checklistId, itemId } = req.params;
+    
+    const result = await cardService.deleteChecklistItem(cardId, checklistId, itemId);
+    
+    // Emit real-time event for checklist item deletion
+    if (global._io && result.boardId) {
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_ITEM_DELETED', {
+        boardId: result.boardId.toString(),
+        cardId,
+        checklistId,
+        itemId,
+        message: 'Item checklist đã được xóa'
+      });
+      console.log('🔄 Socket: Emitted checklist item deletion event for board', result.boardId);
+    }
+    
+    res.status(StatusCodes.OK).json(result);
+  } catch (error) { 
+    console.error('❌ Delete checklist item error:', error);
+    next(error); 
+  }
+};
+
+/**
 
  * Cập nhật trạng thái hoàn thành của card
  */
@@ -217,6 +272,8 @@ export const cardController = {
   createChecklist,
   addChecklistItem,
   updateChecklistItemStatus,
+  deleteChecklist,
+  deleteChecklistItem,
 
   // Thêm API cập nhật trạng thái hoàn thành của card
   updateCardCompletedStatus,

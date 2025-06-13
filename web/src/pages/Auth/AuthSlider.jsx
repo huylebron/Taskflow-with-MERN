@@ -34,11 +34,11 @@ function AuthSlider({ isLogin }) {
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false)
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  
+
   // Separate forms for login and register
   const loginForm = useForm()
   const registerForm = useForm()
-  
+
   let [searchParams] = useSearchParams()
   const registeredEmail = searchParams.get('registeredEmail')
   const verifiedEmail = searchParams.get('verifiedEmail')
@@ -162,25 +162,25 @@ function AuthSlider({ isLogin }) {
           backdropFilter: 'blur(10px)'
         }
       }}>
-        <Typography variant="h4" sx={{ 
-          fontWeight: 'bold', 
-          mb: 2, 
+        <Typography variant="h4" sx={{
+          fontWeight: 'bold',
+          mb: 2,
           position: 'relative',
           zIndex: 1,
           fontSize: { xs: '1.5rem', md: '2rem' }
         }}>
           {isLoginMode ? 'Chào mừng trở lại!' : 'Xin chào!'}
         </Typography>
-        <Typography variant="body1" sx={{ 
-          textAlign: 'center', 
-          mb: 4, 
+        <Typography variant="body1" sx={{
+          textAlign: 'center',
+          mb: 4,
           opacity: 0.9,
           position: 'relative',
           zIndex: 1,
           fontSize: { xs: '0.9rem', md: '1rem' }
         }}>
-          {isLoginMode 
-            ? 'Đăng ký để sử dụng tất cả tính năng của chúng tôi' 
+          {isLoginMode
+            ? 'Đăng ký để sử dụng tất cả tính năng của chúng tôi'
             : 'Đăng nhập để tiếp tục hành trình của bạn'
           }
         </Typography>
@@ -232,8 +232,8 @@ function AuthSlider({ isLogin }) {
                 <DashboardIcon sx={{ color: '#ffffff', fontSize: '1.5rem' }} />
               </Avatar>
             </Box>
-            <Typography variant="h4" sx={{ 
-              fontWeight: 'bold', 
+            <Typography variant="h4" sx={{
+              fontWeight: 'bold',
               color: '#000000',
               background: 'linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%)',
               backgroundClip: 'text',
@@ -244,7 +244,7 @@ function AuthSlider({ isLogin }) {
               TaskFlow
             </Typography>
           </Box>
-          
+
           <Typography variant="h5" sx={{ textAlign: 'center', mb: 3, fontWeight: 'bold', color: '#000000' }}>
             Đăng nhập
           </Typography>
@@ -302,7 +302,7 @@ function AuthSlider({ isLogin }) {
                       {showLoginPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
-                ),
+                )
               }}
               {...loginForm.register('password', {
                 required: FIELD_REQUIRED_MESSAGE,
@@ -379,8 +379,8 @@ function AuthSlider({ isLogin }) {
                 <DashboardIcon sx={{ color: '#ffffff', fontSize: '1.5rem' }} />
               </Avatar>
             </Box>
-            <Typography variant="h4" sx={{ 
-              fontWeight: 'bold', 
+            <Typography variant="h4" sx={{
+              fontWeight: 'bold',
               color: '#000000',
               background: 'linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%)',
               backgroundClip: 'text',
@@ -391,7 +391,7 @@ function AuthSlider({ isLogin }) {
               TaskFlow
             </Typography>
           </Box>
-          
+
           <Typography variant="h5" sx={{ textAlign: 'center', mb: 3, fontWeight: 'bold', color: '#000000' }}>
             Đăng ký
           </Typography>
@@ -437,7 +437,7 @@ function AuthSlider({ isLogin }) {
                       {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
-                ),
+                )
               }}
               {...registerForm.register('password', {
                 required: FIELD_REQUIRED_MESSAGE,
@@ -471,7 +471,7 @@ function AuthSlider({ isLogin }) {
                       {showRegisterConfirmPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
-                ),
+                )
               }}
               {...registerForm.register('password_confirmation', {
                 validate: (value) => {
@@ -508,4 +508,4 @@ function AuthSlider({ isLogin }) {
   )
 }
 
-export default AuthSlider 
+export default AuthSlider

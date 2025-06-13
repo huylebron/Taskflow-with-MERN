@@ -151,9 +151,9 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
         }
       }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <DialogTitle sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         pb: 1
       }}>
@@ -214,9 +214,9 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
         <Grid container spacing={3}>
           {/* Pie Chart - Cards by Label */}
           <Grid item xs={12} md={6}>
-            <Paper 
-              sx={{ 
-                p: 2, 
+            <Paper
+              sx={{
+                p: 2,
                 height: 350,
                 display: 'flex',
                 flexDirection: 'column'
@@ -261,9 +261,9 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
 
           {/* Bar Chart - Cards by Column */}
           <Grid item xs={12} md={6}>
-            <Paper 
-              sx={{ 
-                p: 2, 
+            <Paper
+              sx={{
+                p: 2,
                 height: 350,
                 display: 'flex',
                 flexDirection: 'column'
@@ -276,8 +276,8 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barColumnData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="name" 
+                    <XAxis
+                      dataKey="name"
                       tick={{ fontSize: 12 }}
                       interval={0}
                     />
@@ -303,9 +303,9 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
 
           {/* Bar Chart - Cards by Member (tách riêng, làm rõ) */}
           <Grid item xs={12} md={6}>
-            <Paper 
-              sx={{ 
-                p: 2, 
+            <Paper
+              sx={{
+                p: 2,
                 height: 350,
                 display: 'flex',
                 flexDirection: 'column'
@@ -318,8 +318,8 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={memberData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="name" 
+                    <XAxis
+                      dataKey="name"
                       tick={{ fontSize: 12 }}
                       interval={0}
                       angle={-45}
@@ -348,9 +348,9 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
 
           {/* Line Chart - Cards created by day */}
           <Grid item xs={12} md={6}>
-            <Paper 
-              sx={{ 
-                p: 2, 
+            <Paper
+              sx={{
+                p: 2,
                 height: 350,
                 display: 'flex',
                 flexDirection: 'column'
@@ -389,4 +389,4 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
   )
 }
 
-export default BoardAnalytics 
+export default BoardAnalytics

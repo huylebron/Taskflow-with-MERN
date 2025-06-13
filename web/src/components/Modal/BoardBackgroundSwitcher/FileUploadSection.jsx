@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { 
-  Box, 
-  Typography, 
+import {
+  Box,
+  Typography,
   Button,
   Alert,
   LinearProgress
@@ -20,9 +20,9 @@ const DropZone = styled(Box)(({ theme, isDragOver, hasFile }) => ({
   width: '100%',
   minHeight: '200px',
   border: `2px dashed ${
-    isDragOver 
-      ? theme.palette.primary.main 
-      : hasFile 
+    isDragOver
+      ? theme.palette.primary.main
+      : hasFile
         ? theme.palette.success.main
         : theme.palette.divider
   }`,
@@ -33,19 +33,19 @@ const DropZone = styled(Box)(({ theme, isDragOver, hasFile }) => ({
   justifyContent: 'center',
   cursor: hasFile ? 'default' : 'pointer',
   transition: 'all 0.3s ease',
-  backgroundColor: isDragOver 
+  backgroundColor: isDragOver
     ? theme.palette.primary.main + '10'
-    : hasFile 
+    : hasFile
       ? theme.palette.success.main + '10'
       : theme.palette.background.paper,
   position: 'relative',
   overflow: 'hidden',
   '&:hover': {
-    backgroundColor: !hasFile && !isDragOver 
-      ? theme.palette.action.hover 
+    backgroundColor: !hasFile && !isDragOver
+      ? theme.palette.action.hover
       : undefined,
-    borderColor: !hasFile && !isDragOver 
-      ? theme.palette.primary.light 
+    borderColor: !hasFile && !isDragOver
+      ? theme.palette.primary.light
       : undefined
   }
 }))
@@ -100,7 +100,7 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
   const fileInputRef = useRef(null)
   const previewImageRef = useRef(null)
   const fileReaderRef = useRef(null)
-  
+
   const [isDragOver, setIsDragOver] = useState(false)
   const [uploadedFile, setUploadedFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
@@ -117,29 +117,29 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
     return () => {
       // Clean up any FileReader instances
       if (fileReaderRef.current) {
-        fileReaderRef.current.abort();
-        fileReaderRef.current = null;
+        fileReaderRef.current.abort()
+        fileReaderRef.current = null
       }
-      
+
       // Revoke any object URLs to prevent memory leaks
       if (previewUrl && previewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(previewUrl);
+        URL.revokeObjectURL(previewUrl)
       }
-    };
-  }, [previewUrl]);
+    }
+  }, [previewUrl])
 
   // Validate file
   const validateFile = useCallback((file) => {
     if (!ACCEPTED_TYPES.includes(file.type)) {
       return 'Chỉ hỗ trợ file ảnh (JPG, PNG, GIF, WebP)'
     }
-    
+
     if (file.size > MAX_FILE_SIZE) {
       return 'File quá lớn. Kích thước tối đa là 5MB'
     }
-    
+
     return null
-  }, [ACCEPTED_TYPES, MAX_FILE_SIZE]);
+  }, [ACCEPTED_TYPES, MAX_FILE_SIZE])
 
   // Process file upload with optimizations
   const processFile = useCallback((file) => {
@@ -152,50 +152,50 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
     setIsLoading(true)
     setError('')
     setUploadProgress(0)
-    
+
     // Clean up previous FileReader if exists
     if (fileReaderRef.current) {
-      fileReaderRef.current.abort();
+      fileReaderRef.current.abort()
     }
 
     // Clean up previous preview URL if it's a blob URL
     if (previewUrl && previewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(previewUrl);
+      URL.revokeObjectURL(previewUrl)
     }
-    
+
     const reader = new FileReader()
-    fileReaderRef.current = reader;
-    
+    fileReaderRef.current = reader
+
     // Add progress tracking
     reader.onprogress = (event) => {
       if (event.lengthComputable) {
-        const progress = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(progress);
+        const progress = Math.round((event.loaded / event.total) * 100)
+        setUploadProgress(progress)
       }
-    };
-    
+    }
+
     reader.onload = (e) => {
       const result = e.target.result
       setUploadedFile(file)
       setPreviewUrl(result)
       setIsLoading(false)
       setUploadProgress(100)
-      
+
       // Schedule progress reset after completion animation
       setTimeout(() => {
-        setUploadProgress(0);
-      }, 500);
+        setUploadProgress(0)
+      }, 500)
     }
-    
+
     reader.onerror = () => {
       setError('Không thể đọc file. Vui lòng thử lại.')
       setIsLoading(false)
       setUploadProgress(0)
-      fileReaderRef.current = null;
+      fileReaderRef.current = null
     }
-    
+
     reader.readAsDataURL(file)
-  }, [previewUrl, validateFile]);
+  }, [previewUrl, validateFile])
 
   // Optimize image processing if needed for large files
   const optimizeImageIfNeeded = useCallback((file, callback) => {
@@ -203,11 +203,11 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
     if (file.size > 2 * 1024 * 1024) { // If > 2MB
       // In a real app, you might want to use a library like browser-image-compression
       // Here, we'll just process it directly for simplicity
-      callback(file);
+      callback(file)
     } else {
-      callback(file);
+      callback(file)
     }
-  }, []);
+  }, [])
 
   // Drag & Drop handlers with memoization
   const handleDragOver = useCallback((e) => {
@@ -226,12 +226,12 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
     e.preventDefault()
     e.stopPropagation()
     setIsDragOver(false)
-    
+
     const files = Array.from(e.dataTransfer.files)
     const file = files[0]
-    
+
     if (file) {
-      optimizeImageIfNeeded(file, processFile);
+      optimizeImageIfNeeded(file, processFile)
     }
   }, [processFile, optimizeImageIfNeeded])
 
@@ -239,48 +239,48 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
   const handleClick = useCallback(() => {
     if (uploadedFile) return // Prevent click when file is uploaded
     fileInputRef.current?.click()
-  }, [uploadedFile]);
+  }, [uploadedFile])
 
   const handleFileInputChange = useCallback((e) => {
     const file = e.target.files[0]
     if (file) {
-      optimizeImageIfNeeded(file, processFile);
+      optimizeImageIfNeeded(file, processFile)
     }
-  }, [processFile, optimizeImageIfNeeded]);
+  }, [processFile, optimizeImageIfNeeded])
 
   // Apply uploaded image with error handling
   const handleApply = useCallback(() => {
     if (uploadedFile) {
       onFileSelect(BACKGROUND_TYPES.UPLOAD, uploadedFile)
     }
-  }, [uploadedFile, onFileSelect]);
+  }, [uploadedFile, onFileSelect])
 
   // Remove uploaded file with cleanup
   const handleRemove = useCallback(() => {
     // Revoke object URL if needed
     if (previewUrl && previewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(previewUrl);
+      URL.revokeObjectURL(previewUrl)
     }
-    
+
     setUploadedFile(null)
     setPreviewUrl('')
     setError('')
-    
+
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
-    
+
     if (fileReaderRef.current) {
-      fileReaderRef.current.abort();
-      fileReaderRef.current = null;
+      fileReaderRef.current.abort()
+      fileReaderRef.current = null
     }
-  }, [previewUrl]);
+  }, [previewUrl])
 
   const isCurrentlySelected = useCallback(() => {
-    return selectedBackground?.type === BACKGROUND_TYPES.IMAGE && 
-           selectedBackground?.value === previewUrl && 
+    return selectedBackground?.type === BACKGROUND_TYPES.IMAGE &&
+           selectedBackground?.value === previewUrl &&
            previewUrl !== ''
-  }, [selectedBackground, previewUrl]);
+  }, [selectedBackground, previewUrl])
 
   const formatFileSize = useCallback((bytes) => {
     if (bytes === 0) return '0 Bytes'
@@ -288,19 +288,19 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }, []);
+  }, [])
 
   return (
     <Box>
-      <Typography variant="subtitle1" gutterBottom sx={{ 
+      <Typography variant="subtitle1" gutterBottom sx={{
         fontWeight: 600,
         color: 'text.primary',
         mb: 1
       }}>
         Tải lên hình ảnh
       </Typography>
-      
-      <Typography variant="body2" sx={{ 
+
+      <Typography variant="body2" sx={{
         color: 'text.secondary',
         mb: 2
       }}>
@@ -331,9 +331,9 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
             <Typography variant="body2" textAlign="center" sx={{ mb: 2 }}>
               Đang xử lý file... {uploadProgress > 0 ? `(${uploadProgress}%)` : ''}
             </Typography>
-            <LinearProgress 
-              variant={uploadProgress > 0 ? "determinate" : "indeterminate"} 
-              value={uploadProgress} 
+            <LinearProgress
+              variant={uploadProgress > 0 ? 'determinate' : 'indeterminate'}
+              value={uploadProgress}
             />
           </Box>
         )}
@@ -341,10 +341,10 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
         {/* Upload area */}
         {!uploadedFile && !isLoading && (
           <Box sx={{ textAlign: 'center', p: 3 }}>
-            <CloudUploadIcon sx={{ 
-              fontSize: 48, 
+            <CloudUploadIcon sx={{
+              fontSize: 48,
               color: isDragOver ? 'primary.main' : 'text.secondary',
-              mb: 2 
+              mb: 2
             }} />
             <Typography variant="h6" gutterBottom>
               {isDragOver ? 'Thả file vào đây' : 'Kéo thả hoặc nhấn để chọn'}
@@ -366,11 +366,11 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
               onLoad={() => {
                 // Ensure image is fully loaded and rendered
                 if (previewImageRef.current) {
-                  previewImageRef.current.style.opacity = 1;
+                  previewImageRef.current.style.opacity = 1
                 }
               }}
             />
-            
+
             {/* File actions */}
             <FileActions>
               <ActionButton
@@ -378,7 +378,7 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
                   e.stopPropagation()
                   handleRemove()
                 }}
-                sx={{ 
+                sx={{
                   backgroundColor: 'error.main',
                   color: 'white',
                   '&:hover': { backgroundColor: 'error.dark' }
@@ -401,9 +401,9 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
 
       {/* File info */}
       {uploadedFile && (
-        <Box sx={{ 
-          mt: 2, 
-          p: 2, 
+        <Box sx={{
+          mt: 2,
+          p: 2,
           backgroundColor: 'background.default',
           borderRadius: 1,
           border: '1px solid',
@@ -423,8 +423,8 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
 
       {/* Error message */}
       {error && (
-        <Alert 
-          severity="error" 
+        <Alert
+          severity="error"
           icon={<ErrorOutlineIcon fontSize="inherit" />}
           sx={{ mt: 2 }}
         >
@@ -443,14 +443,14 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
           >
             {isCurrentlySelected() ? 'Đã áp dụng' : 'Áp dụng'}
           </Button>
-         
+
         </Box>
       )}
 
       {/* Help text */}
-      <Box sx={{ 
-        mt: 3, 
-        p: 2, 
+      <Box sx={{
+        mt: 3,
+        p: 2,
         backgroundColor: 'warning.main',
         color: 'warning.contrastText',
         borderRadius: 1,
@@ -458,7 +458,7 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
           color: 'inherit'
         }
       }}>
-        <Typography variant="caption" sx={{ 
+        <Typography variant="caption" sx={{
           display: 'block',
           fontWeight: 500,
           mb: 1
@@ -477,4 +477,4 @@ function FileUploadSection({ selectedBackground, onFileSelect }) {
   )
 }
 
-export default FileUploadSection 
+export default FileUploadSection

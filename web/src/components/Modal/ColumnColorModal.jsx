@@ -56,28 +56,28 @@ function ColumnColorModal({ isOpen, onClose, onSelectColor }) {
           right: 8,
           cursor: 'pointer'
         }}>
-          <CancelIcon 
-            color="error" 
-            sx={{ '&:hover': { color: 'error.light' } }} 
+          <CancelIcon
+            color="error"
+            sx={{ '&:hover': { color: 'error.light' } }}
             onClick={onClose}
-            aria-label="Close dialog" 
+            aria-label="Close dialog"
           />
         </Box>
-        
+
         <Typography id="column-color-modal-title" variant="h6" component="h2" gutterBottom>
           Đổi màu cột
         </Typography>
-        
+
         <Box>
           <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
             Chọn màu cho cột
           </Typography>
 
-          <ColumnColorPicker 
-            colors={colorOptions} 
-            onSelectColor={(color) => handleColorSelect(color, 'color')} 
+          <ColumnColorPicker
+            colors={colorOptions}
+            onSelectColor={(color) => handleColorSelect(color, 'color')}
           />
-          
+
           {/* Option để reset về màu mặc định */}
           <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
             <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
@@ -89,8 +89,8 @@ function ColumnColorModal({ isOpen, onClose, onSelectColor }) {
                 width: '32px',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                border: theme => theme.palette.mode === 'dark' 
-                  ? '2px dashed rgba(255, 255, 255, 0.3)' 
+                border: theme => theme.palette.mode === 'dark'
+                  ? '2px dashed rgba(255, 255, 255, 0.3)'
                   : '2px dashed rgba(0, 0, 0, 0.3)',
                 display: 'flex',
                 alignItems: 'center',
@@ -122,4 +122,4 @@ function ColumnColorModal({ isOpen, onClose, onSelectColor }) {
   )
 }
 
-export default ColumnColorModal 
+export default ColumnColorModal

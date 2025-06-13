@@ -11,7 +11,7 @@ import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 const createNew = async (req, res, next) => {
   const correctCondition = Joi.object({
     boardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-    title: Joi.string().required().min(3).max(50).trim().strict()
+    title: Joi.string().required().min(3).max(50)
   })
 
   try {
@@ -27,7 +27,7 @@ const update = async (req, res, next) => {
   const correctCondition = Joi.object({
     // Nếu cần làm tính năng di chuyển Column sang Board khác thì mới thêm validate boardId
     // boardId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
-    title: Joi.string().min(3).max(50).trim().strict(),
+    title: Joi.string().min(3).max(50),
     color: Joi.string().allow(null),
     cardOrderIds: Joi.array().items(
       Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)

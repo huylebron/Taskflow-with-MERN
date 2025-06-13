@@ -13,8 +13,8 @@ import { fetchCardsWithDueDateAPI, updateCardDueDateAPI } from '~/apis'
 import { processCalendarData } from '~/utils/calendarHelpers'
 
 // Import visual constants for consistent styling
-import { 
-  getDueDateStatus, 
+import {
+  getDueDateStatus,
   getDueDateColor,
   getCalendarEventStyles,
   getUrgencyText,
@@ -23,8 +23,8 @@ import {
 
 // Import ActiveCard modal components
 import ActiveCard from '~/components/Modal/ActiveCard/ActiveCard'
-import { 
-  updateCurrentActiveCard, 
+import {
+  updateCurrentActiveCard,
   showModalActiveCard,
   selectCurrentActiveCard,
   selectIsShowModalActiveCard
@@ -41,26 +41,26 @@ function Calendar() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { boardId } = useParams()
-  
+
   // Calendar ref for direct method calls
   const calendarRef = useRef(null)
-  
+
   // Redux selectors for ActiveCard modal and board data
   const currentActiveCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
   const currentActiveBoard = useSelector(selectCurrentActiveBoard)
-  
+
   // Use calendar synchronization hook
-  const { 
-    updateDueDate, 
+  const {
+    updateDueDate,
     cardsWithDueDate,
-    shouldRefreshCalendar 
+    shouldRefreshCalendar
   } = useCalendarSync()
-  
+
   // Determine if this is board-specific calendar
   const isBoardCalendar = Boolean(boardId)
   const boardTitle = isBoardCalendar ? (currentActiveBoard?.title || 'Board') : null
-  
+
   console.log('📅 Calendar Route Info:', {
     boardId,
     isBoardCalendar,
@@ -68,14 +68,14 @@ function Calendar() {
     currentActiveBoard: currentActiveBoard?.title,
     pathname: window.location.pathname
   })
-  
+
   // State management
   const [currentView, setCurrentView] = useState(() => {
     if (isMobile) return 'timeGridDay'
     if (isTablet) return 'timeGridWeek'
     return 'dayGridMonth'
   })
-  
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' })
@@ -107,7 +107,7 @@ function Calendar() {
 
       // Fetch cards with due dates from API
       const cardsWithDueDates = await fetchCardsWithDueDateAPI(filters)
-      
+
       console.log('📅 Received calendar data:', cardsWithDueDates)
 
       // Handle empty or invalid response
@@ -120,16 +120,16 @@ function Calendar() {
 
       // Process the API response for calendar display
       const processedData = processCardsForCalendar(cardsWithDueDates)
-      
+
       console.log('📅 Processed calendar data:', processedData)
-      
+
       setCalendarData(processedData)
       setLastFetchTime(Date.now())
     } catch (err) {
       console.error('Error fetching calendar data:', err)
       setError('Có lỗi khi tải dữ liệu calendar. Vui lòng kiểm tra kết nối mạng và thử lại.')
       setCalendarData({ events: [], labels: [], users: [], totalCards: 0, board: null })
-      
+
       // Show error notification
       setNotification({
         open: true,
@@ -152,7 +152,7 @@ function Calendar() {
       const events = cardsData.map(card => {
         const eventStyles = getEnhancedEventStyles(card.dueDate)
         const dueDateStatus = getDueDateStatus(card.dueDate)
-        
+
         return {
           id: card._id,
           title: card.title,
@@ -203,7 +203,7 @@ function Calendar() {
   const getEnhancedEventStyles = (dueDate) => {
     const status = getDueDateStatus(dueDate)
     const styles = getCalendarEventStyles(status)
-    
+
     return {
       backgroundColor: styles.backgroundColor,
       borderColor: styles.borderColor,
@@ -225,7 +225,7 @@ function Calendar() {
   useEffect(() => {
     if (currentActiveCard) {
       console.log('🔄 ActiveCard updated, syncing with calendar:', currentActiveCard)
-      
+
       // If due date was updated, refresh calendar data
       if (currentActiveCard.dueDate !== undefined) {
         console.log('📅 Due date changed, refreshing calendar...')
@@ -269,7 +269,7 @@ function Calendar() {
   const handleViewChange = (view) => {
     console.log('🔄 Changing calendar view to:', view)
     setCurrentView(view)
-    
+
     // Use FullCalendar API to change view
     if (calendarRef.current) {
       const calendarApi = calendarRef.current.getApi()
@@ -309,7 +309,7 @@ function Calendar() {
   // Handle event click
   const handleEventClick = (clickInfo) => {
     const { extendedProps } = clickInfo.event
-    
+
     console.log('📅 Event clicked:', {
       cardId: extendedProps.cardId,
       title: clickInfo.event.title,
@@ -317,10 +317,10 @@ function Calendar() {
       labelIds: extendedProps.labelIds,
       memberIds: extendedProps.memberIds
     })
-    
+
     // Find the full card data from calendar events
     const fullCard = findCardById(extendedProps.cardId)
-    
+
     if (fullCard) {
       // Dispatch action to show ActiveCard modal with card data
       dispatch(updateCurrentActiveCard(fullCard))
@@ -339,7 +339,7 @@ function Calendar() {
   const findCardById = (cardId) => {
     const event = events.find(evt => evt.extendedProps.cardId === cardId)
     if (!event) return null
-    
+
     // Reconstruct card object from event data
     return {
       _id: cardId,
@@ -357,17 +357,17 @@ function Calendar() {
   const handleEventDrop = async (dropInfo) => {
     const { event, oldEvent } = dropInfo
     const { extendedProps } = event
-    
+
     // Validate if drop is allowed
     const targetDate = new Date(event.start)
     const oldDate = new Date(oldEvent.start)
-    
+
     // Check if dropping to past date (before today)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const targetDateOnly = new Date(targetDate)
     targetDateOnly.setHours(0, 0, 0, 0)
-    
+
     if (targetDateOnly < today) {
       // Revert the drop
       dropInfo.revert()
@@ -389,7 +389,7 @@ function Calendar() {
       // Preserve time component from original due date if it exists
       const originalDueDate = new Date(oldEvent.start)
       const newDueDate = new Date(targetDate)
-      
+
       // If the original due date had a specific time, preserve it
       if (originalDueDate.getHours() !== 0 || originalDueDate.getMinutes() !== 0) {
         newDueDate.setHours(originalDueDate.getHours(), originalDueDate.getMinutes(), 0, 0)
@@ -408,7 +408,7 @@ function Calendar() {
 
       // Use the synchronization hook for optimistic updates and error handling
       await updateDueDate(
-        extendedProps.cardId, 
+        extendedProps.cardId,
         newDueDate.toISOString(),
         {
           optimistic: true,
@@ -416,18 +416,18 @@ function Calendar() {
           source: 'calendar-drag-drop'
         }
       )
-      
+
       // Update the event appearance immediately with enhanced styling
       const newEventStyles = getEnhancedEventStyles(newDueDate.toISOString())
       const newStatus = getDueDateStatus(newDueDate.toISOString())
-      
+
       event.setProp('backgroundColor', newEventStyles.backgroundColor)
       event.setProp('borderColor', newEventStyles.borderColor)
       event.setProp('className', newEventStyles.className)
       event.setExtendedProp('status', newStatus)
       event.setExtendedProp('urgencyText', getUrgencyText(newStatus))
       event.setExtendedProp('statusLevel', newStatus)
-      
+
       const formatDate = (date) => {
         return new Date(date).toLocaleDateString('vi-VN', {
           weekday: 'long',
@@ -436,7 +436,7 @@ function Calendar() {
           day: 'numeric'
         })
       }
-      
+
       // Show success notification
       setNotification({
         open: true,
@@ -445,7 +445,7 @@ function Calendar() {
       })
 
       console.log('✅ Due date updated successfully via calendar sync!')
-      
+
       // Trigger calendar refresh after a short delay to ensure backend is updated
       setTimeout(() => {
         fetchCalendarData()
@@ -453,10 +453,10 @@ function Calendar() {
 
     } catch (error) {
       console.error('❌ Error updating due date via drag and drop:', error)
-      
+
       // Revert the drop on error
       dropInfo.revert()
-      
+
       setNotification({
         open: true,
         message: `❌ Có lỗi khi cập nhật deadline cho "${event.title}": ${error.message}`,
@@ -472,7 +472,7 @@ function Calendar() {
       end: selectInfo.end,
       allDay: selectInfo.allDay
     })
-    
+
     // TODO: Show create new card dialog or other actions
     // For now, just log
   }
@@ -484,7 +484,7 @@ function Calendar() {
       oldEnd: resizeInfo.oldEvent.end,
       newEnd: resizeInfo.event.end
     })
-    
+
     // Show notification
     setNotification({
       open: true,
@@ -501,10 +501,10 @@ function Calendar() {
   // Loading state
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
         flexDirection: 'column',
         gap: 2
@@ -543,12 +543,12 @@ function Calendar() {
             >
               Về Board
             </Button>
-            
+
             <Breadcrumbs separator="›" aria-label="breadcrumb">
-              <Link 
-                to="/boards" 
-                style={{ 
-                  textDecoration: 'none', 
+              <Link
+                to="/boards"
+                style={{
+                  textDecoration: 'none',
                   color: theme.palette.text.secondary,
                   display: 'flex',
                   alignItems: 'center',
@@ -558,10 +558,10 @@ function Calendar() {
                 <Home fontSize="small" />
                 Boards
               </Link>
-              <Link 
+              <Link
                 to={`/boards/${boardId}`}
-                style={{ 
-                  textDecoration: 'none', 
+                style={{
+                  textDecoration: 'none',
                   color: theme.palette.text.secondary,
                   display: 'flex',
                   alignItems: 'center',
@@ -585,7 +585,6 @@ function Calendar() {
         <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
           📅 {isBoardCalendar ? `Lịch biểu - ${boardTitle}` : 'Lịch biểu dự án'}
         </Typography>
-        
 
 
         {/* Labels Legend */}
@@ -614,7 +613,7 @@ function Calendar() {
             </Stack>
           </Box>
         )}
-        
+
         {/* View Switcher and Refresh Button */}
         <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center', justifyContent: 'space-between' }}>
           <Stack direction="row" spacing={1}>
@@ -633,7 +632,7 @@ function Calendar() {
               )
             })}
           </Stack>
-          
+
           {/* Manual Refresh Button */}
           <Button
             variant="outlined"
@@ -649,11 +648,10 @@ function Calendar() {
       </Box>
 
 
-
       {/* Calendar Container */}
-      <Paper 
-        elevation={2} 
-        sx={{ 
+      <Paper
+        elevation={2}
+        sx={{
           flex: 1,
           p: 2,
           overflow: 'hidden',
@@ -663,10 +661,10 @@ function Calendar() {
         }}
       >
         {loading ? (
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             height: '100%',
             flexDirection: 'column'
           }}>
@@ -676,10 +674,10 @@ function Calendar() {
             </Typography>
           </Box>
         ) : error ? (
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             height: '100%',
             flexDirection: 'column'
           }}>
@@ -689,8 +687,8 @@ function Calendar() {
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {error}
             </Typography>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={fetchCalendarData}
               sx={{ mt: 2 }}
             >
@@ -698,10 +696,10 @@ function Calendar() {
             </Button>
           </Box>
         ) : !Array.isArray(events) || events.length === 0 ? (
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             height: '100%',
             flexDirection: 'column'
           }}>
@@ -738,7 +736,7 @@ function Calendar() {
                 week: 'Tuần',
                 day: 'Ngày'
               }}
-              dayHeaderFormat={{ 
+              dayHeaderFormat={{
                 weekday: 'short',
                 month: 'numeric',
                 day: 'numeric'
@@ -769,13 +767,13 @@ function Calendar() {
                 try {
                   // Add tooltip with more details
                   const { extendedProps } = info.event
-                  const labelText = extendedProps?.labelIds && extendedProps.labelIds.length > 0 
-                    ? `Labels: ${extendedProps.labelIds.length} label(s)` 
+                  const labelText = extendedProps?.labelIds && extendedProps.labelIds.length > 0
+                    ? `Labels: ${extendedProps.labelIds.length} label(s)`
                     : 'Labels: None'
-                  const memberText = extendedProps?.memberIds && extendedProps.memberIds.length > 0 
-                    ? `Members: ${extendedProps.memberIds.length} member(s)` 
+                  const memberText = extendedProps?.memberIds && extendedProps.memberIds.length > 0
+                    ? `Members: ${extendedProps.memberIds.length} member(s)`
                     : 'Members: Chưa assign'
-                  
+
                   info.el.title = `${info.event.title}\nColumn: ${extendedProps?.columnTitle || 'Unknown'}\n${labelText}\n${memberText}`
                 } catch (error) {
                   console.warn('Error setting event tooltip:', error)
@@ -929,8 +927,8 @@ function Calendar() {
         onClose={handleCloseNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseNotification} 
+        <Alert
+          onClose={handleCloseNotification}
           severity={notification.severity}
           variant="filled"
           sx={{ width: '100%' }}
@@ -945,4 +943,4 @@ function Calendar() {
   )
 }
 
-export default Calendar 
+export default Calendar

@@ -83,13 +83,13 @@ function CardActivitySection({ cardComments=[], onAddCardComment }) {
                   cursor: 'text',
                   backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2a2a2a' : '#fafafa',
                   '&:hover': {
-                    borderColor: (theme) => theme.palette.mode === 'dark' ? '#777' : '#bbb',
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? '#777' : '#bbb'
                   },
                   transition: 'border-color 0.2s ease'
                 }}
               >
-                <Typography 
-                  sx={{ 
+                <Typography
+                  sx={{
                     color: (theme) => theme.palette.mode === 'dark' ? '#aaa' : '#666',
                     fontSize: '14px'
                   }}
@@ -135,9 +135,9 @@ function CardActivitySection({ cardComments=[], onAddCardComment }) {
                     Comment
                   </Button>
                 </Box>
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
+                <Typography
+                  variant="caption"
+                  sx={{
                     color: (theme) => theme.palette.mode === 'dark' ? '#aaa' : '#666',
                     fontSize: '11px',
                     textAlign: 'right'
@@ -153,11 +153,11 @@ function CardActivitySection({ cardComments=[], onAddCardComment }) {
 
       {/* Comments List */}
       {cardComments.length === 0 ? (
-        <Typography 
-          sx={{ 
-            pl: '45px', 
-            fontSize: '14px', 
-            fontWeight: '500', 
+        <Typography
+          sx={{
+            pl: '45px',
+            fontSize: '14px',
+            fontWeight: '500',
             color: (theme) => theme.palette.mode === 'dark' ? '#aaa' : '#b1b1b1',
             fontStyle: 'italic'
           }}
@@ -167,11 +167,11 @@ function CardActivitySection({ cardComments=[], onAddCardComment }) {
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {cardComments.map((comment, index) => (
-            <Box 
-              key={index} 
-              sx={{ 
-                display: 'flex', 
-                gap: 1, 
+            <Box
+              key={index}
+              sx={{
+                display: 'flex',
+                gap: 1,
                 width: '100%',
                 '&:hover .comment-actions': {
                   opacity: 1
@@ -185,22 +185,22 @@ function CardActivitySection({ cardComments=[], onAddCardComment }) {
                   src={comment.userAvatar}
                 />
               </Tooltip>
-              
+
               <Box sx={{ width: '100%', minWidth: 0 }}>
                 {/* Comment Header */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
+                  <Typography
+                    variant="body2"
+                    sx={{
                       fontWeight: 'bold',
                       color: (theme) => theme.palette.mode === 'dark' ? '#fff' : '#172b4d'
                     }}
                   >
                     {comment.userDisplayName}
                   </Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
+                  <Typography
+                    variant="caption"
+                    sx={{
                       fontSize: '11px',
                       color: (theme) => theme.palette.mode === 'dark' ? '#aaa' : '#6b778c'
                     }}
@@ -218,7 +218,7 @@ function CardActivitySection({ cardComments=[], onAddCardComment }) {
                   borderRadius: '8px',
                   overflow: 'hidden'
                 }}>
-                  <Box 
+                  <Box
                     data-color-mode={mode}
                     sx={{
                       '& .w-md-editor-preview': {
@@ -251,7 +251,7 @@ function CardActivitySection({ cardComments=[], onAddCardComment }) {
                       }
                     }}
                   >
-                    <MDEditor.Markdown 
+                    <MDEditor.Markdown
                       source={comment.content || ''}
                       rehypePlugins={[[rehypeSanitize]]}
                       style={{

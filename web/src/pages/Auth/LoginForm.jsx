@@ -130,12 +130,12 @@ function LoginForm() {
               Login
             </Button>
           </CardActions>
-          
+
           {/* Forgot Password Link */}
           <Box sx={{ padding: '0 1em', textAlign: 'center' }}>
             <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
-              <Typography sx={{ 
-                color: 'error.main', 
+              <Typography sx={{
+                color: 'error.main',
                 '&:hover': { color: 'error.dark' },
                 fontSize: '0.95rem',
                 fontWeight: 500,

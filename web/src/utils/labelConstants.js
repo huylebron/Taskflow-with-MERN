@@ -85,4 +85,4 @@ export const PREDEFINED_LABELS = [
 ]
 
 // Mock data cho cardLabels example
-export const MOCK_CARD_LABELS = ['label-001', 'label-003', 'label-006'] 
+export const MOCK_CARD_LABELS = ['label-001', 'label-003', 'label-006']
