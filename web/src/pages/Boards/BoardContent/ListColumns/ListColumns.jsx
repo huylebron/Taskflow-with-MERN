@@ -120,7 +120,22 @@ function ListColumns({ columns }) {
                 width: '100%',
                 justifyContent: 'flex-start',
                 pl: 2.5,
-                py: 1
+                py: 1,
+                fontWeight: 500,
+                fontSize: '0.875rem',
+                borderRadius: '8px',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  transform: 'translateY(-1px)',
+                  color: '#f0f0f0'
+                },
+                '&:active': {
+                  transform: 'translateY(0px)'
+                },
+                '& .MuiButton-startIcon': {
+                  color: 'inherit'
+                }
               }}
             >
               Add new column
@@ -147,13 +162,35 @@ function ListColumns({ columns }) {
               value={newColumnTitle}
               onChange={(e) => setNewColumnTitle(e.target.value)}
               sx={{
-                '& label': { color: 'white' },
-                '& input': { color: 'white' },
-                '& label.Mui-focused': { color: 'white' },
+                '& label': { 
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontWeight: 500,
+                  fontSize: '0.875rem'
+                },
+                '& input': { 
+                  color: 'white',
+                  fontWeight: 500,
+                  fontSize: '0.875rem'
+                },
+                '& label.Mui-focused': { 
+                  color: 'white',
+                  fontWeight: 600
+                },
                 '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: 'white' },
-                  '&:hover fieldset': { borderColor: 'white' },
-                  '&.Mui-focused fieldset': { borderColor: 'white' }
+                  borderRadius: '8px',
+                  transition: 'all 0.2s ease',
+                  '& fieldset': { 
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    borderWidth: '1.5px'
+                  },
+                  '&:hover fieldset': { 
+                    borderColor: 'rgba(255, 255, 255, 0.8)',
+                    borderWidth: '1.5px'
+                  },
+                  '&.Mui-focused fieldset': { 
+                    borderColor: 'white',
+                    borderWidth: '2px'
+                  }
                 }
               }}
             />
@@ -161,20 +198,44 @@ function ListColumns({ columns }) {
               <Button
                 className="interceptor-loading"
                 onClick={addNewColumn}
-                variant="contained" color="success" size="small"
+                variant="contained" 
+                color="success" 
+                size="small"
                 sx={{
-                  boxShadow: 'none',
-                  border: '0.5px solid',
+                  fontWeight: 600,
+                  fontSize: '0.8125rem',
+                  borderRadius: '8px',
+                  padding: '6px 16px',
+                  boxShadow: '0 2px 4px rgba(40, 167, 69, 0.2)',
+                  border: '1px solid',
                   borderColor: (theme) => theme.palette.success.main,
-                  '&:hover': { bgcolor: (theme) => theme.palette.success.main }
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': { 
+                    bgcolor: (theme) => theme.palette.success.dark,
+                    borderColor: (theme) => theme.palette.success.dark,
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 8px rgba(40, 167, 69, 0.3)'
+                  },
+                  '&:active': {
+                    transform: 'translateY(0px)'
+                  }
                 }}
-              >Add Column</Button>
+              >
+                Add Column
+              </Button>
               <CloseIcon
                 fontSize="small"
                 sx={{
-                  color: 'white',
+                  color: 'rgba(255, 255, 255, 0.8)',
                   cursor: 'pointer',
-                  '&:hover': { color: (theme) => theme.palette.warning.light }
+                  borderRadius: '4px',
+                  padding: '4px',
+                  transition: 'all 0.2s ease',
+                  '&:hover': { 
+                    color: '#ffb74d',
+                    backgroundColor: 'rgba(255, 183, 77, 0.1)',
+                    transform: 'scale(1.1)'
+                  }
                 }}
                 onClick={toggleOpenNewColumnForm}
               />

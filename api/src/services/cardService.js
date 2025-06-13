@@ -656,7 +656,7 @@ export const cardService = {
   updateChecklistItemStatus,
 
   // Thêm function cập nhật trạng thái hoàn thành của card
-  updateCardCompletedStatus
+  updateCardCompletedStatus,
 
   // Card deletion
   deleteCard

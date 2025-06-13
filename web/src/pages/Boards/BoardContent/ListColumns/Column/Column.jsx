@@ -293,9 +293,44 @@ function Column({ column }) {
               alignItems: 'center',
               justifyContent: 'space-between'
             }}>
-              <Button startIcon={<AddCardIcon />} onClick={toggleOpenNewCardForm}>Add new card</Button>
+              <Button 
+                startIcon={<AddCardIcon />} 
+                onClick={toggleOpenNewCardForm}
+                sx={{
+                  fontWeight: 500,
+                  fontSize: '0.875rem',
+                  color: column?.color ? getTextColorForBackground(column.color) : 'text.secondary',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundColor: column?.color 
+                      ? `${column.color}20` 
+                      : (theme) => theme.palette.mode === 'dark' 
+                        ? 'rgba(255, 255, 255, 0.08)' 
+                        : 'rgba(0, 0, 0, 0.04)',
+                    transform: 'translateY(-1px)',
+                    color: column?.color ? getTextColorForBackground(column.color) : 'primary.main'
+                  },
+                  '& .MuiButton-startIcon': {
+                    color: 'inherit'
+                  }
+                }}
+              >
+                Add new card
+              </Button>
               <Tooltip title="Drag to move">
-                <DragHandleIcon sx={{ cursor: 'pointer' }} />
+                <DragHandleIcon 
+                  sx={{ 
+                    cursor: 'pointer',
+                    color: column?.color ? getTextColorForBackground(column.color) : 'text.secondary',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      color: column?.color ? getTextColorForBackground(column.color) : 'primary.main',
+                      transform: 'scale(1.1)'
+                    }
+                  }} 
+                />
               </Tooltip>
             </Box>
             : <Box sx={{
@@ -314,19 +349,42 @@ function Column({ column }) {
                 value={newCardTitle}
                 onChange={(e) => setNewCardTitle(e.target.value)}
                 sx={{
-                  '& label': { color: 'text.primary' },
+                  '& label': { 
+                    color: column?.color ? getTextColorForBackground(column.color) : 'text.primary',
+                    fontWeight: 500,
+                    fontSize: '0.875rem'
+                  },
                   '& input': {
+                    color: column?.color ? getTextColorForBackground(column.color) : (theme) => theme.palette.primary.main,
+                    bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#2a2d3a' : 'white'),
+                    fontWeight: 500,
+                    fontSize: '0.875rem'
+                  },
+                  '& label.Mui-focused': { 
                     color: (theme) => theme.palette.primary.main,
-                    bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#333643' : 'white')
+                    fontWeight: 600
                   },
-                  '& label.Mui-focused': { color: (theme) => theme.palette.primary.main },
                   '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: (theme) => theme.palette.primary.main },
-                    '&:hover fieldset': { borderColor: (theme) => theme.palette.primary.main },
-                    '&.Mui-focused fieldset': { borderColor: (theme) => theme.palette.primary.main }
-                  },
-                  '& .MuiOutlinedInput-input': {
-                    borderRadius: 1
+                    borderRadius: '8px',
+                    transition: 'all 0.2s ease',
+                    '& fieldset': { 
+                      borderColor: column?.color 
+                        ? `${column.color}60` 
+                        : (theme) => theme.palette.mode === 'dark' 
+                          ? 'rgba(255, 255, 255, 0.23)' 
+                          : 'rgba(0, 0, 0, 0.23)',
+                      borderWidth: '1.5px'
+                    },
+                    '&:hover fieldset': { 
+                      borderColor: column?.color 
+                        ? `${column.color}80` 
+                        : (theme) => theme.palette.primary.main,
+                      borderWidth: '1.5px'
+                    },
+                    '&.Mui-focused fieldset': { 
+                      borderColor: (theme) => theme.palette.primary.main,
+                      borderWidth: '2px'
+                    }
                   }
                 }}
               />
@@ -334,19 +392,46 @@ function Column({ column }) {
                 <Button
                   className="interceptor-loading"
                   onClick={addNewCard}
-                  variant="contained" color="success" size="small"
+                  variant="contained" 
+                  color="success" 
+                  size="small"
                   sx={{
-                    boxShadow: 'none',
-                    border: '0.5px solid',
+                    fontWeight: 600,
+                    fontSize: '0.8125rem',
+                    borderRadius: '8px',
+                    padding: '6px 16px',
+                    boxShadow: '0 2px 4px rgba(40, 167, 69, 0.2)',
+                    border: '1px solid',
                     borderColor: (theme) => theme.palette.success.main,
-                    '&:hover': { bgcolor: (theme) => theme.palette.success.main }
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': { 
+                      bgcolor: (theme) => theme.palette.success.dark,
+                      borderColor: (theme) => theme.palette.success.dark,
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 4px 8px rgba(40, 167, 69, 0.3)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(0px)'
+                    }
                   }}
-                >Add</Button>
+                >
+                  Add
+                </Button>
                 <CloseIcon
                   fontSize="small"
                   sx={{
-                    color: (theme) => theme.palette.warning.light,
-                    cursor: 'pointer'
+                    color: (theme) => theme.palette.mode === 'dark' ? '#ff9800' : '#f57c00',
+                    cursor: 'pointer',
+                    borderRadius: '4px',
+                    padding: '4px',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: (theme) => theme.palette.mode === 'dark' 
+                        ? 'rgba(255, 152, 0, 0.1)' 
+                        : 'rgba(245, 124, 0, 0.1)',
+                      color: (theme) => theme.palette.mode === 'dark' ? '#ffb74d' : '#e65100',
+                      transform: 'scale(1.1)'
+                    }
                   }}
                   onClick={toggleOpenNewCardForm}
                 />

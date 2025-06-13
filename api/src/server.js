@@ -59,8 +59,6 @@ const START_SERVER = () => {
   const io = socketIo(server, { cors: corsOptions })
   global._io = io;
 
-  io = socketIo(server, { cors: corsOptions })
-
   io.on('connection', (socket) => {
     inviteUserToBoardSocket(socket)
 

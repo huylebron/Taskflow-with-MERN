@@ -330,7 +330,13 @@ const updateCardCompletedStatus = async (cardId, isCardCompleted) => {
     const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(cardId), _destroy: false },
       { $set: { isCardCompleted, updatedAt: Date.now() } },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
 
+/**
  * Soft delete a single card by setting _destroy flag to true
  * @param {string} cardId - Card ID to delete
  * @returns {Promise<Object>} - Updated card with _destroy: true

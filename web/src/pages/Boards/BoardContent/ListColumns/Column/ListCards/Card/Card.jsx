@@ -25,9 +25,7 @@ import { updateCurrentActiveCard, showModalActiveCard } from '~/redux/activeCard
 import { useState } from 'react'
 import ImageLightbox from '~/components/Modal/ImageLightbox/ImageLightbox'
 
-import { updateCardDetailsAPI, updateCardCompletedStatusAPI } from '~/apis'
-
-import { updateCardDetailsAPI, deleteCardAPI } from '~/apis'
+import { updateCardDetailsAPI, updateCardCompletedStatusAPI, deleteCardAPI } from '~/apis'
 
 import { toast } from 'react-toastify'
 import { updateCardInBoard, removeCardFromBoard, fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
@@ -439,18 +437,98 @@ function Card({ card }) {
             </Box>
           )}
           
-          <Typography>{card?.title}</Typography>
+          <Typography 
+            sx={{ 
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              lineHeight: 1.4,
+              color: 'text.primary',
+              wordBreak: 'break-word',
+              hyphens: 'auto'
+            }}
+          >
+            {card?.title}
+          </Typography>
         </CardContent>
         {shouldShowCardActions() &&
           <CardActions sx={{ p: '0 4px 8px 4px' }}>
             {!!card?.memberIds?.length &&
-              <Button size="small" startIcon={<GroupIcon />}>{card?.memberIds?.length}</Button>
+              <Button 
+                size="small" 
+                startIcon={<GroupIcon />}
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  minWidth: 'auto',
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  '&:hover': {
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' 
+                      ? 'rgba(255, 255, 255, 0.08)' 
+                      : 'rgba(0, 0, 0, 0.04)',
+                    color: 'primary.main'
+                  },
+                  '& .MuiButton-startIcon': {
+                    marginRight: '4px',
+                    '& svg': { fontSize: '14px' }
+                  }
+                }}
+              >
+                {card?.memberIds?.length}
+              </Button>
             }
             {!!card?.comments?.length &&
-              <Button size="small" startIcon={<CommentIcon />}>{card?.comments?.length}</Button>
+              <Button 
+                size="small" 
+                startIcon={<CommentIcon />}
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  minWidth: 'auto',
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  '&:hover': {
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' 
+                      ? 'rgba(255, 255, 255, 0.08)' 
+                      : 'rgba(0, 0, 0, 0.04)',
+                    color: 'primary.main'
+                  },
+                  '& .MuiButton-startIcon': {
+                    marginRight: '4px',
+                    '& svg': { fontSize: '14px' }
+                  }
+                }}
+              >
+                {card?.comments?.length}
+              </Button>
             }
             {!!card?.attachments?.length &&
-              <Button size="small" startIcon={<AttachmentIcon />}>{card?.attachments?.length}</Button>
+              <Button 
+                size="small" 
+                startIcon={<AttachmentIcon />}
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  minWidth: 'auto',
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  '&:hover': {
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' 
+                      ? 'rgba(255, 255, 255, 0.08)' 
+                      : 'rgba(0, 0, 0, 0.04)',
+                    color: 'primary.main'
+                  },
+                  '& .MuiButton-startIcon': {
+                    marginRight: '4px',
+                    '& svg': { fontSize: '14px' }
+                  }
+                }}
+              >
+                {card?.attachments?.length}
+              </Button>
             }
             {shouldDisplayChecklistProgress() &&
               <Button 

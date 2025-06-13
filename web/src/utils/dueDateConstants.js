@@ -15,7 +15,7 @@ export const DUE_DATE_STATUS = {
 export const DUE_DATE_COLORS = {
   [DUE_DATE_STATUS.OVERDUE]: {
     primary: '#d32f2f',      // Strong red
-    secondary: '#f5dcdc',    // Light red background
+    secondary: '#ffebee',    // Light red background
     text: '#ffffff',         // White text for contrast
     border: '#b71c1c',       // Darker red border
     glow: 'rgba(211, 47, 47, 0.3)', // Red glow effect
@@ -23,8 +23,8 @@ export const DUE_DATE_COLORS = {
   },
   [DUE_DATE_STATUS.DUE_SOON]: {
     primary: '#f57c00',      // Orange
-    secondary: '#fff3e0',    // Light orange background
-    text: '#e65100',         // Dark orange text
+    secondary: '#fff8e1',    // Light orange background
+    text: '#bf360c',         // Dark orange text (better contrast)
     border: '#ef6c00',       // Orange border
     glow: 'rgba(245, 124, 0, 0.3)', // Orange glow effect
     gradient: 'linear-gradient(135deg, #f57c00 0%, #ef6c00 100%)'
@@ -32,7 +32,7 @@ export const DUE_DATE_COLORS = {
   [DUE_DATE_STATUS.UPCOMING]: {
     primary: '#388e3c',      // Green
     secondary: '#e8f5e8',    // Light green background
-    text: '#2e7d32',         // Dark green text
+    text: '#1b5e20',         // Dark green text (better contrast)
     border: '#4caf50',       // Green border
     glow: 'rgba(56, 142, 60, 0.3)', // Green glow effect
     gradient: 'linear-gradient(135deg, #388e3c 0%, #4caf50 100%)'
@@ -40,7 +40,7 @@ export const DUE_DATE_COLORS = {
   [DUE_DATE_STATUS.NORMAL]: {
     primary: '#1976d2',      // Blue
     secondary: '#e3f2fd',    // Light blue background
-    text: '#1565c0',         // Dark blue text
+    text: '#0d47a1',         // Dark blue text (better contrast)
     border: '#2196f3',       // Blue border
     glow: 'rgba(25, 118, 210, 0.3)', // Blue glow effect
     gradient: 'linear-gradient(135deg, #1976d2 0%, #2196f3 100%)'
@@ -150,18 +150,18 @@ export const getUrgencyText = (status) => {
 }
 
 /**
- * Get Material-UI chip styles for due date badges
+ * Get Material-UI chip styles for due date badges with theme support
  * @param {string} status - The due date status
- * @param {object} theme - MUI theme object
- * @returns {object} Chip style object
+ * @returns {object} Chip style object with theme-aware colors
  */
-export const getDueDateChipStyles = (status, theme) => {
+export const getDueDateChipStyles = (status) => {
   const colors = getDueDateColors(status)
   
   const baseStyles = {
     fontSize: '11px',
     height: '24px',
     fontWeight: 600,
+    borderRadius: '8px',
     '& .MuiChip-label': {
       px: 1,
       fontSize: '11px',
@@ -194,37 +194,56 @@ export const getDueDateChipStyles = (status, theme) => {
     case DUE_DATE_STATUS.DUE_SOON:
       return {
         ...baseStyles,
-        backgroundColor: colors.secondary,
-        color: colors.text,
-        border: `1px solid ${colors.primary}`,
+        backgroundColor: (theme) => theme.palette.mode === 'dark' 
+          ? 'rgba(245, 124, 0, 0.2)' 
+          : colors.secondary,
+        color: (theme) => theme.palette.mode === 'dark' 
+          ? '#ffb74d' 
+          : colors.text,
+        border: (theme) => theme.palette.mode === 'dark' 
+          ? '1px solid #ff9800' 
+          : `1px solid ${colors.primary}`,
         '& .MuiChip-icon': {
           ...baseStyles['& .MuiChip-icon'],
-          color: colors.text
+          color: (theme) => theme.palette.mode === 'dark' 
+            ? '#ffb74d' 
+            : colors.text
         }
       }
     case DUE_DATE_STATUS.UPCOMING:
       return {
         ...baseStyles,
-        backgroundColor: colors.secondary,
-        color: colors.text,
-        border: `1px solid ${colors.primary}`,
+        backgroundColor: (theme) => theme.palette.mode === 'dark' 
+          ? 'rgba(56, 142, 60, 0.2)' 
+          : colors.secondary,
+        color: (theme) => theme.palette.mode === 'dark' 
+          ? '#81c784' 
+          : colors.text,
+        border: (theme) => theme.palette.mode === 'dark' 
+          ? '1px solid #4caf50' 
+          : `1px solid ${colors.primary}`,
         '& .MuiChip-icon': {
           ...baseStyles['& .MuiChip-icon'],
-          color: colors.text
+          color: (theme) => theme.palette.mode === 'dark' 
+            ? '#81c784' 
+            : colors.text
         }
       }
     default:
       return {
         ...baseStyles,
-        backgroundColor: theme?.palette?.mode === 'dark' 
+        backgroundColor: (theme) => theme.palette.mode === 'dark' 
           ? 'rgba(255, 255, 255, 0.08)' 
           : 'rgba(0, 0, 0, 0.08)',
-        color: theme?.palette?.mode === 'dark' 
+        color: (theme) => theme.palette.mode === 'dark' 
           ? 'rgba(255, 255, 255, 0.7)' 
           : 'rgba(0, 0, 0, 0.6)',
+        border: (theme) => theme.palette.mode === 'dark' 
+          ? '1px solid rgba(255, 255, 255, 0.12)' 
+          : '1px solid rgba(0, 0, 0, 0.12)',
         '& .MuiChip-icon': {
           ...baseStyles['& .MuiChip-icon'],
-          color: theme?.palette?.mode === 'dark' 
+          color: (theme) => theme.palette.mode === 'dark' 
             ? 'rgba(255, 255, 255, 0.7)' 
             : 'rgba(0, 0, 0, 0.6)'
         }

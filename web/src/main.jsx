@@ -6,6 +6,9 @@ import GlobalStyles from '@mui/material/GlobalStyles'
 import {Experimental_CssVarsProvider as CssVarsProvider} from '@mui/material/styles'
 import theme from '~/theme'
 
+// Import enhanced styling
+import './index.css'
+
 // Cấu hình react-toastify
 import {ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'

@@ -42,21 +42,41 @@ function ToggleFocusInput({ value, onChangedValue, inputFontSize = '16px', ...pr
       // Magic here :D
       sx={{
         '& label': {},
-        '& input': { fontSize: inputFontSize, fontWeight: 'bold' },
+        '& input': { 
+          fontSize: inputFontSize, 
+          fontWeight: 600,
+          color: 'inherit',
+          lineHeight: 1.4
+        },
         '& .MuiOutlinedInput-root': {
           backgroundColor: 'transparent',
-          '& fieldset': { borderColor: 'transparent' }
+          borderRadius: '8px',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          '& fieldset': { 
+            borderColor: 'transparent',
+            borderWidth: '1.5px'
+          }
         },
         '& .MuiOutlinedInput-root:hover': {
           borderColor: 'transparent',
-          '& fieldset': { borderColor: 'transparent' }
+          '& fieldset': { 
+            borderColor: 'rgba(0, 121, 191, 0.3)',
+            borderWidth: '1.5px'
+          }
         },
         '& .MuiOutlinedInput-root.Mui-focused': {
-          backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#33485D' : 'white',
-          '& fieldset': { borderColor: 'primary.main' }
+          backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2a2d3a' : 'white',
+          boxShadow: (theme) => theme.palette.mode === 'dark' 
+            ? '0 0 0 2px rgba(144, 202, 249, 0.2)' 
+            : '0 0 0 2px rgba(0, 121, 191, 0.1)',
+          '& fieldset': { 
+            borderColor: 'primary.main',
+            borderWidth: '2px'
+          }
         },
         '& .MuiOutlinedInput-input': {
-          px: '6px',
+          px: '8px',
+          py: '6px',
           overflow: 'hidden',
           whiteSpace: 'nowrap',
           textOverflow: 'ellipsis'

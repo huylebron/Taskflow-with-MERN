@@ -187,6 +187,7 @@ const updateCardCompletedStatus = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+/**
  * Delete a card and all associated data
  */
 const deleteCard = async (req, res, next) => {
@@ -218,7 +219,7 @@ export const cardController = {
   updateChecklistItemStatus,
 
   // Thêm API cập nhật trạng thái hoàn thành của card
-  updateCardCompletedStatus
+  updateCardCompletedStatus,
 
   deleteCard
 
