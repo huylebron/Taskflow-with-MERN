@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'react-toastify'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -37,14 +37,29 @@ import { updateColumnInBoard } from '~/redux/activeBoard/activeBoardSlice'
 import CircularProgress from '@mui/material/CircularProgress'
 import { socketIoInstance } from '~/socketClient'
 
-function Column({ column }) {
+function Column({ column, shouldShake = false, shakeItemId }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
+
+  // Thêm state và ref cho bell shake animation
+  const [isShaking, setIsShaking] = useState(false)
+  const columnRef = useRef(null)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column._id,
     data: { ...column }
   })
+
+  // Effect để handle shake animation từ prop
+  useEffect(() => {
+    if (shouldShake && !isDragging) {
+      setIsShaking(true)
+      const timer = setTimeout(() => {
+        setIsShaking(false)
+      }, 600)
+      return () => clearTimeout(timer)
+    }
+  }, [shouldShake, isDragging])
   const dndKitColumnStyles = {
     // touchAction: 'none', // Dành cho sensor default dạng PointerSensor
     // Nếu sử dụng CSS.Transform như docs sẽ lỗi kiểu stretch
@@ -53,7 +68,10 @@ function Column({ column }) {
     transition,
     // Chiều cao phải luôn max 100% vì nếu không sẽ lỗi lúc kéo column ngắn qua một cái column dài thì phải kéo ở khu vực giữa giữa rất khó chịu (demo ở video 32). Lưu ý lúc này phải kết hợp với {...listeners} nằm ở Box chứ không phải ở div ngoài cùng để tránh trường hợp kéo vào vùng xanh.
     height: '100%',
-    opacity: isDragging ? 0.5 : undefined
+    opacity: isDragging ? 0.5 : undefined,
+    boxShadow: isDragging ? 'none' : undefined,
+    WebkitBoxShadow: isDragging ? 'none' : undefined,
+    MozBoxShadow: isDragging ? 'none' : undefined
   }
 
   const [anchorEl, setAnchorEl] = useState(null)
@@ -216,13 +234,23 @@ function Column({ column }) {
 
   // Phải bọc div ở đây vì vấn đề chiều cao của column khi kéo thả sẽ có bug kiểu kiểu flickering (video 32)
   return (
-    <div ref={setNodeRef} style={dndKitColumnStyles} {...attributes}>
+    <div 
+      ref={setNodeRef} 
+      style={dndKitColumnStyles} 
+      {...attributes}
+      data-dragging={isDragging}
+      className={`
+        ${isShaking ? 'drag-shake-column' : ''}
+        ${isDragging ? 'drag-active-column' : ''}
+      `.trim()}
+    >
       <Box
         {...listeners}
         sx={{
           minWidth: '300px',
           maxWidth: '300px',
           bgcolor: column?.color || ((theme) => (theme.palette.mode === 'dark' ? '#333643' : '#ebecf0')),
+          boxShadow: isDragging ? 'none !important' : undefined,
           ml: 2,
           borderRadius: '6px',
           height: 'fit-content',
@@ -279,7 +307,7 @@ function Column({ column }) {
         </Box>
 
         {/* List Cards */}
-        <ListCards cards={orderedCards} />
+        <ListCards cards={orderedCards} shakeItemId={shakeItemId} />
 
         {/* Box Column Footer */}
         <Box sx={{

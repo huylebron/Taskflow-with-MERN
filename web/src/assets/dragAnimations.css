@@ -1,0 +1,254 @@
+@keyframes bellShake {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+    10% {
+        transform: rotate(2deg);
+    }
+    20% {
+        transform: rotate(-2deg);
+    }
+    30% {
+        transform: rotate(1.5deg);
+    }
+    40% {
+        transform: rotate(-1.5deg);
+    }
+    50% {
+        transform: rotate(1deg);
+    }
+    60% {
+        transform: rotate(-1deg);
+    }
+    70% {
+        transform: rotate(0.5deg);
+    }
+    80% {
+        transform: rotate(-0.5deg);
+    }
+    90% {
+        transform: rotate(0.2deg);
+    }
+}
+
+@keyframes bellShakeIntense {
+    0%, 100% {
+        transform: rotate(0deg) scale(1);
+    }
+    10% {
+        transform: rotate(3deg) scale(1.02);
+    }
+    20% {
+        transform: rotate(-3deg) scale(1.02);
+    }
+    30% {
+        transform: rotate(2deg) scale(1.01);
+    }
+    40% {
+        transform: rotate(-2deg) scale(1.01);
+    }
+    50% {
+        transform: rotate(1.5deg) scale(1.005);
+    }
+    60% {
+        transform: rotate(-1.5deg) scale(1.005);
+    }
+    70% {
+        transform: rotate(1deg) scale(1);
+    }
+    80% {
+        transform: rotate(-1deg) scale(1);
+    }
+    90% {
+        transform: rotate(0.5deg) scale(1);
+    }
+}
+
+/* Drag State Classes */
+.drag-shake-column {
+    animation: bellShake 0.6s ease-in-out;
+    transform-origin: center center;
+}
+
+.drag-shake-card {
+    animation: bellShakeIntense 0.5s ease-in-out;
+    transform-origin: center center;
+    z-index: 1000;
+}
+
+.drag-active-column {
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
+  box-shadow: none !important;
+  transform: rotate(3deg);
+  will-change: transform;
+}
+
+.drag-active-column * {
+  box-shadow: none !important;
+}
+
+.drag-active-card {
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
+  box-shadow: none !important;
+  transform: rotate(2deg) scale(1.02);
+  z-index: 1001;
+  will-change: transform;
+}
+
+.drag-active-card * {
+  box-shadow: none !important;
+}
+
+.drag-placeholder-glow {
+  position: relative;
+  overflow: hidden;
+  box-shadow: none !important;
+}
+
+.drag-placeholder-glow * {
+  box-shadow: none !important;
+}
+
+.drag-placeholder-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(25, 118, 210, 0.1),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .drag-shake-column,
+  .drag-shake-card {
+    animation-duration: 0.3s;
+  }
+  
+  .drag-active-column {
+    transform: rotate(2deg);
+  }
+  
+  .drag-active-card {
+    transform: rotate(1.5deg) scale(1.01);
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .drag-shake-column,
+    .drag-shake-card {
+        animation: none;
+    }
+
+    .drag-active-column,
+    .drag-active-card {
+        transform: none;
+        transition: box-shadow 0.1s ease;
+    }
+}
+
+/* Performance optimization */
+.drag-shake-column,
+.drag-shake-card {
+  will-change: transform;
+}
+
+.drag-active-column,
+.drag-active-card {
+  will-change: transform, box-shadow;
+}
+
+/* Smooth column drag */
+[data-dnd-sortable] {
+  transition: transform 0.15s ease;
+}
+
+/* Improve rendering during drag */
+.drag-overlay {
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+/* Force hardware acceleration */
+.drag-active-column *,
+.drag-active-card * {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Force remove shadows from dragging elements - aggressive approach */
+[data-rbd-dragging-outside-drop-zone="true"],
+[data-rbd-dragging-outside-drop-zone="false"] {
+  box-shadow: none !important;
+}
+
+/* Target Material-UI components specifically */
+.drag-active-column .MuiBox-root,
+.drag-active-column .css-*,
+.drag-active-card .MuiCard-root,
+.drag-active-card .css-* {
+  box-shadow: none !important;
+}
+
+/* Remove all shadows when dragging */
+.css-* [style*="opacity: 0.5"] {
+  box-shadow: none !important;
+}
+
+/* Override Material-UI default shadows */
+.drag-active-column .MuiPaper-root,
+.drag-active-card .MuiPaper-root {
+  box-shadow: none !important;
+}
+
+/* Target DndKit dragging elements */
+[style*="opacity: 0.5"] {
+  box-shadow: none !important;
+}
+
+[style*="opacity: 0.5"] * {
+  box-shadow: none !important;
+}
+
+/* Ultimate shadow removal for drag state */
+body [style*="opacity: 0.5"],
+body [style*="opacity: 0.5"] *,
+body .drag-active-column,
+body .drag-active-column *,
+body .drag-active-card,
+body .drag-active-card * {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Material-UI aggressive override */
+.MuiCard-root[style*="opacity: 0.5"],
+.MuiBox-root[style*="opacity: 0.5"] {
+  box-shadow: none !important;
+}
+
+/* Ensure no shadows during drag even with !important declarations */
+*[data-dragging="true"],
+*[data-dragging="true"] * {
+  box-shadow: none !important;
+}
