@@ -22,7 +22,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useDispatch, useSelector } from 'react-redux'
 import { updateCurrentActiveCard, showModalActiveCard } from '~/redux/activeCard/activeCardSlice'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ImageLightbox from '~/components/Modal/ImageLightbox/ImageLightbox'
 
 import { updateCardDetailsAPI, updateCardCompletedStatusAPI, deleteCardAPI } from '~/apis'
@@ -48,7 +48,7 @@ import {
 import ConfirmationDialog from '~/components/ConfirmationDialog/ConfirmationDialog'
 import PermissionWrapper from '~/components/PermissionWrapper/PermissionWrapper'
 
-function Card({ card }) {
+function Card({ card, shouldShake = false }) {
   const dispatch = useDispatch()
   const [showLightbox, setShowLightbox] = useState(false)
   const activeBoard = useSelector(selectCurrentActiveBoard)
@@ -60,16 +60,32 @@ function Card({ card }) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
 
+  // Thêm state cho bell shake animation
+  const [isShaking, setIsShaking] = useState(false)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card._id,
     data: { ...card }
   })
+
+  // Effect để handle shake animation từ prop
+  useEffect(() => {
+    if (shouldShake && !isDragging) {
+      setIsShaking(true)
+      const timer = setTimeout(() => {
+        setIsShaking(false)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [shouldShake, isDragging])
   const dndKitCardStyles = {
     transform: CSS.Translate.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : undefined,
-    border: isDragging ? '1px solid #2ecc71' : undefined
+    border: isDragging ? '1px solid #2ecc71' : undefined,
+    boxShadow: isDragging ? 'none' : undefined,
+    WebkitBoxShadow: isDragging ? 'none' : undefined,
+    MozBoxShadow: isDragging ? 'none' : undefined
   }
 
   const shouldShowCardActions = () => {
@@ -199,12 +215,18 @@ function Card({ card }) {
       <MuiCard
         onClick={setActiveCard}
         ref={setNodeRef} style={dndKitCardStyles} {...attributes} {...listeners}
-        className={`due-date-indicator ${isOverdue ? 'overdue' : isDueSoon ? 'due-soon' : ''}`}
+        data-dragging={isDragging}
+        className={`
+          due-date-indicator 
+          ${isOverdue ? 'overdue' : isDueSoon ? 'due-soon' : ''}
+          ${isShaking ? 'drag-shake-card' : ''}
+          ${isDragging ? 'drag-active-card' : ''}
+        `.trim()}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         sx={{
           cursor: 'pointer',
-          boxShadow: isOverdue
+          boxShadow: isDragging ? 'none !important' : isOverdue
             ? '0 2px 8px rgba(211, 47, 47, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2)'
             : isDueSoon
               ? '0 2px 8px rgba(245, 124, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.2)'
@@ -220,8 +242,8 @@ function Card({ card }) {
           transition: 'all 0.3s ease-in-out',
           '&:hover': {
             borderColor: (theme) => theme.palette.primary.main,
-            transform: 'translateY(-2px)',
-            boxShadow: isOverdue
+            transform: isDragging ? 'none' : 'translateY(-2px)',
+            boxShadow: isDragging ? 'none !important' : isOverdue
               ? '0 4px 16px rgba(211, 47, 47, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2)'
               : isDueSoon
                 ? '0 4px 16px rgba(245, 124, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)'

@@ -17,7 +17,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { cloneDeep } from 'lodash'
 import { socketIoInstance } from '~/socketClient'
 
-function ListColumns({ columns }) {
+function ListColumns({ columns, shakeItemId }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
 
@@ -100,7 +100,12 @@ function ListColumns({ columns }) {
         '&::-webkit-scrollbar-track': { m: 2 }
       }}>
         {columns?.map(column =>
-          <Column key={column._id} column={column} />
+          <Column 
+            key={column._id} 
+            column={column} 
+            shouldShake={shakeItemId === column._id}
+            shakeItemId={shakeItemId}
+          />
         )}
 
         {/* Box Add new column CTA */}

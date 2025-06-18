@@ -57,15 +57,39 @@ function BoardContent({
   filterDrawerOpen,
   setFilterDrawerOpen
 }) {
+  // Thêm function play shake sound
+  const playShakeSound = () => {
+    // Tạo subtle sound effect
+    if (typeof Audio !== 'undefined') {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+        const oscillator = audioContext.createOscillator()
+        const gainNode = audioContext.createGain()
+        
+        oscillator.connect(gainNode)
+        gainNode.connect(audioContext.destination)
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime)
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1)
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2)
+        
+        oscillator.start()
+        oscillator.stop(audioContext.currentTime + 0.2)
+      } catch (error) {
+        // Fail silently if audio not supported
+      }
+    }
+  }
   // https://docs.dndkit.com/api-documentation/sensors
   // Nếu dùng PointerSensor mặc định thì phải kết hợp thuộc tính CSS touch-action: none ở những phần tử kéo thả - nhưng mà còn bug
   // const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 10 } })
 
-  // Yêu cầu chuột di chuyển 10px thì mới kích hoạt event, fix trường hợp click bị gọi event
-  const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 10 } })
+  // Yêu cầu chuột di chuyển 5px thì mới kích hoạt event cho column drag mượt mà hơn
+  const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 5 } })
 
-  // Nhấn giữ 250ms và dung sai của cảm ứng 500px thì mới kích hoạt event
-  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 500 } })
+  // Nhấn giữ 150ms và dung sai 300px cho responsive hơn
+  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 300 } })
 
   // Ưu tiên sử dụng kết hợp 2 loại sensors là mouse và touch để có trải nghiệm trên mobile tốt nhất, không bị bug.
   // const sensors = useSensors(pointerSensor)
@@ -78,6 +102,9 @@ function BoardContent({
   const [activeDragItemType, setActiveDragItemType] = useState(null)
   const [activeDragItemData, setActiveDragItemData] = useState(null)
   const [oldColumnWhenDraggingCard, setOldColumnWhenDraggingCard] = useState(null)
+
+  // State để quản lý shake animation
+  const [shakeItemId, setShakeItemId] = useState(null)
 
   // Điểm va chạm cuối cùng trước đó (xử lý thuật toán phát hiện va chạm, video 37)
   const lastOverId = useRef(null)
@@ -213,13 +240,18 @@ function BoardContent({
   // Trigger khi bắt đầu kéo (drag) một phần tử
   const handleDragStart = (event) => {
     // console.log('handleDragStart: ', event)
-    setActiveDragItemId(event?.active?.id)
-    setActiveDragItemType(event?.active?.data?.current?.columnId ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN)
-    setActiveDragItemData(event?.active?.data?.current)
+    const { active } = event
+    
+    setActiveDragItemId(active?.id)
+    setActiveDragItemType(active?.data?.current?.columnId ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN)
+    setActiveDragItemData(active?.data?.current)
+
+    // Thêm sound effect
+    playShakeSound()
 
     // Nếu là kéo card thì mới thực hiện hành động set giá trị oldColumn
-    if (event?.active?.data?.current?.columnId) {
-      setOldColumnWhenDraggingCard(findColumnByCardId(event?.active?.id))
+    if (active?.data?.current?.columnId) {
+      setOldColumnWhenDraggingCard(findColumnByCardId(active?.id))
     }
   }
 
@@ -361,6 +393,15 @@ function BoardContent({
       }
     }
 
+    // Trigger shake animation cho item vừa được thả
+    if (activeDragItemId) {
+      setShakeItemId(activeDragItemId)
+      // Clear shake animation sau 700ms
+      setTimeout(() => {
+        setShakeItemId(null)
+      }, 700)
+    }
+
     // Những dữ liệu sau khi kéo thả này luôn phải đưa về giá trị null mặc định ban đầu
     setActiveDragItemId(null)
     setActiveDragItemType(null)
@@ -371,8 +412,14 @@ function BoardContent({
   // Chúng ta sẽ custom lại chiến lược / thuật toán phát hiện va chạm tối ưu cho việc kéo thả card giữa nhiều columns (video 37 fix bug quan trọng)
   // args = arguments = Các Đối số, tham số
   const collisionDetectionStrategy = useCallback((args) => {
-    // Trường hợp kéo column thì dùng thuật toán closestCorners là chuẩn nhất
+    // Trường hợp kéo column thì dùng thuật toán pointerWithin kết hợp closestCenter cho mượt mà hơn
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
+      // Sử dụng pointerWithin để detect tốt hơn khi kéo column
+      const pointerCollision = pointerWithin(args)
+      if (pointerCollision.length > 0) {
+        return pointerCollision
+      }
+      // Fallback về closestCorners nếu không detect được với pointer
       return closestCorners({ ...args })
     }
 
@@ -502,6 +549,7 @@ function BoardContent({
               ...col,
               cards: col.cards.filter(card => filterCard(card, col._id))
             }))}
+            shakeItemId={shakeItemId}
             moveColumns={moveColumns}
             moveCardInTheSameColumn={moveCardInTheSameColumn}
             moveCardToDifferentColumn={moveCardToDifferentColumn}
@@ -509,8 +557,16 @@ function BoardContent({
 
           <DragOverlay dropAnimation={customDropAnimation}>
             {!activeDragItemType && null}
-            {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) && <Column column={activeDragItemData} />}
-            {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) && <Card card={activeDragItemData} />}
+            {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) && (
+              <div className="drag-active-column drag-placeholder-glow">
+                <Column column={activeDragItemData} />
+              </div>
+            )}
+            {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) && (
+              <div className="drag-active-card drag-placeholder-glow">
+                <Card card={activeDragItemData} />
+              </div>
+            )}
           </DragOverlay>
         </Box>
       </DndContext>

@@ -53,8 +53,15 @@ function ForgotPasswordForm() {
 
   if (isSuccess) {
     return (
-      <Zoom in={true} style={{ transitionDelay: '200ms' }}>
-        <MuiCard sx={{ minWidth: 380, maxWidth: 420, marginTop: '6em' }}>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <Zoom in={true} style={{ transitionDelay: '200ms' }}>
+          <MuiCard sx={{ minWidth: 380, maxWidth: 420 }}>
           <Box sx={{
             margin: '1em',
             display: 'flex',
@@ -99,6 +106,7 @@ function ForgotPasswordForm() {
           </Box>
         </MuiCard>
       </Zoom>
+      </Box>
     )
   }
 
@@ -112,7 +120,7 @@ function ForgotPasswordForm() {
     }}>
       <form onSubmit={handleSubmit}>
         <Zoom in={true} style={{ transitionDelay: '200ms' }}>
-          <MuiCard sx={{ minWidth: 380, maxWidth: 420, marginTop: '6em' }}>
+          <MuiCard sx={{ minWidth: 380, maxWidth: 420 }}>
             <Box sx={{
               margin: '1em',
               display: 'flex',

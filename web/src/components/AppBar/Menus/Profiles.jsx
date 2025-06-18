@@ -32,9 +32,9 @@ function Profiles() {
   const confirmLogout = useConfirm()
   const handleLogout = () => {
     confirmLogout({
-      title: 'Log out of your account?',
-      confirmationText: 'Confirm',
-      cancellationText: 'Cancel'
+      title: 'Đăng xuất khỏi tài khoản?',
+      confirmationText: 'Xác nhận',
+      cancellationText: 'Hủy'
     }).then(() => {
       // Gọi API đăng xuất người dùng
       dispatch(logoutUserAPI())
@@ -43,7 +43,7 @@ function Profiles() {
 
   return (
     <Box>
-      <Tooltip title="Account settings">
+      <Tooltip title="Cài đặt tài khoản">
         <IconButton
           onClick={handleClick}
           size="small"
@@ -70,7 +70,7 @@ function Profiles() {
       >
         <Link to="/settings/account" style={{ color: 'inherit' }}>
           <MenuItem sx={{ '&:hover': { color: 'success.light' } }}>
-            <Avatar sx={{ width: 28, height: 28, mr: 2 }} src={currentUser?.avatar} /> Profile
+            <Avatar sx={{ width: 28, height: 28, mr: 2 }} src={currentUser?.avatar} /> Hồ sơ
           </MenuItem>
         </Link>
         <Divider />
@@ -78,13 +78,13 @@ function Profiles() {
           <ListItemIcon>
             <PersonAdd fontSize="small" />
           </ListItemIcon>
-          Add another account
+          Thêm tài khoản khác
         </MenuItem>
         <MenuItem>
           <ListItemIcon>
             <Settings fontSize="small" />
           </ListItemIcon>
-          Settings
+          Cài đặt
         </MenuItem>
 
         <MenuItem onClick={handleLogout} sx={{
@@ -96,7 +96,7 @@ function Profiles() {
           <ListItemIcon>
             <Logout className='logout-icon' fontSize="small" />
           </ListItemIcon>
-          Logout
+          Đăng xuất
         </MenuItem>
       </Menu>
     </Box>
