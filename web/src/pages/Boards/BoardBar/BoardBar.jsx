@@ -22,6 +22,7 @@ import BoardBackgroundSwitcher from '~/components/Modal/BoardBackgroundSwitcher/
 import BoardAnalytics from '~/components/Modal/BoardAnalytics/BoardAnalytics'
 import DeleteBoardModal from '~/components/Modal/DeleteBoardModal/DeleteBoardModal'
 import MemberManagement from '~/components/Modal/MemberManagement/MemberManagement'
+import NotificationBell from '~/components/NotificationBell'
 import { deleteBoardAPI } from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import PermissionWrapper from '~/components/PermissionWrapper/PermissionWrapper'
@@ -63,6 +64,12 @@ function BoardBar({ board, boardId, onOpenFilterDrawer }) {
 
   // Check if current user is board owner
   const isOwner = board?.ownerIds?.includes(currentUser?._id)
+
+  // Handler cho notification bell
+  const handleNotificationBellClick = () => {
+    console.log('🔔 Notification bell clicked')
+    // Future: Có thể mở notification panel hoặc mark as read
+  }
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
@@ -245,6 +252,17 @@ function BoardBar({ board, boardId, onOpenFilterDrawer }) {
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {/* Notification Bell - chỉ hiện cho board members */}
+        {board?._id && (
+          <Box sx={{ 
+            display: { xs: 'none', sm: 'block' } // Ẩn trên mobile để tiết kiệm space
+          }}>
+            <NotificationBell 
+              boardId={board._id} 
+              onNotification={handleNotificationBellClick}
+            />
+          </Box>
+        )}
         <InviteBoardUser boardId={board._id} />
         <BoardUserGroup boardUsers={board?.FE_allUsers} />
       </Box>

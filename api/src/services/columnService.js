@@ -11,11 +11,13 @@ import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
 import { COLUMN_COLORS, CARD_COVER_GRADIENTS } from '~/utils/constants'
 
-const createNew = async (reqBody) => {
+const createNew = async (reqBody, userInfo = null) => {
   try {
     // Xử lý logic dữ liệu tùy đặc thù dự án
     const newColumn = {
-      ...reqBody
+      ...reqBody,
+      createdBy: userInfo ? userInfo._id : null, // Thêm thông tin người tạo
+      createdAt: Date.now()
     }
     const createdColumn = await columnModel.createNew(newColumn)
     const getNewColumn = await columnModel.findOneById(createdColumn.insertedId)
@@ -26,10 +28,16 @@ const createNew = async (reqBody) => {
 
       // Cập nhật mảng columnOrderIds trong collection boards
       await boardModel.pushColumnOrderIds(getNewColumn)
+      
+      // Thêm boardId vào response để sử dụng cho socket emission
+      getNewColumn.boardId = getNewColumn.boardId || reqBody.boardId
     }
 
     return getNewColumn
-  } catch (error) { throw error }
+  } catch (error) { 
+    console.error('❌ Column service createNew error:', error);
+    throw error;
+  }
 }
 
 const update = async (columnId, reqBody) => {

@@ -8,9 +8,33 @@ import { columnService } from '~/services/columnService'
 
 const createNew = async (req, res, next) => {
   try {
-    const createdColumn = await columnService.createNew(req.body)
+    const userInfo = req.jwtDecoded
+    const createdColumn = await columnService.createNew(req.body, userInfo)
+    
+    // Disabled backend socket emission to avoid duplicate with frontend emission
+    // Frontend handles socket emission in ListColumns.jsx with complete user info
+    /*
+    if (global._io && createdColumn.boardId) {
+      global._io.to(createdColumn.boardId.toString()).emit('BE_COLUMN_CREATED', {
+        boardId: createdColumn.boardId.toString(),
+        columnId: createdColumn._id.toString(),
+        columnTitle: createdColumn.title,
+        userInfo: {
+          _id: userInfo._id,
+          displayName: userInfo.displayName,
+          avatar: userInfo.avatar
+        },
+        timestamp: new Date().toISOString()
+      });
+      console.log('🔄 Socket: Emitted column creation event for board', createdColumn.boardId);
+    }
+    */
+    
     res.status(StatusCodes.CREATED).json(createdColumn)
-  } catch (error) { next(error) }
+  } catch (error) { 
+    console.error('❌ Create column error:', error);
+    next(error);
+  }
 }
 
 const update = async (req, res, next) => {
