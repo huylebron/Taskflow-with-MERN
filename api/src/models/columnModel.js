@@ -15,6 +15,9 @@ const COLUMN_COLLECTION_SCHEMA = Joi.object({
   boardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
   title: Joi.string().required().min(3).max(50),
   color: Joi.string().default(null),
+  
+  // Thêm trường createdBy để lưu thông tin người tạo cột
+  createdBy: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE).default(null),
 
   // Lưu ý các item trong mảng cardOrderIds là ObjectId nên cần thêm pattern cho chuẩn nhé, (lúc quay video số 57 mình quên nhưng sang đầu video số 58 sẽ có nhắc lại về cái này.)
   cardOrderIds: Joi.array().items(
@@ -27,7 +30,7 @@ const COLUMN_COLLECTION_SCHEMA = Joi.object({
 })
 
 // Chỉ định ra những Fields mà chúng ta không muốn cho phép cập nhật trong hàm update()
-const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createdAt']
+const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createdBy', 'createdAt']
 
 const validateBeforeCreate = async (data) => {
   return await COLUMN_COLLECTION_SCHEMA.validateAsync(data, { abortEarly: false })
@@ -39,7 +42,9 @@ const createNew = async (data) => {
     // Biến đổi một số dữ liệu liên quan tới ObjectId chuẩn chỉnh
     const newColumnToAdd = {
       ...validData,
-      boardId: new ObjectId(validData.boardId)
+      boardId: new ObjectId(validData.boardId),
+      // Chuyển đổi createdBy thành ObjectId nếu có
+      createdBy: validData.createdBy ? new ObjectId(validData.createdBy) : null
     }
 
     const createdColumn = await GET_DB().collection(COLUMN_COLLECTION_NAME).insertOne(newColumnToAdd)

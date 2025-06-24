@@ -13,6 +13,7 @@ import {
   updateCurrentActiveBoard,
   selectCurrentActiveBoard
 } from '~/redux/activeBoard/activeBoardSlice'
+import { selectCurrentUser } from '~/redux/user/userSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { cloneDeep } from 'lodash'
 import { socketIoInstance } from '~/socketClient'
@@ -20,6 +21,7 @@ import { socketIoInstance } from '~/socketClient'
 function ListColumns({ columns, shakeItemId }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
+  const currentUser = useSelector(selectCurrentUser)
 
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false)
   const toggleOpenNewColumnForm = () => setOpenNewColumnForm(!openNewColumnForm)
@@ -43,10 +45,25 @@ function ListColumns({ columns, shakeItemId }) {
       boardId: board._id
     })
 
-    // Emit realtime thêm column
+    // Emit realtime thêm column với đầy đủ thông tin
     socketIoInstance.emit('FE_COLUMN_CREATED', {
       boardId: board._id,
-      columnId: createdColumn._id
+      columnId: createdColumn._id,
+      columnTitle: newColumnTitle,
+      userInfo: {
+        _id: currentUser._id,
+        displayName: currentUser.displayName,
+        username: currentUser.username,
+        avatar: currentUser.avatar
+      },
+      timestamp: new Date().toISOString()
+    })
+
+    console.log('🔄 Frontend: Emitted column creation with data:', {
+      boardId: board._id,
+      columnId: createdColumn._id,
+      columnTitle: newColumnTitle,
+      userInfo: currentUser.displayName
     })
 
     // Khi tạo column mới thì nó sẽ chưa có card, cần xử lý vấn đề kéo thả vào một column rỗng (Nhớ lại video 37.2, code hiện tại là video 69)

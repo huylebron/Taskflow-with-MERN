@@ -17,18 +17,21 @@ import {
   selectCurrentActiveBoard,
   selectBoardBackground
 } from '~/redux/activeBoard/activeBoardSlice'
+import { selectCurrentUser } from '~/redux/user/userSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
 import ActiveCard from '~/components/Modal/ActiveCard/ActiveCard'
 import { BACKGROUND_TYPES } from '~/utils/backgroundConstants'
 import { socketIoInstance } from '~/socketClient'
+import { toast } from 'react-toastify'
 
 function Board() {
   const dispatch = useDispatch()
   // Không dùng State của component nữa mà chuyển qua dùng State của Redux
   // const [board, setBoard] = useState(null)
   const board = useSelector(selectCurrentActiveBoard)
+  const currentUser = useSelector(selectCurrentUser)
   // Get board background từ Redux
   const boardBackground = useSelector(selectBoardBackground)
 
@@ -56,6 +59,92 @@ function Board() {
       console.log('🔄 Real-time event received:', data)
       reloadBoardWithDelay()
     }
+
+    // Toast notification handler for column creation
+    const onColumnCreated = (data) => {
+      console.log('🔔 Board: Column created event received (all members):', {
+        columnTitle: data.columnTitle,
+        userInfo: data.userInfo,
+        currentUser: currentUser?.displayName,
+        boardId: data.boardId,
+        fullData: data
+      })
+      
+      // Show notification for ALL members (including the actor)
+      // This ensures complete synchronization across all users
+      if (data.userInfo && 
+          data.boardId === boardId &&
+          data.columnTitle) {
+        
+        // Enhanced fallback logic
+        const userName = data.userInfo.displayName || 
+                        data.userInfo.username || 
+                        'Người dùng không xác định'
+        
+        const columnName = data.columnTitle || 
+                          data.title || 
+                          'cột không có tên'
+        
+        // Different message for actor vs observers for clarity
+        const isCurrentUser = data.userInfo._id === currentUser?._id
+        const message = isCurrentUser 
+          ? `✅ Bạn đã tạo cột mới: "${columnName}"` 
+          : `👤 ${userName} đã tạo cột mới: "${columnName}"`
+        
+        console.log('🔔 Board: Showing synchronized notification for all members:', {
+          userName,
+          columnName,
+          isCurrentUser,
+          message,
+          boardId: data.boardId
+        })
+        
+        // Unique toast ID to prevent duplicates across all members
+        const toastId = `column-all-${data.boardId}-${data.columnId || Date.now()}`
+        
+        toast.info(message, {
+          toastId, // Prevent duplicate toasts with board-specific ID
+          position: 'bottom-left',
+          autoClose: 6000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          style: {
+            backgroundColor: isCurrentUser ? '#2e7d32' : '#1a2332',
+            color: '#ffffff',
+            border: isCurrentUser ? '1px solid #4caf50' : '1px solid #3498db',
+            borderRadius: '12px',
+            boxShadow: isCurrentUser 
+              ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+              : '0 6px 20px rgba(52, 152, 219, 0.3)',
+            fontFamily: 'inherit'
+          },
+          bodyStyle: {
+            fontSize: '14px',
+            fontWeight: '600',
+            padding: '4px 0'
+          },
+          progressStyle: {
+            backgroundColor: isCurrentUser ? '#4caf50' : '#3498db',
+            height: '3px'
+          },
+          icon: isCurrentUser ? '✅' : '🔔'
+        })
+      } else {
+        console.log('🔔 Board: Notification not shown - validation failed:', {
+          hasUserInfo: !!data.userInfo,
+          isCorrectBoard: data.boardId === boardId,
+          hasColumnTitle: !!data.columnTitle
+        })
+      }
+      
+      // Always reload the board for all members to ensure sync
+      console.log('🔄 Board: Triggering synchronized board reload for all members');
+      reloadBoardWithDelay()
+    }
+
+    // Regular event listeners (excluding BE_COLUMN_CREATED)
     socketIoInstance.on('BE_CARD_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_COLUMN_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_NEW_COMMENT', onRealtimeEvent)
@@ -64,11 +153,14 @@ function Board() {
     socketIoInstance.on('BE_LABEL_UPDATED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_DELETED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_CREATED', onRealtimeEvent)
-    socketIoInstance.on('BE_COLUMN_CREATED', onRealtimeEvent)
     socketIoInstance.on('BE_COLUMN_DELETED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
     socketIoInstance.on('BE_CHECKLIST_DELETED', onRealtimeEvent)
     socketIoInstance.on('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
+    
+    // Special handler for column creation with toast notification
+    socketIoInstance.on('BE_COLUMN_CREATED', onColumnCreated)
+    
     // ... có thể thêm các event khác nếu cần
     return () => {
       socketIoInstance.off('BE_CARD_MOVED', onRealtimeEvent)
@@ -79,14 +171,14 @@ function Board() {
       socketIoInstance.off('BE_LABEL_UPDATED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_CREATED', onRealtimeEvent)
-      socketIoInstance.off('BE_COLUMN_CREATED', onRealtimeEvent)
       socketIoInstance.off('BE_COLUMN_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
       socketIoInstance.off('BE_CHECKLIST_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
+      socketIoInstance.off('BE_COLUMN_CREATED', onColumnCreated)
       if (reloadTimeout) clearTimeout(reloadTimeout)
     }
-  }, [dispatch, boardId])
+  }, [dispatch, boardId, currentUser])
 
   /**
    * Func này có nhiệm vụ gọi API và xử lý khi kéo thả Column xong xuôi

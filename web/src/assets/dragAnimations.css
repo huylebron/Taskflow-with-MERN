@@ -76,6 +76,17 @@
     z-index: 1000;
 }
 
+/* Notification Bell Animation */
+.notification-bell-shake {
+    animation: bellShake 0.6s ease-in-out;
+    transform-origin: center center;
+}
+
+.notification-bell-active {
+    color: #ff9800 !important;
+    transition: color 0.3s ease;
+}
+
 .drag-active-column {
   transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
   box-shadow: none !important;
@@ -137,7 +148,8 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .drag-shake-column,
-  .drag-shake-card {
+  .drag-shake-card,
+  .notification-bell-shake {
     animation-duration: 0.3s;
   }
   
@@ -153,7 +165,8 @@
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
     .drag-shake-column,
-    .drag-shake-card {
+    .drag-shake-card,
+    .notification-bell-shake {
         animation: none;
     }
 
@@ -166,7 +179,8 @@
 
 /* Performance optimization */
 .drag-shake-column,
-.drag-shake-card {
+.drag-shake-card,
+.notification-bell-shake {
   will-change: transform;
 }
 

@@ -33,7 +33,19 @@ export const boardSocket = (io, socket) => {
 
   // Thêm cột realtime
   socket.on('FE_COLUMN_CREATED', (data) => {
-    socket.to(data.boardId).emit('BE_COLUMN_CREATED', data)
+    // Enhanced data structure với user info và column details
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🔄 Socket FE_COLUMN_CREATED received:', enhancedData);
+    console.log('🔄 Broadcasting to all members in board:', data.boardId);
+    
+    // Use io.to() to broadcast to ALL members (including sender) for sync
+    // This ensures all members receive the same notification data
+    io.to(data.boardId).emit('BE_COLUMN_CREATED', enhancedData)
+    
+    console.log('🔄 Socket: Broadcasted column creation to all board members');
   })
 
   // Xoá cột realtime
