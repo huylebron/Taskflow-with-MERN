@@ -262,6 +262,73 @@ function NotificationBell({ boardId, onNotification }) {
       }
     }
 
+    // Handle column deletion with Universal Notifications pattern
+    const handleColumnDeleted = (data) => {
+      try {
+        console.log('🗑️ NotificationBell: Column deleted event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id
+        })
+        
+        // Show notification for ALL members in the correct board
+        // This ensures complete synchronization and consistent UX for delete actions
+        if (data.boardId === boardId && data.userInfo) {
+          console.log('🗑️ NotificationBell: Processing delete notification for all members', {
+            columnTitle: data.columnTitle,
+            deletedBy: data.userInfo?.displayName,
+            currentUser: currentUser.displayName,
+            isCurrentUser: data.userInfo._id === currentUser._id,
+            fullData: data
+          })
+          
+          // Enhanced fallback logic
+          const userName = data.userInfo?.displayName || 
+                          data.userInfo?.username || 
+                          'Người dùng không xác định'
+          
+          const columnName = data.columnTitle || 
+                           data.title || 
+                           'cột không có tên'
+          
+          // Different notification text for actor vs observers in delete action
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const notificationText = isCurrentUser
+            ? `Bạn đã xóa cột '${columnName}'`
+            : `${userName} đã xóa cột '${columnName}'`
+          
+          console.log('🗑️ NotificationBell: Delete notification for all members:', {
+            userName,
+            columnName,
+            isCurrentUser,
+            notificationText,
+            timestamp: data.timestamp
+          })
+          
+          // Trigger shake with delete notification data for all members
+          triggerShake({
+            type: 'COLUMN_DELETED',
+            userName,
+            columnName,
+            notificationText,
+            isCurrentUser,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar,
+            originalData: data // For debugging
+          })
+        } else {
+          console.log('🗑️ NotificationBell: Delete event ignored:', {
+            reason: data.boardId !== boardId ? 'Different board' : 'Missing user info'
+          })
+        }
+      } catch (error) {
+        console.error('🗑️ NotificationBell: Error handling column deleted event:', error)
+      }
+    }
+
     // Socket connection event handlers
     const handleConnect = () => {
       console.log('🔔 NotificationBell: Socket connected')
@@ -287,6 +354,7 @@ function NotificationBell({ boardId, onNotification }) {
     socketIoInstance.on('disconnect', handleDisconnect)
     socketIoInstance.on('reconnect', handleReconnect)
     socketIoInstance.on('BE_COLUMN_CREATED', handleColumnCreated)
+    socketIoInstance.on('BE_COLUMN_DELETED', handleColumnDeleted)
 
     // Check initial connection state
     setIsConnected(socketIoInstance.connected)
@@ -298,6 +366,7 @@ function NotificationBell({ boardId, onNotification }) {
       socketIoInstance.off('disconnect', handleDisconnect)
       socketIoInstance.off('reconnect', handleReconnect)
       socketIoInstance.off('BE_COLUMN_CREATED', handleColumnCreated)
+      socketIoInstance.off('BE_COLUMN_DELETED', handleColumnDeleted)
       
       if (shakeTimeoutRef.current) {
         clearTimeout(shakeTimeoutRef.current)
@@ -452,20 +521,38 @@ function NotificationBell({ boardId, onNotification }) {
                     px: 2,
                     backgroundColor: notification.isRead 
                       ? 'transparent' 
-                      : 'rgba(255, 152, 0, 0.1)',
+                      : notification.type === 'COLUMN_DELETED'
+                        ? 'rgba(255, 152, 0, 0.15)' // Slightly more prominent for delete actions
+                        : 'rgba(255, 152, 0, 0.1)',
                     borderLeft: notification.isRead 
                       ? 'none'
-                      : '3px solid #ff9800'
+                      : notification.type === 'COLUMN_DELETED'
+                        ? '3px solid #ff9800' // Orange border for delete actions
+                        : '3px solid #ff9800'
                   }}>
                     <Box sx={{ width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <PersonIcon sx={{ 
-                          fontSize: '16px', 
-                          color: notification.isCurrentUser ? '#4caf50' : '#3498db'
-                        }} />
+                        {/* Visual distinction for different notification types */}
+                        {notification.type === 'COLUMN_DELETED' ? (
+                          // Delete action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#ff9800',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '🗑️'}
+                          </Box>
+                        ) : (
+                          // Default person icon for other actions  
+                          <PersonIcon sx={{ 
+                            fontSize: '16px', 
+                            color: notification.isCurrentUser ? '#4caf50' : '#3498db'
+                          }} />
+                        )}
                         <Typography variant="body2" sx={{ 
                           fontWeight: 600,
-                          color: notification.isCurrentUser ? '#4caf50' : '#3498db'
+                          color: notification.type === 'COLUMN_DELETED' 
+                            ? (notification.isCurrentUser ? '#4caf50' : '#ff9800')
+                            : (notification.isCurrentUser ? '#4caf50' : '#3498db')
                         }}>
                           {notification.isCurrentUser ? 'Bạn' : notification.userName}
                         </Typography>

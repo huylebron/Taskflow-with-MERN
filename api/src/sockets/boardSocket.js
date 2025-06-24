@@ -50,7 +50,19 @@ export const boardSocket = (io, socket) => {
 
   // Xoá cột realtime
   socket.on('FE_COLUMN_DELETED', (data) => {
-    socket.to(data.boardId).emit('BE_COLUMN_DELETED', data)
+    // Enhanced data structure với user info và column details
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🗑️ Socket FE_COLUMN_DELETED received:', enhancedData);
+    console.log('🗑️ Broadcasting to all members in board:', data.boardId);
+    
+    // Use io.to() to broadcast to ALL members (including sender) for Universal Notifications
+    // This ensures all members receive the same notification data consistently
+    io.to(data.boardId).emit('BE_COLUMN_DELETED', enhancedData)
+    
+    console.log('🗑️ Socket: Broadcasted column deletion to all board members');
   })
 
   // Di chuyển card trong cùng cột realtime
