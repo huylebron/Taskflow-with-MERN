@@ -28,6 +28,7 @@ import {
   updateCurrentActiveBoard,
   selectCurrentActiveBoard
 } from '~/redux/activeBoard/activeBoardSlice'
+import { selectCurrentUser } from '~/redux/user/userSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { cloneDeep } from 'lodash'
 import ToggleFocusInput from '~/components/Form/ToggleFocusInput'
@@ -40,6 +41,7 @@ import { socketIoInstance } from '~/socketClient'
 function Column({ column, shouldShake = false, shakeItemId }) {
   const dispatch = useDispatch()
   const board = useSelector(selectCurrentActiveBoard)
+  const currentUser = useSelector(selectCurrentUser)
 
   // Thêm state và ref cho bell shake animation
   const [isShaking, setIsShaking] = useState(false)
@@ -146,19 +148,87 @@ function Column({ column, shouldShake = false, shakeItemId }) {
   // Xử lý xóa một Column và Cards bên trong nó
   const confirmDeleteColumn = useConfirm()
   const handleDeleteColumn = () => {
+    // Calculate cards count for enhanced warning
+    const cardCount = orderedCards ? orderedCards.filter(card => !card.FE_PlaceholderCard).length : 0
+    
+    // Enhanced confirmation dialog with real-time notification warning
+    const enhancedDescription = (
+      <div style={{ color: '#333' }}>
+        {/* Main warning */}
+        <div style={{ marginBottom: '16px', fontSize: '14px', lineHeight: '1.5' }}>
+          <strong>⚠️ Cảnh báo: Hành động này sẽ xóa vĩnh viễn:</strong>
+        </div>
+        
+        {/* What will be deleted */}
+        <div style={{ 
+          backgroundColor: '#fff3cd', 
+          border: '1px solid #ffeaa7', 
+          borderRadius: '6px', 
+          padding: '12px', 
+          marginBottom: '16px' 
+        }}>
+          <div style={{ fontWeight: '600', marginBottom: '8px' }}>📁 Cột: "{column?.title || 'Untitled Column'}"</div>
+          {cardCount > 0 ? (
+            <div>📋 {cardCount} thẻ bên trong cột</div>
+          ) : (
+            <div style={{ color: '#6c757d' }}>📋 Cột trống (không có thẻ nào)</div>
+          )}
+        </div>
+
+        {/* Real-time notification warning */}
+        <div style={{ 
+          backgroundColor: '#e8f4fd', 
+          border: '1px solid #b3d7ff', 
+          borderRadius: '6px', 
+          padding: '12px', 
+          marginBottom: '16px' 
+        }}>
+          <div style={{ fontWeight: '600', marginBottom: '8px', color: '#0066cc' }}>
+            🔔 Thông báo Real-time
+          </div>
+          <div style={{ fontSize: '13px', lineHeight: '1.4', color: '#333' }}>
+            Tất cả thành viên trong board sẽ nhận được thông báo khi bạn xóa cột này. 
+            Họ sẽ thấy thông báo "bạn đã xóa cột" và board sẽ được cập nhật ngay lập tức.
+          </div>
+        </div>
+
+        {/* Final confirmation */}
+        <div style={{ 
+          color: '#dc3545', 
+          fontWeight: '600', 
+          textAlign: 'center',
+          fontSize: '14px'
+        }}>
+          ❌ Hành động này KHÔNG THỂ hoàn tác!
+        </div>
+      </div>
+    )
+
     confirmDeleteColumn({
-      title: 'Delete Column?',
-      description: 'This action will permanently delete your Column and its Cards! Are you sure?',
-      confirmationText: 'Confirm',
-      cancellationText: 'Cancel'
-      // buttonOrder: ['confirm', 'cancel']
-      // content: 'test content hehe',
-      // allowClose: false,
-      // dialogProps: { maxWidth: 'lg' },
-      // cancellationButtonProps: { color: 'primary' },
-      // confirmationButtonProps: { color: 'success', variant: 'outlined' },
-      // description: 'Phải nhập chữ trungquandev thì mới được Confirm =))',
-      // confirmationKeyword: 'trungquandev'
+      title: (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#dc3545' }}>
+          🗑️ Xác nhận xóa cột
+        </div>
+      ),
+      content: enhancedDescription,
+      confirmationText: 'XÓA VĨNH VIỄN',
+      cancellationText: 'Hủy bỏ',
+      dialogProps: { maxWidth: 'sm' },
+      confirmationButtonProps: { 
+        color: 'error', 
+        variant: 'contained',
+        sx: {
+          backgroundColor: '#dc3545',
+          '&:hover': {
+            backgroundColor: '#c82333'
+          }
+        }
+      },
+      cancellationButtonProps: { 
+        color: 'inherit',
+        variant: 'outlined'
+      },
+      allowClose: false // Force user to make explicit choice
     }).then(() => {
       // Update cho chuẩn dữ liệu state Board
 
@@ -171,12 +241,48 @@ function Column({ column, shouldShake = false, shakeItemId }) {
 
       // Gọi API xử lý phía BE
       deleteColumnDetailsAPI(column._id).then(res => {
-        toast.success(res?.deleteResult)
-        // Emit realtime xoá column
-        socketIoInstance.emit('FE_COLUMN_DELETED', {
+        // ✅ REMOVED DEFAULT TOAST - Only use enhanced real-time toast with user info
+        console.log('🗑️ Frontend: Column deleted successfully, proceeding with real-time notification')
+        
+        // Enhanced data structure với user info và column details cho Universal Notifications
+        // Validation để đảm bảo dữ liệu an toàn
+        if (!currentUser?._id) {
+          console.error('🗑️ Frontend: Cannot emit column deletion - missing current user info')
+          return
+        }
+        
+        if (!board?._id) {
+          console.error('🗑️ Frontend: Cannot emit column deletion - missing board info')
+          return
+        }
+        
+        const columnDeleteData = {
           boardId: board._id,
-          columnId: column._id
+          columnId: column._id,
+          columnTitle: column?.title || 'Untitled Column',
+          userInfo: {
+            _id: currentUser._id,
+            displayName: currentUser.displayName || currentUser.username || 'Unknown User',
+            username: currentUser.username || 'unknown',
+            avatar: currentUser.avatar || null
+          },
+          timestamp: new Date().toISOString()
+        }
+        
+        console.log('🗑️ Frontend: Emitting column deletion with enhanced data:', {
+          boardId: columnDeleteData.boardId,
+          columnTitle: columnDeleteData.columnTitle,
+          userDisplayName: columnDeleteData.userInfo.displayName,
+          hasUserInfo: !!columnDeleteData.userInfo._id
         })
+        
+        // Emit realtime xoá column với complete data structure
+        try {
+          socketIoInstance.emit('FE_COLUMN_DELETED', columnDeleteData)
+          console.log('🗑️ Frontend: Successfully emitted column deletion event')
+        } catch (error) {
+          console.error('🗑️ Frontend: Error emitting column deletion event:', error)
+        }
       })
     }).catch(() => {})
   }

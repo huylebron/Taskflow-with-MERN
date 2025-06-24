@@ -144,7 +144,91 @@ function Board() {
       reloadBoardWithDelay()
     }
 
-    // Regular event listeners (excluding BE_COLUMN_CREATED)
+    // Toast notification handler for column deletion (Universal Notifications Pattern)
+    const onColumnDeleted = (data) => {
+      console.log('🗑️ Board: Column deleted event received (all members):', {
+        columnTitle: data.columnTitle,
+        userInfo: data.userInfo,
+        currentUser: currentUser?.displayName,
+        boardId: data.boardId,
+        fullData: data
+      })
+      
+      // Show notification for ALL members (including the actor)
+      // This ensures complete synchronization across all users
+      if (data.userInfo && 
+          data.boardId === boardId &&
+          data.columnTitle) {
+        
+        // Enhanced fallback logic
+        const userName = data.userInfo.displayName || 
+                        data.userInfo.username || 
+                        'Người dùng không xác định'
+        
+        const columnName = data.columnTitle || 
+                          data.title || 
+                          'cột không có tên'
+        
+        // Different message for actor vs observers for delete action
+        const isCurrentUser = data.userInfo._id === currentUser?._id
+        const message = isCurrentUser 
+          ? `✅ Bạn đã xóa cột: "${columnName}"` 
+          : `🗑️ ${userName} đã xóa cột: "${columnName}"`
+        
+        console.log('🗑️ Board: Showing synchronized delete notification for all members:', {
+          userName,
+          columnName,
+          isCurrentUser,
+          message,
+          boardId: data.boardId
+        })
+        
+        // Unique toast ID to prevent duplicates across all members
+        const toastId = `column-delete-all-${data.boardId}-${data.columnId || Date.now()}`
+        
+        toast.info(message, {
+          toastId, // Prevent duplicate toasts with board-specific ID
+          position: 'bottom-left',
+          autoClose: 5000, // Slightly shorter for delete actions
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          style: {
+            backgroundColor: isCurrentUser ? '#2e7d32' : '#f57c00', // Green for actor, orange for observers
+            color: '#ffffff',
+            border: isCurrentUser ? '1px solid #4caf50' : '1px solid #ff9800',
+            borderRadius: '12px',
+            boxShadow: isCurrentUser 
+              ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+              : '0 6px 20px rgba(255, 152, 0, 0.3)', // Orange shadow for delete
+            fontFamily: 'inherit'
+          },
+          bodyStyle: {
+            fontSize: '14px',
+            fontWeight: '600',
+            padding: '4px 0'
+          },
+          progressStyle: {
+            backgroundColor: isCurrentUser ? '#4caf50' : '#ff9800',
+            height: '3px'
+          },
+          icon: isCurrentUser ? '✅' : '🗑️'
+        })
+      } else {
+        console.log('🗑️ Board: Delete notification not shown - validation failed:', {
+          hasUserInfo: !!data.userInfo,
+          isCorrectBoard: data.boardId === boardId,
+          hasColumnTitle: !!data.columnTitle
+        })
+      }
+      
+      // Always reload the board for all members to ensure sync
+      console.log('🔄 Board: Triggering synchronized board reload for all members after deletion');
+      reloadBoardWithDelay()
+    }
+
+    // Regular event listeners (excluding BE_COLUMN_CREATED and BE_COLUMN_DELETED)
     socketIoInstance.on('BE_CARD_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_COLUMN_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_NEW_COMMENT', onRealtimeEvent)
@@ -153,13 +237,13 @@ function Board() {
     socketIoInstance.on('BE_LABEL_UPDATED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_DELETED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_CREATED', onRealtimeEvent)
-    socketIoInstance.on('BE_COLUMN_DELETED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
     socketIoInstance.on('BE_CHECKLIST_DELETED', onRealtimeEvent)
     socketIoInstance.on('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
     
-    // Special handler for column creation with toast notification
+    // Special handlers with Universal Notifications pattern
     socketIoInstance.on('BE_COLUMN_CREATED', onColumnCreated)
+    socketIoInstance.on('BE_COLUMN_DELETED', onColumnDeleted)
     
     // ... có thể thêm các event khác nếu cần
     return () => {
@@ -171,11 +255,11 @@ function Board() {
       socketIoInstance.off('BE_LABEL_UPDATED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_CREATED', onRealtimeEvent)
-      socketIoInstance.off('BE_COLUMN_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
       socketIoInstance.off('BE_CHECKLIST_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_COLUMN_CREATED', onColumnCreated)
+      socketIoInstance.off('BE_COLUMN_DELETED', onColumnDeleted)
       if (reloadTimeout) clearTimeout(reloadTimeout)
     }
   }, [dispatch, boardId, currentUser])
