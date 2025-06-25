@@ -329,6 +329,74 @@ function NotificationBell({ boardId, onNotification }) {
       }
     }
 
+    // Handle column title update with Universal Notifications pattern
+    const handleColumnTitleUpdated = (data) => {
+      try {
+        console.log('📝 NotificationBell: Column title updated event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id
+        })
+        
+        // Show notification for ALL members in the correct board
+        // This ensures complete synchronization and consistent UX for title update actions
+        if (data.boardId === boardId && data.userInfo) {
+          console.log('📝 NotificationBell: Processing title update notification for all members', {
+            oldTitle: data.oldTitle,
+            newTitle: data.newTitle,
+            updatedBy: data.userInfo?.displayName,
+            currentUser: currentUser.displayName,
+            isCurrentUser: data.userInfo._id === currentUser._id,
+            fullData: data
+          })
+          
+          // Enhanced fallback logic
+          const userName = data.userInfo?.displayName || 
+                          data.userInfo?.username || 
+                          'Người dùng không xác định'
+          
+          const oldTitle = data.oldTitle || 'cột không có tên'
+          const newTitle = data.newTitle || 'cột không có tên'
+          
+          // Different notification text for actor vs observers in title update action
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const notificationText = isCurrentUser
+            ? `Bạn đã đổi tên cột từ '${oldTitle}' thành '${newTitle}'`
+            : `${userName} đã đổi tên cột từ '${oldTitle}' thành '${newTitle}'`
+          
+          console.log('📝 NotificationBell: Title update notification for all members:', {
+            userName,
+            titleChange: `${oldTitle} → ${newTitle}`,
+            isCurrentUser,
+            notificationText,
+            timestamp: data.timestamp
+          })
+          
+          // Trigger shake with title update notification data for all members
+          triggerShake({
+            type: 'COLUMN_TITLE_UPDATED',
+            userName,
+            oldTitle,
+            newTitle,
+            notificationText,
+            isCurrentUser,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar,
+            originalData: data // For debugging
+          })
+        } else {
+          console.log('📝 NotificationBell: Title update event ignored:', {
+            reason: data.boardId !== boardId ? 'Different board' : 'Missing user info'
+          })
+        }
+      } catch (error) {
+        console.error('📝 NotificationBell: Error handling column title updated event:', error)
+      }
+    }
+
     // Socket connection event handlers
     const handleConnect = () => {
       console.log('🔔 NotificationBell: Socket connected')
@@ -355,6 +423,7 @@ function NotificationBell({ boardId, onNotification }) {
     socketIoInstance.on('reconnect', handleReconnect)
     socketIoInstance.on('BE_COLUMN_CREATED', handleColumnCreated)
     socketIoInstance.on('BE_COLUMN_DELETED', handleColumnDeleted)
+    socketIoInstance.on('BE_COLUMN_UPDATED', handleColumnTitleUpdated)
 
     // Check initial connection state
     setIsConnected(socketIoInstance.connected)
@@ -367,6 +436,7 @@ function NotificationBell({ boardId, onNotification }) {
       socketIoInstance.off('reconnect', handleReconnect)
       socketIoInstance.off('BE_COLUMN_CREATED', handleColumnCreated)
       socketIoInstance.off('BE_COLUMN_DELETED', handleColumnDeleted)
+      socketIoInstance.off('BE_COLUMN_UPDATED', handleColumnTitleUpdated)
       
       if (shakeTimeoutRef.current) {
         clearTimeout(shakeTimeoutRef.current)
@@ -522,13 +592,17 @@ function NotificationBell({ boardId, onNotification }) {
                     backgroundColor: notification.isRead 
                       ? 'transparent' 
                       : notification.type === 'COLUMN_DELETED'
-                        ? 'rgba(255, 152, 0, 0.15)' // Slightly more prominent for delete actions
-                        : 'rgba(255, 152, 0, 0.1)',
+                        ? 'rgba(255, 152, 0, 0.15)' // Orange for delete actions
+                        : notification.type === 'COLUMN_TITLE_UPDATED'
+                          ? 'rgba(33, 150, 243, 0.15)' // Blue for title update actions
+                          : 'rgba(255, 152, 0, 0.1)', // Default orange
                     borderLeft: notification.isRead 
                       ? 'none'
                       : notification.type === 'COLUMN_DELETED'
                         ? '3px solid #ff9800' // Orange border for delete actions
-                        : '3px solid #ff9800'
+                        : notification.type === 'COLUMN_TITLE_UPDATED'
+                          ? '3px solid #2196f3' // Blue border for title update actions
+                          : '3px solid #ff9800' // Default orange border
                   }}>
                     <Box sx={{ width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -541,6 +615,14 @@ function NotificationBell({ boardId, onNotification }) {
                           }}>
                             {notification.isCurrentUser ? '✅' : '🗑️'}
                           </Box>
+                        ) : notification.type === 'COLUMN_TITLE_UPDATED' ? (
+                          // Title update action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#2196f3',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '📝'}
+                          </Box>
                         ) : (
                           // Default person icon for other actions  
                           <PersonIcon sx={{ 
@@ -552,7 +634,9 @@ function NotificationBell({ boardId, onNotification }) {
                           fontWeight: 600,
                           color: notification.type === 'COLUMN_DELETED' 
                             ? (notification.isCurrentUser ? '#4caf50' : '#ff9800')
-                            : (notification.isCurrentUser ? '#4caf50' : '#3498db')
+                            : notification.type === 'COLUMN_TITLE_UPDATED'
+                              ? (notification.isCurrentUser ? '#4caf50' : '#2196f3')
+                              : (notification.isCurrentUser ? '#4caf50' : '#3498db')
                         }}>
                           {notification.isCurrentUser ? 'Bạn' : notification.userName}
                         </Typography>

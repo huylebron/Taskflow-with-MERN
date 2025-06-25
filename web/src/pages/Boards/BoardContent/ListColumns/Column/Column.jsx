@@ -288,6 +288,15 @@ function Column({ column, shouldShake = false, shakeItemId }) {
   }
 
   const onUpdateColumnTitle = (newTitle) => {
+    // Store old title để có thể emit socket event với context
+    const oldTitle = column.title
+    
+    // Only process if title actually changed
+    if (oldTitle === newTitle) {
+      console.log('📝 Column title unchanged, skipping update')
+      return
+    }
+    
     // Gọi API update Column và xử lý dữ liệu board trong redux
     updateColumnDetailsAPI(column._id, { title: newTitle }).then(() => {
       const newBoard = cloneDeep(board)
@@ -295,6 +304,49 @@ function Column({ column, shouldShake = false, shakeItemId }) {
       if (columnToUpdate) columnToUpdate.title = newTitle
 
       dispatch(updateCurrentActiveBoard(newBoard))
+
+      // Enhanced data structure với user info và column details cho Universal Notifications
+      // Validation để đảm bảo dữ liệu an toàn
+      if (!currentUser?._id) {
+        console.error('📝 Frontend: Cannot emit column update - missing current user info')
+        return
+      }
+      
+      if (!board?._id) {
+        console.error('📝 Frontend: Cannot emit column update - missing board info')
+        return
+      }
+      
+      const columnUpdateData = {
+        boardId: board._id,
+        columnId: column._id,
+        oldTitle: oldTitle || 'Untitled Column',
+        newTitle: newTitle || 'Untitled Column',
+        userInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName || currentUser.username || 'Unknown User',
+          username: currentUser.username || 'unknown',
+          avatar: currentUser.avatar || null
+        },
+        timestamp: new Date().toISOString()
+      }
+      
+      console.log('📝 Frontend: Emitting column title update with enhanced data:', {
+        boardId: columnUpdateData.boardId,
+        titleChange: `${oldTitle} → ${newTitle}`,
+        userDisplayName: columnUpdateData.userInfo.displayName,
+        hasUserInfo: !!columnUpdateData.userInfo._id
+      })
+      
+      // Emit realtime cập nhật tên column với complete data structure
+      try {
+        socketIoInstance.emit('FE_COLUMN_UPDATED', columnUpdateData)
+        console.log('📝 Frontend: Successfully emitted column title update event')
+      } catch (error) {
+        console.error('📝 Frontend: Error emitting column title update event:', error)
+      }
+    }).catch((error) => {
+      console.error('📝 Frontend: Error updating column title:', error)
     })
   }
 
