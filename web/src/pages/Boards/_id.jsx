@@ -228,11 +228,96 @@ function Board() {
       reloadBoardWithDelay()
     }
 
-    // Regular event listeners (excluding BE_COLUMN_CREATED and BE_COLUMN_DELETED)
+    // Toast notification handler for column title update (Universal Notifications Pattern)
+    const onColumnTitleUpdated = (data) => {
+      console.log('📝 Board: Column title updated event received (all members):', {
+        oldTitle: data.oldTitle,
+        newTitle: data.newTitle,
+        userInfo: data.userInfo,
+        currentUser: currentUser?.displayName,
+        boardId: data.boardId,
+        fullData: data
+      })
+      
+      // Show notification for ALL members (including the actor)
+      // This ensures complete synchronization across all users
+      if (data.userInfo && 
+          data.boardId === boardId &&
+          data.oldTitle && 
+          data.newTitle) {
+        
+        // Enhanced fallback logic
+        const userName = data.userInfo.displayName || 
+                        data.userInfo.username || 
+                        'Người dùng không xác định'
+        
+        const oldTitle = data.oldTitle || 'cột không có tên'
+        const newTitle = data.newTitle || 'cột không có tên'
+        
+        // Different message for actor vs observers for title update action
+        const isCurrentUser = data.userInfo._id === currentUser?._id
+        const message = isCurrentUser 
+          ? `✅ Bạn đã đổi tên cột từ "${oldTitle}" thành "${newTitle}"` 
+          : `📝 ${userName} đã đổi tên cột từ "${oldTitle}" thành "${newTitle}"`
+        
+        console.log('📝 Board: Showing synchronized title update notification for all members:', {
+          userName,
+          titleChange: `${oldTitle} → ${newTitle}`,
+          isCurrentUser,
+          message,
+          boardId: data.boardId
+        })
+        
+        // Unique toast ID to prevent duplicates across all members
+        const toastId = `column-title-update-all-${data.boardId}-${data.columnId || Date.now()}`
+        
+        toast.info(message, {
+          toastId, // Prevent duplicate toasts with board-specific ID
+          position: 'bottom-left',
+          autoClose: 4000, // Standard duration for title updates
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          style: {
+            backgroundColor: isCurrentUser ? '#2e7d32' : '#1976d2', // Green for actor, blue for observers
+            color: '#ffffff',
+            border: isCurrentUser ? '1px solid #4caf50' : '1px solid #2196f3',
+            borderRadius: '12px',
+            boxShadow: isCurrentUser 
+              ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+              : '0 6px 20px rgba(33, 150, 243, 0.3)', // Blue shadow for title update
+            fontFamily: 'inherit'
+          },
+          bodyStyle: {
+            fontSize: '14px',
+            fontWeight: '600',
+            padding: '4px 0'
+          },
+          progressStyle: {
+            backgroundColor: isCurrentUser ? '#4caf50' : '#2196f3',
+            height: '3px'
+          },
+          icon: isCurrentUser ? '✅' : '📝'
+        })
+      } else {
+        console.log('📝 Board: Title update notification not shown - validation failed:', {
+          hasUserInfo: !!data.userInfo,
+          isCorrectBoard: data.boardId === boardId,
+          hasOldTitle: !!data.oldTitle,
+          hasNewTitle: !!data.newTitle
+        })
+      }
+      
+      // Always reload the board for all members to ensure sync
+      console.log('🔄 Board: Triggering synchronized board reload for all members after title update');
+      reloadBoardWithDelay()
+    }
+
+    // Regular event listeners (excluding BE_COLUMN_CREATED, BE_COLUMN_DELETED, and BE_COLUMN_UPDATED)
     socketIoInstance.on('BE_CARD_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_COLUMN_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_NEW_COMMENT', onRealtimeEvent)
-    socketIoInstance.on('BE_COLUMN_UPDATED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_UPDATED', onRealtimeEvent)
     socketIoInstance.on('BE_LABEL_UPDATED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_DELETED', onRealtimeEvent)
@@ -244,13 +329,13 @@ function Board() {
     // Special handlers with Universal Notifications pattern
     socketIoInstance.on('BE_COLUMN_CREATED', onColumnCreated)
     socketIoInstance.on('BE_COLUMN_DELETED', onColumnDeleted)
+    socketIoInstance.on('BE_COLUMN_UPDATED', onColumnTitleUpdated)
     
     // ... có thể thêm các event khác nếu cần
     return () => {
       socketIoInstance.off('BE_CARD_MOVED', onRealtimeEvent)
       socketIoInstance.off('BE_COLUMN_MOVED', onRealtimeEvent)
       socketIoInstance.off('BE_NEW_COMMENT', onRealtimeEvent)
-      socketIoInstance.off('BE_COLUMN_UPDATED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_UPDATED', onRealtimeEvent)
       socketIoInstance.off('BE_LABEL_UPDATED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_DELETED', onRealtimeEvent)
@@ -260,6 +345,7 @@ function Board() {
       socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_COLUMN_CREATED', onColumnCreated)
       socketIoInstance.off('BE_COLUMN_DELETED', onColumnDeleted)
+      socketIoInstance.off('BE_COLUMN_UPDATED', onColumnTitleUpdated)
       if (reloadTimeout) clearTimeout(reloadTimeout)
     }
   }, [dispatch, boardId, currentUser])

@@ -16,9 +16,21 @@ export const boardSocket = (io, socket) => {
     io.to(data.boardId).emit('BE_COLUMN_MOVED', data)
   })
 
-  // Cập nhật tên cột
+  // Cập nhật tên cột realtime
   socket.on('FE_COLUMN_UPDATED', (data) => {
-    socket.to(data.boardId).emit('BE_COLUMN_UPDATED', data)
+    // Enhanced data structure với user info và column details
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('📝 Socket FE_COLUMN_UPDATED received:', enhancedData);
+    console.log('📝 Broadcasting to all members in board:', data.boardId);
+    
+    // Use io.to() to broadcast to ALL members (including sender) for Universal Notifications
+    // This ensures all members receive the same notification data consistently
+    io.to(data.boardId).emit('BE_COLUMN_UPDATED', enhancedData)
+    
+    console.log('📝 Socket: Broadcasted column update to all board members');
   })
 
   // Cập nhật tên card
