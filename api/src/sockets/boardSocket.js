@@ -81,4 +81,18 @@ export const boardSocket = (io, socket) => {
   socket.on('FE_CARD_SORTED_IN_COLUMN', (data) => {
     socket.to(data.boardId).emit('BE_CARD_SORTED_IN_COLUMN', data)
   })
+
+  // Hoàn thành hoặc bỏ hoàn thành Card (Universal Notifications)
+  socket.on('FE_CARD_COMPLETED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('✅ Socket FE_CARD_COMPLETED received:', enhancedData)
+    console.log('✅ Broadcasting card completed status to all members in board:', data.boardId)
+
+    io.to(data.boardId).emit('BE_CARD_COMPLETED', enhancedData)
+
+    console.log('✅ Socket: Broadcasted card completed status to all board members')
+  })
 } 

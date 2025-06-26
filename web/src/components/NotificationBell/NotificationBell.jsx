@@ -30,10 +30,10 @@ function NotificationBell({ boardId, onNotification }) {
       const stored = localStorage.getItem(storageKey)
       if (stored) {
         const parsedNotifications = JSON.parse(stored)
-        // Filter notifications within 1 hour
-        const oneHourAgo = Date.now() - (60 * 60 * 1000)
+        // Filter notifications within 7 days
+        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000)
         const validNotifications = parsedNotifications.filter(
-          notification => new Date(notification.timestamp).getTime() > oneHourAgo
+          notification => new Date(notification.timestamp).getTime() > sevenDaysAgo
         )
         setNotifications(validNotifications)
         
@@ -133,6 +133,9 @@ function NotificationBell({ boardId, onNotification }) {
     
     const hours = Math.floor(minutes / 60)
     if (hours < 24) return `${hours} giờ trước`
+    
+    const days = Math.floor(hours / 24)
+    if (days < 7) return `${days} ngày trước`
     
     return formatTimestamp(timestamp)
   }
@@ -397,6 +400,58 @@ function NotificationBell({ boardId, onNotification }) {
       }
     }
 
+    // Handle card completed status change with Universal Notifications pattern
+    const handleCardCompleted = (data) => {
+      try {
+        console.log('✅ NotificationBell: Card completed status event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id
+        })
+
+        // Show notification for ALL members in the correct board
+        if (data.boardId === boardId && data.userInfo) {
+          const userName = data.userInfo?.displayName || data.userInfo?.username || 'Người dùng không xác định'
+          const cardTitle = data.cardTitle || 'thẻ không có tên'
+          const actionText = data.isCardCompleted ? 'hoàn thành' : 'bỏ hoàn thành'
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const notificationText = isCurrentUser
+            ? `Bạn đã ${actionText} thẻ '${cardTitle}'`
+            : `${userName} đã ${actionText} thẻ '${cardTitle}'`
+
+          console.log('✅ NotificationBell: Card completed notification for all members:', {
+            userName,
+            cardTitle,
+            isCurrentUser,
+            notificationText,
+            timestamp: data.timestamp
+          })
+
+          // Trigger shake with card completed notification data for all members
+          triggerShake({
+            type: 'CARD_COMPLETED',
+            userName,
+            cardTitle,
+            isCardCompleted: data.isCardCompleted,
+            notificationText,
+            isCurrentUser,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar,
+            originalData: data
+          })
+        } else {
+          console.log('✅ NotificationBell: Card completed event ignored:', {
+            reason: data.boardId !== boardId ? 'Different board' : 'Missing user info'
+          })
+        }
+      } catch (error) {
+        console.error('✅ NotificationBell: Error handling card completed event:', error)
+      }
+    }
+
     // Socket connection event handlers
     const handleConnect = () => {
       console.log('🔔 NotificationBell: Socket connected')
@@ -424,6 +479,8 @@ function NotificationBell({ boardId, onNotification }) {
     socketIoInstance.on('BE_COLUMN_CREATED', handleColumnCreated)
     socketIoInstance.on('BE_COLUMN_DELETED', handleColumnDeleted)
     socketIoInstance.on('BE_COLUMN_UPDATED', handleColumnTitleUpdated)
+    // Add card completed listener
+    socketIoInstance.on('BE_CARD_COMPLETED', handleCardCompleted)
 
     // Check initial connection state
     setIsConnected(socketIoInstance.connected)
@@ -437,6 +494,8 @@ function NotificationBell({ boardId, onNotification }) {
       socketIoInstance.off('BE_COLUMN_CREATED', handleColumnCreated)
       socketIoInstance.off('BE_COLUMN_DELETED', handleColumnDeleted)
       socketIoInstance.off('BE_COLUMN_UPDATED', handleColumnTitleUpdated)
+      // Remove card completed listener
+      socketIoInstance.off('BE_CARD_COMPLETED', handleCardCompleted)
       
       if (shakeTimeoutRef.current) {
         clearTimeout(shakeTimeoutRef.current)
@@ -569,7 +628,7 @@ function NotificationBell({ boardId, onNotification }) {
           <Typography variant="caption" sx={{ 
             color: 'rgba(255, 255, 255, 0.6)'
           }}>
-            Lịch sử trong 1 giờ qua
+            Lịch sử trong 7 ngày qua
           </Typography>
         </Box>
         
@@ -595,14 +654,18 @@ function NotificationBell({ boardId, onNotification }) {
                         ? 'rgba(255, 152, 0, 0.15)' // Orange for delete actions
                         : notification.type === 'COLUMN_TITLE_UPDATED'
                           ? 'rgba(33, 150, 243, 0.15)' // Blue for title update actions
-                          : 'rgba(255, 152, 0, 0.1)', // Default orange
+                          : notification.type === 'CARD_COMPLETED'
+                            ? 'rgba(76, 175, 80, 0.15)' // Green for card completion actions
+                            : 'rgba(255, 152, 0, 0.1)', // Default orange
                     borderLeft: notification.isRead 
                       ? 'none'
                       : notification.type === 'COLUMN_DELETED'
                         ? '3px solid #ff9800' // Orange border for delete actions
                         : notification.type === 'COLUMN_TITLE_UPDATED'
                           ? '3px solid #2196f3' // Blue border for title update actions
-                          : '3px solid #ff9800' // Default orange border
+                          : notification.type === 'CARD_COMPLETED'
+                            ? '3px solid #4caf50' // Green border for card completion actions
+                            : '3px solid #ff9800' // Default orange border
                   }}>
                     <Box sx={{ width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -623,6 +686,14 @@ function NotificationBell({ boardId, onNotification }) {
                           }}>
                             {notification.isCurrentUser ? '✅' : '📝'}
                           </Box>
+                        ) : notification.type === 'CARD_COMPLETED' ? (
+                          // Card completion action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#66bb6a',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '✅'}
+                          </Box>
                         ) : (
                           // Default person icon for other actions  
                           <PersonIcon sx={{ 
@@ -636,7 +707,9 @@ function NotificationBell({ boardId, onNotification }) {
                             ? (notification.isCurrentUser ? '#4caf50' : '#ff9800')
                             : notification.type === 'COLUMN_TITLE_UPDATED'
                               ? (notification.isCurrentUser ? '#4caf50' : '#2196f3')
-                              : (notification.isCurrentUser ? '#4caf50' : '#3498db')
+                              : notification.type === 'CARD_COMPLETED'
+                                ? (notification.isCurrentUser ? '#4caf50' : '#66bb6a')
+                                : (notification.isCurrentUser ? '#4caf50' : '#3498db')
                         }}>
                           {notification.isCurrentUser ? 'Bạn' : notification.userName}
                         </Typography>

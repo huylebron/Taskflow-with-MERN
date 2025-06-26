@@ -47,12 +47,15 @@ import {
 } from '~/utils/dueDateConstants'
 import ConfirmationDialog from '~/components/ConfirmationDialog/ConfirmationDialog'
 import PermissionWrapper from '~/components/PermissionWrapper/PermissionWrapper'
+import { socketIoInstance } from '~/socketClient'
+import { selectCurrentUser } from '~/redux/user/userSlice'
 
 function Card({ card, shouldShake = false }) {
   const dispatch = useDispatch()
   const [showLightbox, setShowLightbox] = useState(false)
   const activeBoard = useSelector(selectCurrentActiveBoard)
   const boardLabels = activeBoard?.labels || []
+  const currentUser = useSelector(selectCurrentUser)
 
   const [hovered, setHovered] = useState(false)
   const [loadingComplete, setLoadingComplete] = useState(false)
@@ -81,11 +84,13 @@ function Card({ card, shouldShake = false }) {
   const dndKitCardStyles = {
     transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : undefined,
-    border: isDragging ? '1px solid #2ecc71' : undefined,
-    boxShadow: isDragging ? 'none' : undefined,
-    WebkitBoxShadow: isDragging ? 'none' : undefined,
-    MozBoxShadow: isDragging ? 'none' : undefined
+    opacity: isDragging ? 0 : undefined,
+    visibility: isDragging ? 'hidden' : 'visible',
+    border: isDragging ? '1px dashed transparent' : undefined,
+    boxShadow: isDragging ? 'none !important' : undefined,
+    WebkitBoxShadow: isDragging ? 'none !important' : undefined,
+    MozBoxShadow: isDragging ? 'none !important' : undefined,
+    filter: isDragging ? 'none !important' : undefined
   }
 
   const shouldShowCardActions = () => {
@@ -202,7 +207,24 @@ function Card({ card, shouldShake = false }) {
     try {
       const updatedCard = await updateCardCompletedStatusAPI(card._id, !card.isCardCompleted)
       dispatch(updateCardInBoard(updatedCard))
-      // toast.success(!card.isCardCompleted ? 'Đã đánh dấu hoàn thành!' : 'Đã bỏ đánh dấu hoàn thành!', { position: 'bottom-right' })
+
+      // Emit Universal Notifications event after successful update
+      if (socketIoInstance && activeBoard?._id && currentUser?._id) {
+        socketIoInstance.emit('FE_CARD_COMPLETED', {
+          boardId: activeBoard._id,
+          cardId: card._id,
+          columnId: card.columnId,
+          cardTitle: card?.title,
+          isCardCompleted: !card.isCardCompleted,
+          userInfo: {
+            _id: currentUser._id,
+            displayName: currentUser.displayName || currentUser.username || 'Unknown User',
+            username: currentUser.username || 'unknown',
+            avatar: currentUser.avatar || null
+          },
+          timestamp: new Date().toISOString()
+        })
+      }
     } catch (error) {
       toast.error('Cập nhật trạng thái hoàn thành thất bại!', { position: 'bottom-right' })
     } finally {

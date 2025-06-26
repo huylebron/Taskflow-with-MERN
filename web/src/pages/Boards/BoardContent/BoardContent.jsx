@@ -38,12 +38,16 @@ const ACTIVE_DRAG_ITEM_TYPE = {
   CARD: 'ACTIVE_DRAG_ITEM_TYPE_CARD'
 }
 
-// Custom Drop Animation cho DragOverlay
+// Custom Drop Animation cho DragOverlay - Loại bỏ bóng và hiệu ứng không mong muốn
 const customDropAnimation = {
   sideEffects: defaultDropAnimationSideEffects({
     styles: {
       active: {
-        opacity: '0.5'
+        opacity: '0.8',
+        boxShadow: 'none',
+        WebkitBoxShadow: 'none',
+        MozBoxShadow: 'none',
+        filter: 'none'
       }
     }
   })
@@ -135,12 +139,7 @@ function BoardContent({
           isCardCompleted: data.isCardCompleted,
           columnId: data.columnId
         }))
-        toast.info(
-          data.isCardCompleted
-            ? 'Một thẻ đã được đánh dấu hoàn thành!'
-            : 'Một thẻ đã bỏ đánh dấu hoàn thành!',
-          { position: 'bottom-right' }
-        )
+        // Removed generic toast, Universal Notifications will handle user messaging
       }
     }
     socketIoInstance.on('CARD_COMPLETED_STATUS_CHANGED', handleCardStatusChanged)
@@ -245,6 +244,9 @@ function BoardContent({
     setActiveDragItemId(active?.id)
     setActiveDragItemType(active?.data?.current?.columnId ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN)
     setActiveDragItemData(active?.data?.current)
+
+    // Thêm class để loại bỏ bóng toàn cầu khi drag
+    document.body.classList.add('dnd-dragging')
 
     // Thêm sound effect
     playShakeSound()
@@ -402,6 +404,9 @@ function BoardContent({
       }, 700)
     }
 
+    // Loại bỏ class drag khi kết thúc
+    document.body.classList.remove('dnd-dragging')
+
     // Những dữ liệu sau khi kéo thả này luôn phải đưa về giá trị null mặc định ban đầu
     setActiveDragItemId(null)
     setActiveDragItemType(null)
@@ -555,15 +560,19 @@ function BoardContent({
             moveCardToDifferentColumn={moveCardToDifferentColumn}
           />
 
-          <DragOverlay dropAnimation={customDropAnimation}>
+          <DragOverlay 
+            dropAnimation={customDropAnimation}
+            style={{ boxShadow: 'none', filter: 'none' }}
+            className="drag-overlay"
+          >
             {!activeDragItemType && null}
             {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) && (
-              <div className="drag-active-column drag-placeholder-glow">
+              <div className="drag-active-column drag-placeholder-glow" style={{ boxShadow: 'none !important' }}>
                 <Column column={activeDragItemData} />
               </div>
             )}
             {(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) && (
-              <div className="drag-active-card drag-placeholder-glow">
+              <div className="drag-active-card drag-placeholder-glow" style={{ boxShadow: 'none !important', WebkitBoxShadow: 'none !important', MozBoxShadow: 'none !important' }}>
                 <Card card={activeDragItemData} />
               </div>
             )}

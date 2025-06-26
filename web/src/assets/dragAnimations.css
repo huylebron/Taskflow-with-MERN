@@ -266,3 +266,80 @@ body .drag-active-card * {
 *[data-dragging="true"] * {
   box-shadow: none !important;
 }
+
+/* Comprehensive DragOverlay shadow removal */
+.drag-overlay,
+.drag-overlay *,
+.drag-active-card,
+.drag-active-card *,
+.drag-active-column,
+.drag-active-column * {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Target DndKit DragOverlay component directly */
+[data-rbd-drag-handle-dragging-id],
+[data-rbd-drag-handle-dragging-id] *,
+div[style*="pointer-events: none"],
+div[style*="pointer-events: none"] * {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Remove shadows from any element with opacity 0.5 (drag overlay) */
+*[style*="opacity: 0.5"],
+*[style*="opacity: 0.5"] *,
+*[style*="opacity:0.5"],
+*[style*="opacity:0.5"] * {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Target high z-index elements (likely drag overlays) */
+*[style*="z-index: 999"],
+*[style*="z-index: 999"] *,
+*[style*="z-index:999"],
+*[style*="z-index:999"] * {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Remove Material-UI shadows more aggressively */
+.MuiCard-root.drag-active-card,
+.MuiCard-root.drag-active-card *,
+.MuiPaper-root.drag-active-card,
+.MuiPaper-root.drag-active-card *,
+.MuiBox-root.drag-active-card,
+.MuiBox-root.drag-active-card * {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Force remove shadows from any draggable components */
+[draggable="true"],
+[draggable="true"] *,
+.dnd-kit-draggable,
+.dnd-kit-draggable *,
+.dnd-kit-drag-overlay,
+.dnd-kit-drag-overlay * {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Ultimate nuclear option - remove all shadows from fixed/absolute positioned elements during drag */
+body.dnd-dragging *[style*="position: fixed"],
+body.dnd-dragging *[style*="position: absolute"],
+body.dnd-dragging *[style*="position:fixed"],
+body.dnd-dragging *[style*="position:absolute"] {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
