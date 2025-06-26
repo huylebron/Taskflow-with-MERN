@@ -215,7 +215,7 @@ function Card({ card, shouldShake = false }) {
           cardId: card._id,
           columnId: card.columnId,
           cardTitle: card?.title,
-          isCardCompleted: !card.isCardCompleted,
+          isCardCompleted: updatedCard.isCardCompleted,
           userInfo: {
             _id: currentUser._id,
             displayName: currentUser.displayName || currentUser.username || 'Unknown User',
