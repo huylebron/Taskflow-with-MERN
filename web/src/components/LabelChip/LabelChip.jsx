@@ -10,16 +10,23 @@ const StyledChip = styled(Chip, {
 })(({ theme, labelColor, textColor }) => ({
   backgroundColor: labelColor,
   color: textColor,
-  fontWeight: 500,
-  fontSize: '11px',
-  height: 'auto',
-  padding: '2px 0',
+  fontWeight: 600,
+  fontSize: '12px',
+  height: '20px',
+  minWidth: '40px',
+  borderRadius: '3px',
   '& .MuiChip-label': {
     padding: '0 8px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
-  }
+    whiteSpace: 'nowrap',
+    lineHeight: 1.2
+  },
+  '&:hover': {
+    transform: 'scale(1.05)',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+  },
+  transition: 'all 0.2s ease'
 }))
 
 /**

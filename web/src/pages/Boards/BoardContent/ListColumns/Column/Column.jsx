@@ -96,7 +96,7 @@ function Column({ column, shouldShake = false, shakeItemId }) {
 
   const addNewCard = async () => {
     if (!newCardTitle) {
-      toast.error('Please enter Card Title!', { position: 'bottom-right' })
+      toast.error('Vui lòng nhập tiêu đề cho thẻ!', { position: 'bottom-right' })
       return
     }
 
@@ -112,12 +112,45 @@ function Column({ column, shouldShake = false, shakeItemId }) {
       boardId: board._id
     })
 
-    // Emit realtime thêm card
-    socketIoInstance.emit('FE_CARD_CREATED', {
-      boardId: board._id,
-      columnId: createdCard.columnId,
-      cardId: createdCard._id
-    })
+    // ✅ ENHANCED: Apply Universal Notifications Pattern
+    // Validation để đảm bảo dữ liệu an toàn
+    if (!currentUser?._id) {
+      console.error('📝 Frontend: Cannot emit card creation - missing current user info')
+    } else if (!board?._id) {
+      console.error('📝 Frontend: Cannot emit card creation - missing board info')
+    } else {
+      // Enhanced data structure với complete user info và card details
+      const cardCreateData = {
+        boardId: board._id,
+        columnId: createdCard.columnId,
+        cardId: createdCard._id,
+        cardTitle: createdCard.title,
+        columnTitle: column?.title || 'Untitled Column',
+        userInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName || currentUser.username || 'Unknown User',
+          username: currentUser.username || 'unknown',
+          avatar: currentUser.avatar || null
+        },
+        timestamp: new Date().toISOString()
+      }
+
+      console.log('📝 Frontend: Emitting card creation with enhanced data:', {
+        boardId: cardCreateData.boardId,
+        cardTitle: cardCreateData.cardTitle,
+        columnTitle: cardCreateData.columnTitle,
+        userDisplayName: cardCreateData.userInfo.displayName,
+        hasUserInfo: !!cardCreateData.userInfo._id
+      })
+
+      // Emit realtime card creation với Universal Notifications
+      try {
+        socketIoInstance.emit('FE_CARD_CREATED', cardCreateData)
+        console.log('📝 Frontend: Successfully emitted card creation event')
+      } catch (error) {
+        console.error('📝 Frontend: Error emitting card creation event:', error)
+      }
+    }
 
     // Cập nhật state board
     // Phía Front-end chúng ta phải tự làm đúng lại state data board (thay vì phải gọi lại api fetchBoardDetailsAPI)

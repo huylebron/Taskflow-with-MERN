@@ -452,6 +452,184 @@ function NotificationBell({ boardId, onNotification }) {
       }
     }
 
+    // Handle card movement between columns with Universal Notifications pattern
+    const handleCardMoved = (data) => {
+      try {
+        console.log('🔄 NotificationBell: Card movement event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          cardMovement: `${data.cardTitle}: ${data.fromColumnTitle} → ${data.toColumnTitle}`
+        })
+
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Unknown User'
+          const cardTitle = data.cardTitle || 'Untitled Card'
+          const fromColumn = data.fromColumnTitle || 'Unknown Column'
+          const toColumn = data.toColumnTitle || 'Unknown Column'
+          
+          // Message format for notification bell
+          const notificationText = isCurrentUser
+            ? `Bạn đã di chuyển '${cardTitle}' từ '${fromColumn}' sang '${toColumn}'`
+            : `${userName} đã di chuyển '${cardTitle}' từ '${fromColumn}' sang '${toColumn}'`
+
+          console.log('🔄 NotificationBell: Card movement notification for all members:', {
+            userName,
+            cardMovement: `${fromColumn} → ${toColumn}`,
+            isCurrentUser,
+            notificationText,
+            timestamp: data.timestamp
+          })
+          
+          // Trigger shake with card movement notification data for all members
+          triggerShake({
+            type: 'CARD_MOVED',
+            userName,
+            cardTitle,
+            fromColumnTitle: fromColumn,
+            toColumnTitle: toColumn,
+            notificationText,
+            isCurrentUser,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar,
+            originalData: data // For debugging
+          })
+        } else {
+          console.log('🔄 NotificationBell: Card movement event ignored:', {
+            reason: data.boardId !== boardId ? 'Different board' : 'Missing user info'
+          })
+        }
+      } catch (error) {
+        console.error('🔄 NotificationBell: Error handling card movement event:', error)
+      }
+    }
+
+    // Handle card cover updates with Universal Notifications pattern
+    const handleCardCoverUpdated = (data) => {
+      try {
+        console.log('🖼️ NotificationBell: Card cover updated event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          cardTitle: data.cardTitle,
+          action: data.action
+        })
+
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Unknown User'
+          const cardTitle = data.cardTitle || 'Untitled Card'
+          
+          // Message format for notification bell
+          let notificationText = ''
+          
+          if (data.action === 'UPDATE_COVER_COLOR') {
+            const coverTypeText = data.coverType === 'gradient' ? 'gradient' : 'màu nền'
+            notificationText = isCurrentUser
+              ? `Bạn đã thay đổi ảnh bìa thành ${coverTypeText} cho '${cardTitle}'`
+              : `${userName} đã thay đổi ảnh bìa thành ${coverTypeText} cho '${cardTitle}'`
+          } else if (data.action === 'UPLOAD_COVER_IMAGE') {
+            notificationText = isCurrentUser
+              ? `Bạn đã tải lên ảnh bìa mới cho '${cardTitle}'`
+              : `${userName} đã tải lên ảnh bìa mới cho '${cardTitle}'`
+          } else if (data.action === 'DELETE_COVER') {
+            notificationText = isCurrentUser
+              ? `Bạn đã xóa ảnh bìa của '${cardTitle}'`
+              : `${userName} đã xóa ảnh bìa của '${cardTitle}'`
+          }
+
+          console.log('🖼️ NotificationBell: Card cover notification for all members:', {
+            userName,
+            cardTitle,
+            action: data.action,
+            isCurrentUser,
+            notificationText,
+            timestamp: data.timestamp
+          })
+          
+          // Trigger shake with card cover notification data for all members
+          triggerShake({
+            type: 'CARD_COVER_UPDATED',
+            userName,
+            cardTitle,
+            action: data.action,
+            coverType: data.coverType,
+            fileName: data.fileName,
+            notificationText,
+            isCurrentUser,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar,
+            originalData: data // For debugging
+          })
+        } else {
+          console.log('🖼️ NotificationBell: Card cover event ignored:', {
+            reason: data.boardId !== boardId ? 'Different board' : 'Missing user info'
+          })
+        }
+      } catch (error) {
+        console.error('🖼️ NotificationBell: Error handling card cover event:', error)
+      }
+    }
+
+    // Handler for card creation (Universal Notifications Pattern)
+    const handleCardCreated = (data) => {
+      try {
+        console.log('🔔 NotificationBell: Card created event received:', {
+          cardTitle: data.cardTitle,
+          columnTitle: data.columnTitle,
+          userInfo: data.userInfo,
+          boardId: data.boardId,
+          currentBoard: boardId,
+          currentUser: currentUser.displayName,
+          fullData: data
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Unknown User'
+          const cardTitle = data.cardTitle || 'thẻ không có tên'
+          const columnTitle = data.columnTitle || 'cột'
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã tạo thẻ mới '${cardTitle}' trong '${columnTitle}'`
+            : `${userName} đã tạo thẻ mới '${cardTitle}' trong '${columnTitle}'`
+          
+          console.log('🔔 NotificationBell: Triggering card creation notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            cardTitle,
+            columnTitle
+          })
+          
+          triggerShake({ 
+            type: 'CARD_CREATED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            cardTitle,
+            columnTitle,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('🔔 NotificationBell: Card creation event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('🔔 NotificationBell: Error handling card creation event:', error)
+      }
+    }
+
     // Socket connection event handlers
     const handleConnect = () => {
       console.log('🔔 NotificationBell: Socket connected')
@@ -481,6 +659,12 @@ function NotificationBell({ boardId, onNotification }) {
     socketIoInstance.on('BE_COLUMN_UPDATED', handleColumnTitleUpdated)
     // Add card completed listener
     socketIoInstance.on('BE_CARD_COMPLETED', handleCardCompleted)
+    // Add card movement listener
+    socketIoInstance.on('BE_CARD_MOVED', handleCardMoved)
+    // Add card cover updated listener
+    socketIoInstance.on('BE_CARD_COVER_UPDATED', handleCardCoverUpdated)
+    // Add card creation listener
+    socketIoInstance.on('BE_CARD_CREATED', handleCardCreated)
 
     // Check initial connection state
     setIsConnected(socketIoInstance.connected)
@@ -496,6 +680,12 @@ function NotificationBell({ boardId, onNotification }) {
       socketIoInstance.off('BE_COLUMN_UPDATED', handleColumnTitleUpdated)
       // Remove card completed listener
       socketIoInstance.off('BE_CARD_COMPLETED', handleCardCompleted)
+      // Remove card movement listener
+      socketIoInstance.off('BE_CARD_MOVED', handleCardMoved)
+      // Remove card cover updated listener
+      socketIoInstance.off('BE_CARD_COVER_UPDATED', handleCardCoverUpdated)
+      // Remove card creation listener
+      socketIoInstance.off('BE_CARD_CREATED', handleCardCreated)
       
       if (shakeTimeoutRef.current) {
         clearTimeout(shakeTimeoutRef.current)
@@ -656,7 +846,13 @@ function NotificationBell({ boardId, onNotification }) {
                           ? 'rgba(33, 150, 243, 0.15)' // Blue for title update actions
                           : notification.type === 'CARD_COMPLETED'
                             ? 'rgba(76, 175, 80, 0.15)' // Green for card completion actions
-                            : 'rgba(255, 152, 0, 0.1)', // Default orange
+                                                    : notification.type === 'CARD_MOVED'
+                          ? 'rgba(33, 150, 243, 0.15)' // Blue for card movement actions
+                          : notification.type === 'CARD_COVER_UPDATED'
+                            ? 'rgba(156, 39, 176, 0.15)' // Purple for card cover actions
+                            : notification.type === 'CARD_CREATED'
+                              ? 'rgba(33, 150, 243, 0.15)' // Blue for card creation actions
+                              : 'rgba(255, 152, 0, 0.1)', // Default orange
                     borderLeft: notification.isRead 
                       ? 'none'
                       : notification.type === 'COLUMN_DELETED'
@@ -665,7 +861,13 @@ function NotificationBell({ boardId, onNotification }) {
                           ? '3px solid #2196f3' // Blue border for title update actions
                           : notification.type === 'CARD_COMPLETED'
                             ? '3px solid #4caf50' // Green border for card completion actions
-                            : '3px solid #ff9800' // Default orange border
+                            : notification.type === 'CARD_MOVED'
+                              ? '3px solid #2196f3' // Blue border for card movement actions
+                              : notification.type === 'CARD_COVER_UPDATED'
+                                ? '3px solid #9c27b0' // Purple border for card cover actions
+                                : notification.type === 'CARD_CREATED'
+                                  ? '3px solid #2196f3' // Blue border for card creation actions
+                                  : '3px solid #ff9800' // Default orange border
                   }}>
                     <Box sx={{ width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -694,6 +896,30 @@ function NotificationBell({ boardId, onNotification }) {
                           }}>
                             {notification.isCurrentUser ? '✅' : '✅'}
                           </Box>
+                        ) : notification.type === 'CARD_MOVED' ? (
+                          // Card movement action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#2196f3',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '🔄'}
+                          </Box>
+                        ) : notification.type === 'CARD_COVER_UPDATED' ? (
+                          // Card cover update action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#9c27b0',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '🖼️'}
+                          </Box>
+                        ) : notification.type === 'CARD_CREATED' ? (
+                          // Card creation action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#2196f3',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '📝'}
+                          </Box>
                         ) : (
                           // Default person icon for other actions  
                           <PersonIcon sx={{ 
@@ -709,7 +935,11 @@ function NotificationBell({ boardId, onNotification }) {
                               ? (notification.isCurrentUser ? '#4caf50' : '#2196f3')
                               : notification.type === 'CARD_COMPLETED'
                                 ? (notification.isCurrentUser ? '#4caf50' : '#66bb6a')
-                                : (notification.isCurrentUser ? '#4caf50' : '#3498db')
+                                : notification.type === 'CARD_MOVED'
+                                  ? (notification.isCurrentUser ? '#4caf50' : '#2196f3')
+                                  : notification.type === 'CARD_CREATED'
+                                    ? (notification.isCurrentUser ? '#4caf50' : '#2196f3')
+                                    : (notification.isCurrentUser ? '#4caf50' : '#3498db')
                         }}>
                           {notification.isCurrentUser ? 'Bạn' : notification.userName}
                         </Typography>

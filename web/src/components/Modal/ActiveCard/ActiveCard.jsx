@@ -75,6 +75,7 @@ import ChecklistDialog from '../ChecklistDialog/ChecklistDialog'
 import { MOCK_CHECKLISTS } from '~/utils/checklistConstants'
 import ConfirmationDialog from '~/components/ConfirmationDialog/ConfirmationDialog'
 import { socketIoInstance } from '~/socketClient'
+import { CardNotificationBell } from '~/components/NotificationBell'
 
 // Import the new due date API function for optimized calendar operations
 import { updateCardDueDateAPI } from '~/apis'
@@ -250,10 +251,37 @@ function ActiveCard() {
     }
     let reqData = new FormData()
     reqData.append('cardCover', event.target?.files[0])
+    const file = event.target?.files[0]
 
     // Gọi API...
     toast.promise(
-      callApiUpdateCard(reqData).finally(() => event.target.value = ''),
+      callApiUpdateCard(reqData).then((updatedCard) => {
+        // Emit socket event for real-time notifications following Universal Pattern
+        socketIoInstance.emit('FE_CARD_COVER_UPDATED', {
+          boardId: activeBoard._id,
+          cardId: activeCard._id,
+          cardTitle: activeCard.title || 'Thẻ không có tiêu đề',
+          action: 'UPLOAD_COVER_IMAGE',
+          coverType: 'image',
+          fileName: file.name,
+          userInfo: {
+            _id: currentUser._id,
+            displayName: currentUser.displayName || currentUser.username || 'Người dùng',
+            username: currentUser.username,
+            avatar: currentUser.avatar
+          },
+          timestamp: new Date().toISOString()
+        })
+
+        console.log('🖼️ ActiveCard: Emitted card cover upload event (sidebar):', {
+          action: 'UPLOAD_COVER_IMAGE',
+          fileName: file.name,
+          actor: currentUser.displayName,
+          cardTitle: activeCard.title
+        })
+
+        return updatedCard
+      }).finally(() => event.target.value = ''),
       { pending: 'Updating...' }
     )
   }
@@ -262,6 +290,27 @@ function ActiveCard() {
     try {
       // Gọi API để xóa cover
       await callApiUpdateCard({ deleteCardCover: true })
+
+      // Emit socket event for real-time notifications following Universal Pattern
+      socketIoInstance.emit('FE_CARD_COVER_UPDATED', {
+        boardId: activeBoard._id,
+        cardId: activeCard._id,
+        cardTitle: activeCard.title || 'Thẻ không có tiêu đề',
+        action: 'DELETE_COVER',
+        userInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName || currentUser.username || 'Người dùng',
+          username: currentUser.username,
+          avatar: currentUser.avatar
+        },
+        timestamp: new Date().toISOString()
+      })
+
+      console.log('🖼️ ActiveCard: Emitted card cover delete event:', {
+        action: 'DELETE_COVER',
+        actor: currentUser.displayName,
+        cardTitle: activeCard.title
+      })
 
       // Thông báo thành công
       toast.success('Xóa ảnh cover thành công!', { position: 'bottom-right' })
@@ -281,8 +330,44 @@ function ActiveCard() {
     })
   }
 
-  const onUpdateCardMembers = (incomingMemberInfo) => {
-    callApiUpdateCard({ incomingMemberInfo })
+  const onUpdateCardMembers = async (incomingMemberInfo) => {
+    try {
+      // Call API to update card members
+      await callApiUpdateCard({ incomingMemberInfo })
+      
+      // Emit socket event for real-time notifications following Universal Pattern
+      const targetUser = activeBoard?.FE_allUsers?.find(user => user._id === incomingMemberInfo.userId)
+      
+      socketIoInstance.emit('FE_CARD_MEMBER_UPDATED', {
+        boardId: activeBoard._id,
+        cardId: activeCard._id,
+        cardTitle: activeCard.title || 'Thẻ không có tiêu đề',
+        action: incomingMemberInfo.action, // 'ADD' or 'REMOVE'
+        targetUser: {
+          _id: targetUser?._id,
+          displayName: targetUser?.displayName || targetUser?.username || 'Người dùng',
+          username: targetUser?.username,
+          avatar: targetUser?.avatar
+        },
+        userInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName || currentUser.username || 'Người dùng',
+          username: currentUser.username,
+          avatar: currentUser.avatar
+        },
+        timestamp: new Date().toISOString()
+      })
+      
+      console.log('👥 ActiveCard: Emitted card member update event:', {
+        action: incomingMemberInfo.action,
+        targetUser: targetUser?.displayName,
+        actor: currentUser.displayName,
+        cardTitle: activeCard.title
+      })
+    } catch (error) {
+      console.error('❌ Error updating card members:', error)
+      toast.error('Có lỗi khi cập nhật thành viên thẻ!')
+    }
   }
 
   const handleCoverClick = (e) => {
@@ -309,6 +394,30 @@ function ActiveCard() {
         coverType: coverType
       })
 
+      // Emit socket event for real-time notifications following Universal Pattern
+      socketIoInstance.emit('FE_CARD_COVER_UPDATED', {
+        boardId: activeBoard._id,
+        cardId: activeCard._id,
+        cardTitle: activeCard.title || 'Thẻ không có tiêu đề',
+        action: 'UPDATE_COVER_COLOR',
+        coverType: coverType,
+        coverValue: coverValue,
+        userInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName || currentUser.username || 'Người dùng',
+          username: currentUser.username,
+          avatar: currentUser.avatar
+        },
+        timestamp: new Date().toISOString()
+      })
+
+      console.log('🖼️ ActiveCard: Emitted card cover color update event:', {
+        action: 'UPDATE_COVER_COLOR',
+        coverType: coverType,
+        actor: currentUser.displayName,
+        cardTitle: activeCard.title
+      })
+
       // Thông báo thành công
       toast.success('Cập nhật ảnh bìa thành công!', { position: 'bottom-right' })
     } catch (error) {
@@ -322,7 +431,33 @@ function ActiveCard() {
 
     // Gọi API...
     toast.promise(
-      callApiUpdateCard(reqData),
+      callApiUpdateCard(reqData).then((updatedCard) => {
+        // Emit socket event for real-time notifications following Universal Pattern
+        socketIoInstance.emit('FE_CARD_COVER_UPDATED', {
+          boardId: activeBoard._id,
+          cardId: activeCard._id,
+          cardTitle: activeCard.title || 'Thẻ không có tiêu đề',
+          action: 'UPLOAD_COVER_IMAGE',
+          coverType: 'image',
+          fileName: file.name,
+          userInfo: {
+            _id: currentUser._id,
+            displayName: currentUser.displayName || currentUser.username || 'Người dùng',
+            username: currentUser.username,
+            avatar: currentUser.avatar
+          },
+          timestamp: new Date().toISOString()
+        })
+
+        console.log('🖼️ ActiveCard: Emitted card cover upload event:', {
+          action: 'UPLOAD_COVER_IMAGE',
+          fileName: file.name,
+          actor: currentUser.displayName,
+          cardTitle: activeCard.title
+        })
+
+        return updatedCard
+      }),
       { pending: 'Đang tải lên...', success: 'Cập nhật ảnh bìa thành công!', error: 'Cập nhật ảnh bìa thất bại!' }
     )
   }
@@ -768,7 +903,24 @@ function ActiveCard() {
 
         {/* Members section - full width */}
         <Box sx={{ mb: 3 }}>
-          <Typography sx={{ fontWeight: '600', color: 'primary.main', mb: 1 }}>Members</Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            mb: 1 
+          }}>
+            <Typography sx={{ fontWeight: '600', color: 'primary.main' }}>
+              Members
+            </Typography>
+            <CardNotificationBell 
+              cardId={activeCard?._id}
+              boardId={activeBoard?._id}
+              onNotification={(notificationData) => {
+                // Optional: Handle notification callback if needed
+                console.log('Card notification:', notificationData)
+              }}
+            />
+          </Box>
           <CardUserGroup
             cardMemberIds={activeCard?.memberIds}
             onUpdateCardMembers={onUpdateCardMembers}
