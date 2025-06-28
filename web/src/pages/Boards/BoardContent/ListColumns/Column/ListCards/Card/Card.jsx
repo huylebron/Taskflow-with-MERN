@@ -16,7 +16,6 @@ import Stack from '@mui/material/Stack'
 import Chip from '@mui/material/Chip'
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import LinearProgress from '@mui/material/LinearProgress'
-import Checkbox from '@mui/material/Checkbox'
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -178,8 +177,8 @@ function Card({ card, shouldShake = false }) {
   const getCardLabels = () => {
     if (!card?.labelIds?.length || !boardLabels.length) return []
 
-    // Giới hạn hiển thị tối đa 3 labels
-    const displayLimit = 6
+    // Tăng giới hạn hiển thị lên 5 labels
+    const displayLimit = 5
     const labelIdsToShow = card.labelIds.slice(0, displayLimit)
     return labelIdsToShow.map(labelId => {
       return findLabelById(labelId, boardLabels)
@@ -189,7 +188,7 @@ function Card({ card, shouldShake = false }) {
   // Tính số labels còn lại không hiển thị
   const getRemainingLabelsCount = () => {
     if (!card?.labelIds?.length) return 0
-    const displayLimit = 3
+    const displayLimit = 5
     return Math.max(0, card.labelIds.length - displayLimit)
   }
 
@@ -204,6 +203,16 @@ function Card({ card, shouldShake = false }) {
   const handleCardCompletedChange = async (e) => {
     e.stopPropagation()
     setLoadingComplete(true)
+    
+    // Trigger star burst animation
+    const checkboxContainer = e.currentTarget.closest('.checkbox-container') || e.currentTarget
+    if (checkboxContainer) {
+      checkboxContainer.classList.add('star-burst')
+      setTimeout(() => {
+        checkboxContainer.classList.remove('star-burst')
+      }, 800)
+    }
+    
     try {
       const updatedCard = await updateCardCompletedStatusAPI(card._id, !card.isCardCompleted)
       dispatch(updateCardInBoard(updatedCard))
@@ -239,6 +248,7 @@ function Card({ card, shouldShake = false }) {
         ref={setNodeRef} style={dndKitCardStyles} {...attributes} {...listeners}
         data-dragging={isDragging}
         className={`
+          card-border-highlight
           due-date-indicator 
           ${isOverdue ? 'overdue' : isDueSoon ? 'due-soon' : ''}
           ${isShaking ? 'drag-shake-card' : ''}
@@ -260,6 +270,7 @@ function Card({ card, shouldShake = false }) {
             : isDueSoon
               ? '1px solid #f57c00'
               : '1px solid transparent',
+          borderRadius: '8px',
           position: 'relative',
           transition: 'all 0.3s ease-in-out',
           '&:hover': {
@@ -288,17 +299,7 @@ function Card({ card, shouldShake = false }) {
           })
         }}
       >
-        {/* Checkbox hoàn thành hiển thị khi hover */}
-        <Box sx={{ position: 'absolute', top: 0, left: 0, zIndex: 2, display: (card.isCardCompleted || hovered) ? 'block' : 'none' }}>
-          <Tooltip title={card.isCardCompleted ? 'Bỏ đánh dấu hoàn thành' : 'Đánh dấu là hoàn thành'}>
-            <Checkbox
-              checked={!!card.isCardCompleted}
-              onClick={handleCardCompletedChange}
-              disabled={loadingComplete}
-              sx={{ color: card.isCardCompleted ? 'success.main' : 'grey.500' }}
-            />
-          </Tooltip>
-        </Box>
+
         {card?.cover &&
           <Box sx={{
             position: 'relative',
@@ -357,7 +358,7 @@ function Card({ card, shouldShake = false }) {
             </Tooltip>
           </Box>
         }
-        <CardContent sx={{ p: 1.5, pl: 5, '&:last-child': { p: 1.5, pl: 5 } }}>
+        <CardContent sx={{ p: 1.5, pl: 1.5, '&:last-child': { p: 1.5, pl: 1.5 } }}>
           {/* Labels */}
           {cardLabels.length > 0 && (
             <Stack
@@ -365,8 +366,8 @@ function Card({ card, shouldShake = false }) {
               spacing={0.5}
               sx={{
                 flexWrap: 'wrap',
-                gap: '4px',
-                mb: 1
+                gap: '6px',
+                mb: 1.5
               }}
             >
               {cardLabels.map(label => (
@@ -375,12 +376,8 @@ function Card({ card, shouldShake = false }) {
                   label={label}
                   size="small"
                   sx={{
-                    height: '8px',
-                    maxWidth: '40px',
                     '& .MuiChip-label': {
-                      p: '0 4px',
-                      lineHeight: 1.2,
-                      fontSize: '8px'
+                      maxWidth: '60px'
                     }
                   }}
                 />
@@ -391,14 +388,24 @@ function Card({ card, shouldShake = false }) {
                   size="small"
                   label={`+${remainingLabelsCount}`}
                   sx={{
-                    height: '8px',
+                    height: '20px',
+                    minWidth: '32px',
+                    borderRadius: '3px',
+                    fontSize: '12px',
+                    fontWeight: 600,
                     '& .MuiChip-label': {
-                      p: '0 4px',
-                      lineHeight: 1.2,
-                      fontSize: '8px'
+                      padding: '0 6px',
+                      lineHeight: 1.2
                     },
                     backgroundColor: (theme) =>
-                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'
+                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                    color: (theme) =>
+                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)',
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                    },
+                    transition: 'all 0.2s ease'
                   }}
                 />
               )}
@@ -481,18 +488,189 @@ function Card({ card, shouldShake = false }) {
             </Box>
           )}
 
-          <Typography
+          {/* Title với checkbox - Enhanced Trello-like interaction */}
+          <Box
             sx={{
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              lineHeight: 1.4,
-              color: 'text.primary',
-              wordBreak: 'break-word',
-              hyphens: 'auto'
+              position: 'relative',
+              minHeight: '1.4em',
+              overflow: 'hidden'
             }}
           >
-            {card?.title}
-          </Typography>
+            {/* Checkbox hoàn thành với animation tỏa sáng */}
+            <Box 
+              sx={{ 
+                position: 'absolute',
+                left: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                opacity: (card.isCardCompleted || hovered) ? 1 : 0,
+                visibility: (card.isCardCompleted || hovered) ? 'visible' : 'hidden',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                zIndex: 2
+              }}
+            >
+              <Tooltip title={card.isCardCompleted ? 'Bỏ đánh dấu hoàn thành' : 'Đánh dấu là hoàn thành'}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: card.isCardCompleted 
+                        ? 'radial-gradient(circle, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.1) 40%, transparent 70%)'
+                        : 'radial-gradient(circle, rgba(25, 118, 210, 0.15) 0%, rgba(25, 118, 210, 0.08) 40%, transparent 70%)',
+                      opacity: 0,
+                      transition: 'all 0.3s ease',
+                      pointerEvents: 'none',
+                      zIndex: 0
+                    },
+                    '&:hover::before': {
+                      opacity: 1,
+                      transform: 'translate(-50%, -50%) scale(1.2)'
+                    },
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      width: '0',
+                      height: '0',
+                      borderRadius: '50%',
+                      background: card.isCardCompleted 
+                        ? 'radial-gradient(circle, rgba(255, 193, 7, 0.8) 0%, rgba(255, 152, 0, 0.6) 50%, transparent 100%)'
+                        : 'radial-gradient(circle, rgba(25, 118, 210, 0.6) 0%, rgba(33, 150, 243, 0.4) 50%, transparent 100%)',
+                      transform: 'translate(-50%, -50%)',
+                      opacity: 0,
+                      transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                      pointerEvents: 'none',
+                      zIndex: 1
+                    },
+                    '&.star-burst::after': {
+                      width: '100px',
+                      height: '100px',
+                      opacity: 1,
+                      animation: 'starBurst 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+                    },
+                    '@keyframes starBurst': {
+                      '0%': {
+                        width: '0',
+                        height: '0',
+                        opacity: 1,
+                        transform: 'translate(-50%, -50%) rotate(0deg)'
+                      },
+                      '30%': {
+                        width: '60px',
+                        height: '60px',
+                        opacity: 0.8,
+                        transform: 'translate(-50%, -50%) rotate(120deg)'
+                      },
+                      '60%': {
+                        width: '90px',
+                        height: '90px',
+                        opacity: 0.4,
+                        transform: 'translate(-50%, -50%) rotate(240deg)'
+                      },
+                      '100%': {
+                        width: '120px',
+                        height: '120px',
+                        opacity: 0,
+                        transform: 'translate(-50%, -50%) rotate(360deg)'
+                      }
+                    }
+                  }}
+                  onClick={handleCardCompletedChange}
+                  className="checkbox-container"
+                >
+                  {/* Custom Circular Checkbox */}
+                  <Box
+                    sx={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      border: card.isCardCompleted ? 'none' : '2px solid rgba(25, 118, 210, 0.6)',
+                      backgroundColor: card.isCardCompleted ? '#4caf50' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      position: 'relative',
+                      zIndex: 2,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        transform: 'scale(1.15)',
+                        borderColor: card.isCardCompleted ? '#4caf50' : 'rgba(25, 118, 210, 0.8)',
+                        boxShadow: card.isCardCompleted 
+                          ? '0 0 0 4px rgba(76, 175, 80, 0.2), 0 0 12px rgba(76, 175, 80, 0.4)'
+                          : '0 0 0 4px rgba(25, 118, 210, 0.15), 0 0 12px rgba(25, 118, 210, 0.3)'
+                      }
+                    }}
+                  >
+                    {card.isCardCompleted && (
+                      <Box
+                        sx={{
+                          color: 'white',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          animation: 'checkMarkPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+                          '@keyframes checkMarkPop': {
+                            '0%': {
+                              transform: 'scale(0) rotate(-45deg)',
+                              opacity: 0
+                            },
+                            '50%': {
+                              transform: 'scale(1.3) rotate(-22.5deg)',
+                              opacity: 0.8
+                            },
+                            '100%': {
+                              transform: 'scale(1) rotate(0deg)',
+                              opacity: 1
+                            }
+                          }
+                        }}
+                      >
+                        ✓
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Tooltip>
+            </Box>
+
+            {/* Title với animation dịch chuyển */}
+            <Typography
+              sx={{
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                lineHeight: 1.4,
+                color: 'text.primary',
+                wordBreak: 'break-word',
+                hyphens: 'auto',
+                paddingLeft: (card.isCardCompleted || hovered) ? '32px' : '0px',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                textDecoration: card.isCardCompleted ? 'line-through' : 'none',
+                opacity: card.isCardCompleted ? 0.7 : 1,
+                position: 'relative',
+                zIndex: 1
+              }}
+            >
+              {card?.title}
+            </Typography>
+          </Box>
         </CardContent>
         {shouldShowCardActions() &&
           <CardActions sx={{ p: '0 4px 8px 4px' }}>

@@ -4,10 +4,21 @@ export const boardSocket = (io, socket) => {
     socket.join(boardId)
   })
 
-  // Khi có thao tác move card, emit tới room
+  // Khi có thao tác move card, emit tới room với Universal Notifications Pattern
   socket.on('FE_CARD_MOVED', (data) => {
-    // data cần chứa boardId, cardId, fromColumnId, toColumnId, ...
-    io.to(data.boardId).emit('BE_CARD_MOVED', data)
+    // Enhanced data structure với user info và context đầy đủ
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🔄 Socket FE_CARD_MOVED received:', enhancedData);
+    console.log('🔄 Broadcasting card movement to all members in board:', data.boardId);
+    
+    // Use io.to() to broadcast to ALL members (including sender) for Universal Notifications
+    // This ensures all members receive the same notification data consistently
+    io.to(data.boardId).emit('BE_CARD_MOVED', enhancedData)
+    
+    console.log('🔄 Socket: Broadcasted card movement to all board members');
   })
 
   // Khi có thao tác move column, emit tới room
@@ -94,5 +105,50 @@ export const boardSocket = (io, socket) => {
     io.to(data.boardId).emit('BE_CARD_COMPLETED', enhancedData)
 
     console.log('✅ Socket: Broadcasted card completed status to all board members')
+  })
+
+  // Cập nhật thành viên card (Universal Notifications)
+  socket.on('FE_CARD_MEMBER_UPDATED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('👥 Socket FE_CARD_MEMBER_UPDATED received:', enhancedData)
+    console.log('👥 Broadcasting card member update to all members in board:', data.boardId)
+
+    // Use io.to() to broadcast to ALL members (including sender) for Universal Notifications
+    io.to(data.boardId).emit('BE_CARD_MEMBER_UPDATED', enhancedData)
+
+    console.log('👥 Socket: Broadcasted card member update to all board members')
+  })
+
+  // Cập nhật ảnh cover card (Universal Notifications)
+  socket.on('FE_CARD_COVER_UPDATED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🖼️ Socket FE_CARD_COVER_UPDATED received:', enhancedData)
+    console.log('🖼️ Broadcasting card cover update to all members in board:', data.boardId)
+
+    // Use io.to() to broadcast to ALL members (including sender) for Universal Notifications
+    io.to(data.boardId).emit('BE_CARD_COVER_UPDATED', enhancedData)
+
+    console.log('🖼️ Socket: Broadcasted card cover update to all board members')
+  })
+
+  // Tạo card mới (Universal Notifications)
+  socket.on('FE_CARD_CREATED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('📝 Socket FE_CARD_CREATED received:', enhancedData)
+    console.log('📝 Broadcasting card creation to all members in board:', data.boardId)
+
+    // Use io.to() to broadcast to ALL members (including sender) for Universal Notifications
+    io.to(data.boardId).emit('BE_CARD_CREATED', enhancedData)
+
+    console.log('📝 Socket: Broadcasted card creation to all board members')
   })
 } 

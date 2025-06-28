@@ -254,7 +254,7 @@ function Board() {
         const oldTitle = data.oldTitle || 'cột không có tên'
         const newTitle = data.newTitle || 'cột không có tên'
         
-        // Different message for actor vs observers for title update action
+        // Different message for actor vs observers for title update
         const isCurrentUser = data.userInfo._id === currentUser?._id
         const message = isCurrentUser 
           ? `✅ Bạn đã đổi tên cột từ "${oldTitle}" thành "${newTitle}"` 
@@ -262,19 +262,20 @@ function Board() {
         
         console.log('📝 Board: Showing synchronized title update notification for all members:', {
           userName,
-          titleChange: `${oldTitle} → ${newTitle}`,
+          oldTitle,
+          newTitle,
           isCurrentUser,
           message,
           boardId: data.boardId
         })
         
         // Unique toast ID to prevent duplicates across all members
-        const toastId = `column-title-update-all-${data.boardId}-${data.columnId || Date.now()}`
+        const toastId = `column-title-all-${data.boardId}-${data.columnId || Date.now()}`
         
         toast.info(message, {
           toastId, // Prevent duplicate toasts with board-specific ID
           position: 'bottom-left',
-          autoClose: 4000, // Standard duration for title updates
+          autoClose: 5000,
           hideProgressBar: false,
           closeOnClick: true,
           pauseOnHover: true,
@@ -286,7 +287,7 @@ function Board() {
             borderRadius: '12px',
             boxShadow: isCurrentUser 
               ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
-              : '0 6px 20px rgba(33, 150, 243, 0.3)', // Blue shadow for title update
+              : '0 6px 20px rgba(33, 150, 243, 0.3)', // Blue shadow for updates
             fontFamily: 'inherit'
           },
           bodyStyle: {
@@ -399,14 +400,398 @@ function Board() {
       reloadBoardWithDelay()
     }
 
-    // Regular event listeners (excluding BE_COLUMN_CREATED, BE_COLUMN_DELETED, and BE_COLUMN_UPDATED)
-    socketIoInstance.on('BE_CARD_MOVED', onRealtimeEvent)
+    // Toast notification handler for card movement between columns
+    const onCardMoved = (data) => {
+      try {
+        console.log('🔄 Board: Card movement event received (all members):', {
+          cardTitle: data.cardTitle,
+          columnMovement: `${data.fromColumnTitle} → ${data.toColumnTitle}`,
+          userInfo: data.userInfo,
+          currentUser: currentUser?.displayName,
+          boardId: data.boardId,
+          fullData: data
+        })
+        
+        // Show notification for ALL members (including the actor)
+        // This ensures complete synchronization across all users
+        if (data.userInfo && 
+            data.boardId === boardId &&
+            data.cardTitle &&
+            data.fromColumnTitle &&
+            data.toColumnTitle) {
+          
+          const isCurrentUser = data.userInfo._id === currentUser?._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Unknown User'
+          
+          // Message format with movement context
+          const message = isCurrentUser 
+            ? `✅ Bạn đã di chuyển "${data.cardTitle}" từ "${data.fromColumnTitle}" sang "${data.toColumnTitle}"`
+            : `🔄 ${userName} đã di chuyển "${data.cardTitle}" từ "${data.fromColumnTitle}" sang "${data.toColumnTitle}"`
+          
+          console.log('🔄 Board: Showing card movement toast for all members:', {
+            message,
+            isCurrentUser,
+            userName,
+            cardMovement: `${data.fromColumnTitle} → ${data.toColumnTitle}`
+          })
+          
+          toast.info(message, {
+            toastId: `card-moved-${data.boardId}-${data.cardId}`,
+            position: 'bottom-left',
+            autoClose: 4000,
+            style: {
+              backgroundColor: isCurrentUser ? '#2e7d32' : '#1976d2', // Green for actor, blue for observers
+              color: '#ffffff',
+              border: isCurrentUser ? '1px solid #4caf50' : '1px solid #2196f3'
+            },
+            icon: isCurrentUser ? '✅' : '🔄'
+          })
+        } else {
+          console.log('🔄 Board: Card movement event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 
+                    !data.cardTitle ? 'Missing card title' :
+                    !data.fromColumnTitle ? 'Missing from column title' :
+                    !data.toColumnTitle ? 'Missing to column title' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('🔄 Board: Error handling card movement event:', error)
+      }
+      reloadBoardWithDelay()
+    }
+
+    // Toast notification handler for card member updates (Universal Notifications Pattern)
+    const onCardMemberUpdated = (data) => {
+      console.log('👥 Board: Card member updated event received (all members):', {
+        cardTitle: data.cardTitle,
+        action: data.action,
+        targetUser: data.targetUser,
+        userInfo: data.userInfo,
+        currentUser: currentUser?.displayName,
+        boardId: data.boardId,
+        fullData: data
+      })
+      
+      // Show notification for ALL members (including the actor)
+      if (data.userInfo && 
+          data.boardId === boardId &&
+          data.cardTitle &&
+          data.targetUser &&
+          data.action) {
+        
+        // Enhanced fallback logic
+        const actorName = data.userInfo.displayName || 
+                         data.userInfo.username || 
+                         'Người dùng không xác định'
+        
+        const targetName = data.targetUser.displayName || 
+                          data.targetUser.username || 
+                          'thành viên'
+        
+        const cardTitle = data.cardTitle || 'thẻ không có tên'
+        
+        // Check if current user is the actor or the target
+        const isCurrentUserActor = data.userInfo._id === currentUser?._id
+        const isCurrentUserTarget = data.targetUser._id === currentUser?._id
+        const isSelfAction = data.userInfo._id === data.targetUser._id // Actor và target là cùng một người
+        
+        let message = ''
+        
+        if (isCurrentUserActor && isSelfAction) {
+          // Current user performed action on themselves (self join/leave)
+          if (data.action === 'ADD') {
+            message = `✅ Bạn đã tham gia thẻ: "${cardTitle}"`
+          } else {
+            message = `✅ Bạn đã rời khỏi thẻ: "${cardTitle}"`
+          }
+        } else if (isCurrentUserActor) {
+          // Current user performed action on someone else
+          if (data.action === 'ADD') {
+            message = `✅ Bạn đã thêm ${targetName} vào thẻ: "${cardTitle}"`
+          } else {
+            message = `✅ Bạn đã xóa ${targetName} khỏi thẻ: "${cardTitle}"`
+          }
+        } else if (isCurrentUserTarget) {
+          // Current user is the target of someone else's action
+          if (data.action === 'ADD') {
+            message = `👥 ${actorName} đã thêm bạn vào thẻ: "${cardTitle}"`
+          } else {
+            message = `👥 ${actorName} đã xóa bạn khỏi thẻ: "${cardTitle}"`
+          }
+        } else {
+          // Current user is observer watching others' actions
+          if (isSelfAction) {
+            // Someone else performed self join/leave
+            if (data.action === 'ADD') {
+              message = `👥 ${actorName} đã tham gia thẻ: "${cardTitle}"`
+            } else {
+              message = `👥 ${actorName} đã rời khỏi thẻ: "${cardTitle}"`
+            }
+          } else {
+            // Someone else performed action on another person
+            if (data.action === 'ADD') {
+              message = `👥 ${actorName} đã thêm ${targetName} vào thẻ: "${cardTitle}"`
+            } else {
+              message = `👥 ${actorName} đã xóa ${targetName} khỏi thẻ: "${cardTitle}"`
+            }
+          }
+        }
+        
+        console.log('👥 Board: Showing synchronized card member notification for all members:', {
+          actorName,
+          targetName,
+          cardTitle,
+          action: data.action,
+          isCurrentUserActor,
+          isCurrentUserTarget,
+          message,
+          boardId: data.boardId
+        })
+        
+        // Unique toast ID to prevent duplicates across all members
+        const toastId = `card-member-all-${data.boardId}-${data.cardId}-${data.targetUser._id}-${data.action}`
+        
+        toast.info(message, {
+          toastId, // Prevent duplicate toasts with specific ID
+          position: 'bottom-left',
+          autoClose: 4000, // Standard duration for card operations
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          style: {
+            backgroundColor: isCurrentUserActor ? '#2e7d32' : '#1976d2', // Green for actor, blue for observers/targets
+            color: '#ffffff',
+            border: isCurrentUserActor ? '1px solid #4caf50' : '1px solid #2196f3',
+            borderRadius: '12px',
+            boxShadow: isCurrentUserActor 
+              ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+              : '0 6px 20px rgba(33, 150, 243, 0.3)',
+            fontFamily: 'inherit'
+          },
+          bodyStyle: {
+            fontSize: '14px',
+            fontWeight: '600',
+            padding: '4px 0'
+          },
+          progressStyle: {
+            backgroundColor: isCurrentUserActor ? '#4caf50' : '#2196f3',
+            height: '3px'
+          },
+          icon: isCurrentUserActor ? '✅' : '👥'
+        })
+      } else {
+        console.log('👥 Board: Card member notification not shown - validation failed:', {
+          hasUserInfo: !!data.userInfo,
+          isCorrectBoard: data.boardId === boardId,
+          hasCardTitle: !!data.cardTitle,
+          hasTargetUser: !!data.targetUser,
+          hasAction: !!data.action
+        })
+      }
+      
+          // Always reload the board for all members to ensure sync
+    console.log('👥 Board: Triggering synchronized board reload for card member update');
+    reloadBoardWithDelay()
+  }
+
+  // Toast notification handler for card creation (Universal Notifications Pattern)
+  const onCardCreated = (data) => {
+    console.log('📝 Board: Card created event received (all members):', {
+      cardTitle: data.cardTitle,
+      columnTitle: data.columnTitle,
+      userInfo: data.userInfo,
+      currentUser: currentUser?.displayName,
+      boardId: data.boardId,
+      fullData: data
+    })
+    
+    // Show notification for ALL members (including the actor)
+    // This ensures complete synchronization across all users
+    if (data.userInfo && 
+        data.boardId === boardId &&
+        data.cardTitle &&
+        data.columnTitle) {
+      
+      // Enhanced fallback logic
+      const userName = data.userInfo.displayName || 
+                      data.userInfo.username || 
+                      'Người dùng không xác định'
+      
+      const cardName = data.cardTitle || 'thẻ không có tên'
+      const columnName = data.columnTitle || 'cột không có tên'
+      
+      // Different message for actor vs observers for card creation
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+      const message = isCurrentUser 
+        ? `✅ Bạn đã tạo thẻ mới: "${cardName}" trong "${columnName}"` 
+        : `📝 ${userName} đã tạo thẻ mới: "${cardName}" trong "${columnName}"`
+      
+      console.log('📝 Board: Showing synchronized card creation notification for all members:', {
+        userName,
+        cardName,
+        columnName,
+        isCurrentUser,
+        message,
+        boardId: data.boardId
+      })
+      
+      // Unique toast ID to prevent duplicates across all members
+      const toastId = `card-create-all-${data.boardId}-${data.cardId || Date.now()}`
+      
+      toast.info(message, {
+        toastId, // Prevent duplicate toasts with board-specific ID
+        position: 'bottom-left',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#1976d2', // Green for actor, blue for observers
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #2196f3',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser 
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+            : '0 6px 20px rgba(33, 150, 243, 0.3)', // Blue shadow for creation
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#2196f3',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '📝'
+      })
+    } else {
+      console.log('📝 Board: Card creation notification not shown - validation failed:', {
+        hasUserInfo: !!data.userInfo,
+        isCorrectBoard: data.boardId === boardId,
+        hasCardTitle: !!data.cardTitle,
+        hasColumnTitle: !!data.columnTitle
+      })
+    }
+    
+    // Always reload the board for all members to ensure sync
+    console.log('🔄 Board: Triggering synchronized board reload for all members after card creation');
+    reloadBoardWithDelay()
+  }
+
+  const onCardCoverUpdated = (data) => {
+    console.log('🖼️ Board: Card cover updated event received (all members):', {
+      cardTitle: data.cardTitle,
+      action: data.action,
+      userInfo: data.userInfo,
+      currentUser: currentUser?.displayName,
+      boardId: data.boardId,
+      fullData: data
+    })
+    
+    // Show notification for ALL members (including the actor)
+    if (data.userInfo && 
+        data.boardId === boardId &&
+        data.cardTitle &&
+        data.action) {
+      
+      // Enhanced fallback logic
+      const actorName = data.userInfo.displayName || 
+                       data.userInfo.username || 
+                       'Người dùng không xác định'
+      
+      const cardTitle = data.cardTitle || 'thẻ không có tên'
+      
+      // Check if current user is the actor
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+      
+      let message = ''
+      let icon = '🖼️'
+      
+      if (data.action === 'UPDATE_COVER_COLOR') {
+        const coverTypeText = data.coverType === 'gradient' ? 'gradient' : 'màu'
+        message = isCurrentUser 
+          ? `✅ Bạn đã cập nhật ảnh bìa ${coverTypeText} cho thẻ: "${cardTitle}"` 
+          : `🖼️ ${actorName} đã cập nhật ảnh bìa ${coverTypeText} cho thẻ: "${cardTitle}"`
+        icon = isCurrentUser ? '✅' : '🎨'
+      } else if (data.action === 'UPLOAD_COVER_IMAGE') {
+        const fileName = data.fileName ? ` (${data.fileName})` : ''
+        message = isCurrentUser 
+          ? `✅ Bạn đã tải lên ảnh bìa mới cho thẻ: "${cardTitle}"${fileName}` 
+          : `🖼️ ${actorName} đã tải lên ảnh bìa mới cho thẻ: "${cardTitle}"${fileName}`
+        icon = isCurrentUser ? '✅' : '📷'
+      } else if (data.action === 'DELETE_COVER') {
+        message = isCurrentUser 
+          ? `✅ Bạn đã xóa ảnh bìa của thẻ: "${cardTitle}"` 
+          : `🖼️ ${actorName} đã xóa ảnh bìa của thẻ: "${cardTitle}"`
+        icon = isCurrentUser ? '✅' : '🗑️'
+      }
+      
+      console.log('🖼️ Board: Showing synchronized card cover notification for all members:', {
+        actorName,
+        cardTitle,
+        action: data.action,
+        isCurrentUser,
+        message,
+        boardId: data.boardId
+      })
+      
+      // Unique toast ID to prevent duplicates across all members
+      const toastId = `card-cover-all-${data.boardId}-${data.cardId}-${data.action}-${Date.now()}`
+      
+      toast.info(message, {
+        toastId, // Prevent duplicate toasts with specific ID
+        position: 'bottom-left',
+        autoClose: 4000, // Standard duration for card operations
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#1976d2', // Green for actor, blue for observers
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #2196f3',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser 
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+            : '0 6px 20px rgba(33, 150, 243, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#2196f3',
+          height: '3px'
+        },
+        icon: icon
+      })
+    } else {
+      console.log('🖼️ Board: Card cover notification not shown - validation failed:', {
+        hasUserInfo: !!data.userInfo,
+        isCorrectBoard: data.boardId === boardId,
+        hasCardTitle: !!data.cardTitle,
+        hasAction: !!data.action
+      })
+    }
+    
+    // Always reload the board for all members to ensure sync
+    console.log('🖼️ Board: Triggering synchronized board reload for card cover update');
+    reloadBoardWithDelay()
+  }
+
+    // Regular event listeners (excluding BE_COLUMN_CREATED, BE_COLUMN_DELETED, BE_COLUMN_UPDATED, BE_CARD_MOVED, and BE_CARD_CREATED)
     socketIoInstance.on('BE_COLUMN_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_NEW_COMMENT', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_UPDATED', onRealtimeEvent)
     socketIoInstance.on('BE_LABEL_UPDATED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_DELETED', onRealtimeEvent)
-    socketIoInstance.on('BE_CARD_CREATED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
     socketIoInstance.on('BE_CHECKLIST_DELETED', onRealtimeEvent)
     socketIoInstance.on('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
@@ -415,24 +800,30 @@ function Board() {
     socketIoInstance.on('BE_COLUMN_CREATED', onColumnCreated)
     socketIoInstance.on('BE_COLUMN_DELETED', onColumnDeleted)
     socketIoInstance.on('BE_COLUMN_UPDATED', onColumnTitleUpdated)
+    socketIoInstance.on('BE_CARD_CREATED', onCardCreated)
     socketIoInstance.on('BE_CARD_COMPLETED', onCardCompleted)
+    socketIoInstance.on('BE_CARD_MOVED', onCardMoved)
+    socketIoInstance.on('BE_CARD_MEMBER_UPDATED', onCardMemberUpdated)
+    socketIoInstance.on('BE_CARD_COVER_UPDATED', onCardCoverUpdated)
     
     // ... có thể thêm các event khác nếu cần
     return () => {
-      socketIoInstance.off('BE_CARD_MOVED', onRealtimeEvent)
       socketIoInstance.off('BE_COLUMN_MOVED', onRealtimeEvent)
       socketIoInstance.off('BE_NEW_COMMENT', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_UPDATED', onRealtimeEvent)
       socketIoInstance.off('BE_LABEL_UPDATED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_DELETED', onRealtimeEvent)
-      socketIoInstance.off('BE_CARD_CREATED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
       socketIoInstance.off('BE_CHECKLIST_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_COLUMN_CREATED', onColumnCreated)
       socketIoInstance.off('BE_COLUMN_DELETED', onColumnDeleted)
       socketIoInstance.off('BE_COLUMN_UPDATED', onColumnTitleUpdated)
+      socketIoInstance.off('BE_CARD_CREATED', onCardCreated)
       socketIoInstance.off('BE_CARD_COMPLETED', onCardCompleted)
+      socketIoInstance.off('BE_CARD_MOVED', onCardMoved)
+      socketIoInstance.off('BE_CARD_MEMBER_UPDATED', onCardMemberUpdated)
+      socketIoInstance.off('BE_CARD_COVER_UPDATED', onCardCoverUpdated)
       if (reloadTimeout) clearTimeout(reloadTimeout)
     }
   }, [dispatch, boardId, currentUser])
@@ -524,13 +915,56 @@ function Board() {
       nextColumnId,
       nextCardOrderIds: dndOrderedColumns.find(c => c._id === nextColumnId)?.cardOrderIds
     })
-    // Emit realtime
-    socketIoInstance.emit('FE_CARD_MOVED', {
+
+    // Enhanced data structure cho Universal Notifications với validation
+    if (!currentUser?._id) {
+      console.error('🔄 Frontend: Cannot emit card movement - missing current user info')
+      return
+    }
+    
+    if (!board?._id) {
+      console.error('🔄 Frontend: Cannot emit card movement - missing board info')
+      return
+    }
+
+    // Find card và column details để có context đầy đủ
+    const movedCard = dndOrderedColumns
+      .flatMap(col => col.cards)
+      .find(card => card._id === currentCardId)
+    
+    const fromColumn = dndOrderedColumns.find(c => c._id === prevColumnId)
+    const toColumn = dndOrderedColumns.find(c => c._id === nextColumnId)
+
+    const cardMoveData = {
       boardId: board._id,
       cardId: currentCardId,
+      cardTitle: movedCard?.title || 'Untitled Card',
       fromColumnId: prevColumnId,
-      toColumnId: nextColumnId
+      toColumnId: nextColumnId,
+      fromColumnTitle: fromColumn?.title || 'Unknown Column',
+      toColumnTitle: toColumn?.title || 'Unknown Column',
+      userInfo: {
+        _id: currentUser._id,
+        displayName: currentUser.displayName || currentUser.username || 'Unknown User',
+        username: currentUser.username || 'unknown',
+        avatar: currentUser.avatar || null
+      },
+      timestamp: new Date().toISOString()
+    }
+
+    console.log('🔄 Frontend: Emitting card movement with enhanced data:', {
+      cardMovement: `${cardMoveData.cardTitle}: ${cardMoveData.fromColumnTitle} → ${cardMoveData.toColumnTitle}`,
+      userDisplayName: cardMoveData.userInfo.displayName,
+      hasUserInfo: !!cardMoveData.userInfo._id
     })
+
+    // Emit realtime với complete data structure
+    try {
+      socketIoInstance.emit('FE_CARD_MOVED', cardMoveData)
+      console.log('🔄 Frontend: Successfully emitted card movement event')
+    } catch (error) {
+      console.error('🔄 Frontend: Error emitting card movement event:', error)
+    }
   }
 
   // Lấy background style dựa trên boardBackground từ Redux

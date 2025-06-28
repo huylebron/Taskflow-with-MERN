@@ -1,6 +1,6 @@
 /**
  * Tính màu văn bản (trắng hoặc đen) tương phản với màu nền
- * Dựa trên thuật toán tính độ sáng màu (luminance)
+ * Dựa trên thuật toán tính độ sáng màu (luminance) - WCAG 2.0
  * @param {string} backgroundColor - Mã màu HEX (ví dụ: #FF0000)
  * @returns {string} - Mã màu HEX cho văn bản (#FFFFFF hoặc #000000)
  */
@@ -28,12 +28,20 @@ export const getContrastText = (backgroundColor) => {
   const g = parseInt(color.substring(2, 4), 16)
   const b = parseInt(color.substring(4, 6), 16)
 
-  // Tính toán độ sáng dựa trên cảm nhận của mắt người
-  // Công thức: (0.299 * R + 0.587 * G + 0.114 * B)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  // Sử dụng thuật toán WCAG 2.0 để tính relative luminance
+  const getRGBLuminance = (colorValue) => {
+    const srgb = colorValue / 255
+    return srgb <= 0.03928 
+      ? srgb / 12.92 
+      : Math.pow((srgb + 0.055) / 1.055, 2.4)
+  }
 
-  // Nếu màu sáng (luminance > 0.5) thì dùng chữ đen, ngược lại dùng chữ trắng
-  return luminance > 0.5 ? '#000000' : '#FFFFFF'
+  const luminance = 0.2126 * getRGBLuminance(r) + 
+                   0.7152 * getRGBLuminance(g) + 
+                   0.0722 * getRGBLuminance(b)
+
+  // Sử dụng ngưỡng 0.179 để có contrast tốt hơn (Trello-like)
+  return luminance > 0.179 ? '#000000' : '#FFFFFF'
 }
 
 /**
