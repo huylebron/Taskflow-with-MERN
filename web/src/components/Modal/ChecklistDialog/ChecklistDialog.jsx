@@ -23,6 +23,7 @@ import Checkbox from '@mui/material/Checkbox'
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import { toast } from 'react-toastify'
+import { useSelector } from 'react-redux'
 
 import {
   calculateChecklistProgress,
@@ -43,8 +44,7 @@ import {
 import { 
   CHECKLIST_LIMITS, 
   DELETE_UI_STATES, 
-  DELETE_ERROR_MESSAGES,
-  DELETE_SUCCESS_MESSAGES
+  DELETE_ERROR_MESSAGES
 } from '~/utils/checklistConstants'
 import {
   createChecklistAPI,
@@ -54,6 +54,9 @@ import {
   deleteChecklistItemAPI
 } from '~/apis'
 import ConfirmationDialog from '~/components/ConfirmationDialog/ConfirmationDialog'
+import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
+import { selectCurrentUser } from '~/redux/user/userSlice'
+import { socketIoInstance } from '~/socketClient'
 
 /**
  * ChecklistItem Component
@@ -340,7 +343,11 @@ function ChecklistItem({
  * ChecklistDialog Component
  * Hiển thị modal cho phép quản lý checklists của một card
  */
-function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists, cardId }) {
+function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists, cardId, cardTitle }) {
+  // Redux state for socket context
+  const currentUser = useSelector(selectCurrentUser)
+  const activeBoard = useSelector(selectCurrentActiveBoard)
+
   // State for new checklist form
   const [newChecklistTitle, setNewChecklistTitle] = useState('')
 
@@ -518,7 +525,7 @@ function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists,
       // Create optimistic update
       const optimisticUpdate = createOptimisticDeleteItemState(checklists, finalChecklistId, finalItemId)
       
-      // Apply optimistic update
+      // Apply optimistic update (skip success toast for delete operations)
       setItemOptimisticState({
         isOptimistic: true,
         originalChecklists: checklists,
@@ -526,14 +533,14 @@ function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists,
         checklistId: finalChecklistId
       })
       
-      // Update UI optimistically
-      onUpdateChecklists(optimisticUpdate.checklists)
+      // Update UI optimistically (skip success toast for delete operations)
+      onUpdateChecklists(optimisticUpdate.checklists, true)
 
       // Call API to delete checklist item
       const updatedCard = await deleteChecklistItemAPI(cardId, finalChecklistId, finalItemId)
       
-      // Success: Update with real data from server
-      onUpdateChecklists(updatedCard.checklists)
+      // Success: Update with real data from server (skip success toast for delete operations)
+      onUpdateChecklists(updatedCard.checklists, true)
       
       // Clear optimistic state
       setItemOptimisticState({
@@ -543,18 +550,51 @@ function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists,
         checklistId: null
       })
 
-      // Show success message
-      toast.success(DELETE_SUCCESS_MESSAGES.ITEM_DELETED, {
-        position: 'bottom-right',
-        autoClose: 3000
-      })
+      // Emit socket event for real-time notifications (Universal Pattern ✅)
+      if (currentUser && activeBoard?._id) {
+        const socketData = {
+          boardId: activeBoard._id,
+          cardId,
+          checklistId: finalChecklistId,
+          itemId: finalItemId,
+          checklistName: finalChecklistContext?.title || 'Unknown Checklist',
+          itemName: finalItemToDelete?.title || 'Unknown Item',
+          cardTitle: cardTitle || 'Unknown Card',
+          userInfo: {
+            _id: currentUser._id,
+            displayName: currentUser.displayName || currentUser.username || 'Unknown User',
+            username: currentUser.username || 'unknown',
+            avatar: currentUser.avatar || null
+          },
+          timestamp: new Date().toISOString()
+        }
+
+        console.log('🔄 Frontend: Emitting checklist item deletion with enhanced data:', {
+          checklistName: socketData.checklistName,
+          itemName: socketData.itemName,
+          cardTitle: socketData.cardTitle,
+          userDisplayName: socketData.userInfo.displayName
+        })
+
+        try {
+          socketIoInstance.emit('FE_CHECKLIST_ITEM_DELETED', socketData)
+          console.log('🔄 Frontend: Successfully emitted checklist item deletion event')
+        } catch (error) {
+          console.error('🔄 Frontend: Error emitting checklist item deletion event:', error)
+        }
+      } else {
+        console.warn('🔄 Frontend: Cannot emit checklist item deletion - missing user or board info')
+      }
+
+      // Success message is handled by Board component's socket listener for Universal Notifications
+      // toast.success() removed to prevent duplicate toasts
 
     } catch (error) {
       console.error('❌ Error deleting checklist item:', error)
       
-      // Rollback optimistic update
+      // Rollback optimistic update (skip success toast for rollback)
       if (itemOptimisticState.isOptimistic && itemOptimisticState.originalChecklists) {
-        onUpdateChecklists(itemOptimisticState.originalChecklists)
+        onUpdateChecklists(itemOptimisticState.originalChecklists, true)
       }
       
       // Clear optimistic state
@@ -664,21 +704,21 @@ function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists,
       // Create optimistic update
       const optimisticUpdate = createOptimisticDeleteChecklistState(checklists, checklistToDelete._id)
       
-      // Apply optimistic update
+      // Apply optimistic update (skip success toast for delete operations)
       setOptimisticState({
         isOptimistic: true,
         originalChecklists: checklists,
         removedChecklist: optimisticUpdate.removedChecklist
       })
       
-      // Update UI optimistically
-      onUpdateChecklists(optimisticUpdate.checklists)
+      // Update UI optimistically (skip success toast for delete operations)
+      onUpdateChecklists(optimisticUpdate.checklists, true)
 
       // Call API to delete checklist
       const updatedCard = await deleteChecklistAPI(cardId, checklistToDelete._id)
       
-      // Success: Update with real data from server
-      onUpdateChecklists(updatedCard.checklists)
+      // Success: Update with real data from server (skip success toast for delete operations)
+      onUpdateChecklists(updatedCard.checklists, true)
       
       // Clear optimistic state
       setOptimisticState({
@@ -687,18 +727,48 @@ function ChecklistDialog({ isOpen, onClose, checklists = [], onUpdateChecklists,
         removedChecklist: null
       })
 
-      // Show success message
-      toast.success(DELETE_SUCCESS_MESSAGES.CHECKLIST_DELETED, {
-        position: 'bottom-right',
-        autoClose: 3000
-      })
+      // Emit socket event for real-time notifications (Universal Pattern ✅)
+      if (currentUser && activeBoard?._id) {
+        const socketData = {
+          boardId: activeBoard._id,
+          cardId,
+          checklistId: checklistToDelete._id,
+          checklistName: checklistToDelete.title || 'Unknown Checklist',
+          cardTitle: cardTitle || 'Unknown Card',
+          userInfo: {
+            _id: currentUser._id,
+            displayName: currentUser.displayName || currentUser.username || 'Unknown User',
+            username: currentUser.username || 'unknown',
+            avatar: currentUser.avatar || null
+          },
+          timestamp: new Date().toISOString()
+        }
+
+        console.log('🔄 Frontend: Emitting checklist deletion with enhanced data:', {
+          checklistName: socketData.checklistName,
+          cardTitle: socketData.cardTitle,
+          userDisplayName: socketData.userInfo.displayName
+        })
+
+        try {
+          socketIoInstance.emit('FE_CHECKLIST_DELETED', socketData)
+          console.log('🔄 Frontend: Successfully emitted checklist deletion event')
+        } catch (error) {
+          console.error('🔄 Frontend: Error emitting checklist deletion event:', error)
+        }
+      } else {
+        console.warn('🔄 Frontend: Cannot emit checklist deletion - missing user or board info')
+      }
+
+      // Success message is handled by Board component's socket listener for Universal Notifications
+      // toast.success() removed to prevent duplicate toasts
 
     } catch (error) {
       console.error('❌ Error deleting checklist:', error)
       
-      // Rollback optimistic update
+      // Rollback optimistic update (skip success toast for rollback)
       if (optimisticState.isOptimistic && optimisticState.originalChecklists) {
-        onUpdateChecklists(optimisticState.originalChecklists)
+        onUpdateChecklists(optimisticState.originalChecklists, true)
       }
       
       // Clear optimistic state

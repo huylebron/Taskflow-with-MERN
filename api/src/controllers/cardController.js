@@ -158,18 +158,36 @@ const updateChecklistItemStatus = async (req, res, next) => {
 const deleteChecklist = async (req, res, next) => {
   try {
     const { cardId, checklistId } = req.params;
+    const userInfo = req.jwtDecoded;
     
     const result = await cardService.deleteChecklist(cardId, checklistId);
     
-    // Emit real-time event for checklist deletion
-    if (global._io && result.boardId) {
-      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_DELETED', {
+    // Emit real-time event for checklist deletion with enhanced data structure
+    if (global._io && result.boardId && userInfo) {
+      const enhancedData = {
         boardId: result.boardId.toString(),
         cardId,
         checklistId,
+        checklistName: result.checklistName || 'Unknown Checklist',
+        cardTitle: result.cardTitle || 'Unknown Card',
+        userInfo: {
+          _id: userInfo._id,
+          displayName: userInfo.displayName || userInfo.username || 'Unknown User',
+          username: userInfo.username || 'unknown',
+          avatar: userInfo.avatar || null
+        },
+        timestamp: new Date().toISOString(),
         message: 'Checklist đã được xóa'
+      };
+      
+      console.log('🔄 Socket: Emitting enhanced checklist deletion event:', {
+        checklistName: enhancedData.checklistName,
+        cardTitle: enhancedData.cardTitle,
+        userDisplayName: enhancedData.userInfo.displayName
       });
-      console.log('🔄 Socket: Emitted checklist deletion event for board', result.boardId);
+      
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_DELETED', enhancedData);
+      console.log('🔄 Socket: Broadcasted checklist deletion to all board members');
     }
     
     res.status(StatusCodes.OK).json(result);
@@ -185,19 +203,39 @@ const deleteChecklist = async (req, res, next) => {
 const deleteChecklistItem = async (req, res, next) => {
   try {
     const { cardId, checklistId, itemId } = req.params;
+    const userInfo = req.jwtDecoded;
     
     const result = await cardService.deleteChecklistItem(cardId, checklistId, itemId);
     
-    // Emit real-time event for checklist item deletion
-    if (global._io && result.boardId) {
-      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_ITEM_DELETED', {
+    // Emit real-time event for checklist item deletion with enhanced data structure
+    if (global._io && result.boardId && userInfo) {
+      const enhancedData = {
         boardId: result.boardId.toString(),
         cardId,
         checklistId,
         itemId,
+        checklistName: result.checklistName || 'Unknown Checklist',
+        itemName: result.itemName || 'Unknown Item',
+        cardTitle: result.cardTitle || 'Unknown Card',
+        userInfo: {
+          _id: userInfo._id,
+          displayName: userInfo.displayName || userInfo.username || 'Unknown User',
+          username: userInfo.username || 'unknown',
+          avatar: userInfo.avatar || null
+        },
+        timestamp: new Date().toISOString(),
         message: 'Item checklist đã được xóa'
+      };
+      
+      console.log('🔄 Socket: Emitting enhanced checklist item deletion event:', {
+        checklistName: enhancedData.checklistName,
+        itemName: enhancedData.itemName,
+        cardTitle: enhancedData.cardTitle,
+        userDisplayName: enhancedData.userInfo.displayName
       });
-      console.log('🔄 Socket: Emitted checklist item deletion event for board', result.boardId);
+      
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_ITEM_DELETED', enhancedData);
+      console.log('🔄 Socket: Broadcasted checklist item deletion to all board members');
     }
     
     res.status(StatusCodes.OK).json(result);

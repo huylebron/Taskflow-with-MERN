@@ -30,7 +30,7 @@ function RegisterForm() {
     const { email, password } = data
     toast.promise(
       registerUserAPI({ email, password }),
-      { pending: 'Registration is in progress...' }
+      { pending: 'Đang đăng ký...' }
     ).then(user => {
       navigate(`/login?registeredEmail=${user.email}`)
     })
@@ -57,7 +57,7 @@ function RegisterForm() {
               <TextField
                 autoFocus
                 fullWidth
-                label="Enter Email..."
+                label="Nhập Email..."
                 type="text"
                 variant="outlined"
                 error={!!errors['email']}
@@ -75,7 +75,7 @@ function RegisterForm() {
             <Box sx={{ marginTop: '1em' }}>
               <TextField
                 fullWidth
-                label="Enter Password..."
+                label="Nhập Mật khẩu..."
                 type="password"
                 variant="outlined"
                 error={!!errors['password']}
@@ -93,14 +93,14 @@ function RegisterForm() {
             <Box sx={{ marginTop: '1em' }}>
               <TextField
                 fullWidth
-                label="Enter Password Confirmation..."
+                label="Nhập Xác nhận mật khẩu..."
                 type="password"
                 variant="outlined"
                 error={!!errors['password_confirmation']}
                 {...register('password_confirmation', {
                   validate: (value) => {
                     if (value === watch('password')) return true
-                    return 'Password Confirmation does not match!'
+                    return 'Xác nhận mật khẩu không khớp!'
                   }
                 })}
               />
@@ -116,13 +116,13 @@ function RegisterForm() {
               size="large"
               fullWidth
             >
-              Register
+              Đăng ký
             </Button>
           </CardActions>
           <Box sx={{ padding: '0 1em 1em 1em', textAlign: 'center' }}>
-            <Typography>Already have an account?</Typography>
+            <Typography>Bạn đã có tài khoản?</Typography>
             <Link to="/login" style={{ textDecoration: 'none' }}>
-              <Typography sx={{ color: 'primary.main', '&:hover': { color: '#ffbb39' } }}>Log in!</Typography>
+              <Typography sx={{ color: 'primary.main', '&:hover': { color: '#ffbb39' } }}>Đăng nhập!</Typography>
             </Link>
           </Box>
         </MuiCard>

@@ -75,7 +75,6 @@ import ChecklistDialog from '../ChecklistDialog/ChecklistDialog'
 import { MOCK_CHECKLISTS } from '~/utils/checklistConstants'
 import ConfirmationDialog from '~/components/ConfirmationDialog/ConfirmationDialog'
 import { socketIoInstance } from '~/socketClient'
-import { CardNotificationBell } from '~/components/NotificationBell'
 
 // Import the new due date API function for optimized calendar operations
 import { updateCardDueDateAPI } from '~/apis'
@@ -516,11 +515,33 @@ function ActiveCard() {
     // Gọi API để cập nhật labelIds cho card
     try {
       await updateCardLabelsAPI(activeCard._id, updatedLabelIds)
-      // Emit realtime cập nhật label
+      
+      // Enhanced emission for Universal Notifications Pattern
+      const labelName = activeBoard.labels.find(l => l.id === labelId)?.name || 'nhãn'
+      const action = currentLabelIds.includes(labelId) ? 'REMOVE' : 'ADD'
+      
       socketIoInstance.emit('FE_LABEL_UPDATED', {
         boardId: activeBoard._id,
         cardId: activeCard._id,
-        labelIds: updatedLabelIds
+        cardTitle: activeCard.title || 'Thẻ không có tiêu đề',
+        labelId: labelId,
+        labelName: labelName,
+        action: action, // ADD or REMOVE
+        labelIds: updatedLabelIds,
+        userInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName || currentUser.username || 'Người dùng',
+          username: currentUser.username,
+          avatar: currentUser.avatar
+        },
+        timestamp: new Date().toISOString()
+      })
+      
+      console.log('🏷️ ActiveCard: Emitted label update event:', {
+        action,
+        labelName,
+        cardTitle: activeCard.title,
+        actor: currentUser.displayName
       })
     } catch (err) {
       toast.error('Có lỗi khi cập nhật label cho card!')
@@ -562,7 +583,7 @@ function ActiveCard() {
     setShowChecklistDialog(false)
   }
 
-  const onUpdateChecklists = async (updatedChecklists) => {
+  const onUpdateChecklists = async (updatedChecklists, skipSuccessToast = false) => {
     try {
       // Update local state
       setChecklists(updatedChecklists)
@@ -576,7 +597,10 @@ function ActiveCard() {
       dispatch(updateActiveCardChecklists({ checklists: updatedChecklists }))
       dispatch(updateCardChecklistsInBoard({ cardId: activeCard._id, checklists: updatedChecklists }))
 
-      toast.success('Cập nhật checklist thành công!')
+      // Only show success toast if not explicitly skipped (for create/update operations, not delete)
+      if (!skipSuccessToast) {
+        toast.success('Cập nhật checklist thành công!')
+      }
     } catch (error) {
       toast.error('Có lỗi khi cập nhật checklist!')
     }
@@ -757,7 +781,7 @@ function ActiveCard() {
     } catch (error) {
       // Revert optimistic update on failure
       dispatch(fetchBoardDetailsAPI(activeBoard._id))
-      toast.error('Failed to delete card! Rolling back.', { position: 'bottom-right' })
+      toast.error('Xóa thẻ thất bại! Đang khôi phục.', { position: 'bottom-right' })
     } finally {
       setIsDeleting(false)
     }
@@ -912,14 +936,6 @@ function ActiveCard() {
             <Typography sx={{ fontWeight: '600', color: 'primary.main' }}>
               Members
             </Typography>
-            <CardNotificationBell 
-              cardId={activeCard?._id}
-              boardId={activeBoard?._id}
-              onNotification={(notificationData) => {
-                // Optional: Handle notification callback if needed
-                console.log('Card notification:', notificationData)
-              }}
-            />
           </Box>
           <CardUserGroup
             cardMemberIds={activeCard?.memberIds}
@@ -1101,7 +1117,7 @@ function ActiveCard() {
               </MenuItem>
               <MenuItem
                 onClick={() => {
-                  toast.info('Tính năng Custom Fields đang được phát triển')
+                  toast.info('Tính năng Trường tùy chỉnh đang được phát triển')
                   handleMoreMenuClose()
                 }}
                 sx={{
@@ -1112,7 +1128,7 @@ function ActiveCard() {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
                   <AutoFixHighOutlinedIcon fontSize="small" />
-                  <span>Custom Fields</span>
+                  <span>Trường tùy chỉnh</span>
                 </Box>
               </MenuItem>
             </Menu>
@@ -1213,6 +1229,7 @@ function ActiveCard() {
           isOpen={showAttachmentModal}
           onClose={onCloseAttachmentModal}
           cardId={activeCard?._id} // 🚨 CRITICAL: Pass cardId for API calls
+          cardTitle={activeCard?.title}
           attachments={attachments}
           onAddAttachment={onAddAttachment}
           onDeleteAttachment={onDeleteAttachment}
@@ -1247,6 +1264,7 @@ function ActiveCard() {
           onChecklistDeleted={onChecklistDeleted}
           onChecklistItemDeleted={onChecklistItemDeleted}
           cardId={activeCard?._id}
+          cardTitle={activeCard?.title}
         />
 
         {/* Due Date Picker Dialog */}

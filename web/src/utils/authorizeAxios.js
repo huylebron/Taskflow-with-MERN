@@ -118,6 +118,21 @@ authorizedAxiosInstance.interceptors.response.use((response) => {
   }
   // Dùng toastify để hiển thị bất kể mọi mã lỗi lên màn hình - Ngoại trừ mã 410 - GONE phục vụ việc tự động refresh lại token.
   if (error.response?.status !== 410) {
+    // Việt hóa các thông báo lỗi phổ biến
+    if (errorMessage === 'Network Error') {
+      errorMessage = 'Lỗi kết nối mạng'
+    } else if (errorMessage.includes('timeout')) {
+      errorMessage = 'Yêu cầu đã hết thời gian chờ'
+    } else if (error.response?.status === 404) {
+      errorMessage = 'Không tìm thấy tài nguyên yêu cầu'
+    } else if (error.response?.status === 403) {
+      errorMessage = 'Bạn không có quyền thực hiện hành động này'
+    } else if (error.response?.status === 401) {
+      errorMessage = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại'
+    } else if (error.response?.status === 500) {
+      errorMessage = 'Lỗi máy chủ, vui lòng thử lại sau'
+    }
+    
     toast.error(errorMessage)
   }
 

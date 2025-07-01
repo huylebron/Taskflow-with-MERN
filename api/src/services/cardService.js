@@ -630,10 +630,26 @@ const updateChecklistItemStatus = async (cardId, checklistId, itemId, isComplete
  * Xóa checklist khỏi card
  * @param {string} cardId - Card ID
  * @param {string} checklistId - Checklist ID cần xóa
- * @returns {Promise<Object>} - Updated card
+ * @returns {Promise<Object>} - Updated card with enhanced context
  */
 const deleteChecklist = async (cardId, checklistId) => {
   try {
+    // First, get the card and checklist for context information
+    const card = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOne({
+      _id: new ObjectId(cardId),
+      _destroy: false,
+      'checklists._id': checklistId
+    });
+
+    if (!card) {
+      throw new Error('Card or checklist not found');
+    }
+
+    // Extract checklist and card information for socket context
+    const checklistToDelete = card.checklists?.find(cl => cl._id === checklistId);
+    const checklistName = checklistToDelete?.title || 'Unknown Checklist';
+    const cardTitle = card.title || 'Unknown Card';
+
     // Validate checklist exists before attempting to delete
     const checklist = await cardModel.validateChecklistExists(cardId, checklistId);
     if (!checklist) {
@@ -657,6 +673,10 @@ const deleteChecklist = async (cardId, checklistId) => {
       throw new Error('Failed to delete checklist - card may have been modified');
     }
 
+    // Add enhanced context to result for socket notifications
+    result.checklistName = checklistName;
+    result.cardTitle = cardTitle;
+
     return result;
   } catch (error) {
     throw new Error(`Error deleting checklist: ${error.message}`);
@@ -668,10 +688,30 @@ const deleteChecklist = async (cardId, checklistId) => {
  * @param {string} cardId - Card ID
  * @param {string} checklistId - Checklist ID
  * @param {string} itemId - Item ID cần xóa
- * @returns {Promise<Object>} - Updated card
+ * @returns {Promise<Object>} - Updated card with enhanced context
  */
 const deleteChecklistItem = async (cardId, checklistId, itemId) => {
   try {
+    // First, get the card, checklist, and item for context information
+    const card = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOne({
+      _id: new ObjectId(cardId),
+      _destroy: false,
+      'checklists._id': checklistId,
+      'checklists.items._id': itemId
+    });
+
+    if (!card) {
+      throw new Error('Card, checklist, or item not found');
+    }
+
+    // Extract context information for socket notifications
+    const checklist = card.checklists?.find(cl => cl._id === checklistId);
+    const itemToDelete = checklist?.items?.find(item => item._id === itemId);
+    
+    const checklistName = checklist?.title || 'Unknown Checklist';
+    const itemName = itemToDelete?.title || 'Unknown Item';
+    const cardTitle = card.title || 'Unknown Card';
+
     // Validate item exists before attempting to delete
     const item = await cardModel.validateChecklistItemExists(cardId, checklistId, itemId);
     if (!item) {
@@ -695,6 +735,11 @@ const deleteChecklistItem = async (cardId, checklistId, itemId) => {
     if (!result) {
       throw new Error('Failed to delete checklist item - card may have been modified');
     }
+
+    // Add enhanced context to result for socket notifications
+    result.checklistName = checklistName;
+    result.itemName = itemName;
+    result.cardTitle = cardTitle;
 
     return result;
   } catch (error) {

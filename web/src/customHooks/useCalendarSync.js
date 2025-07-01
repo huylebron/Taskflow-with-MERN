@@ -59,7 +59,7 @@ export const useCalendarSync = () => {
       }
 
       if (showToast) {
-        toast.success('Due date updated successfully')
+        toast.success('Cập nhật ngày hết hạn thành công')
       }
 
       console.log(`✅ Due date update completed for card ${cardId}`)
@@ -80,7 +80,7 @@ export const useCalendarSync = () => {
       }
 
       if (showToast) {
-        toast.error(`Failed to update due date: ${error.message}`)
+        toast.error(`Cập nhật ngày hết hạn thất bại: ${error.message}`)
       }
 
       throw error
@@ -106,7 +106,7 @@ export const useCalendarSync = () => {
     } catch (error) {
       console.error('❌ Batch sync failed:', error)
       // In a real app, you'd want to rollback all changes
-      toast.error('Failed to sync some cards')
+      toast.error('Đồng bộ một số thẻ thất bại')
       throw error
     }
   }, [dispatch])

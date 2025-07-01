@@ -786,15 +786,298 @@ function Board() {
     reloadBoardWithDelay()
   }
 
-    // Regular event listeners (excluding BE_COLUMN_CREATED, BE_COLUMN_DELETED, BE_COLUMN_UPDATED, BE_CARD_MOVED, and BE_CARD_CREATED)
+  // 📎 Attachment uploaded handler (Universal Notifications Pattern)
+  const onAttachmentUploaded = (data) => {
+    console.log('📎 Board: Attachment uploaded event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.cardTitle) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+
+      const filesText = data.attachmentsCount > 1 ? `${data.attachmentsCount} tệp` : '1 tệp'
+
+      const message = isCurrentUser
+        ? `✅ Bạn đã tải lên ${filesText} cho thẻ: "${data.cardTitle}"`
+        : `📎 ${actorName} đã tải lên ${filesText} cho thẻ: "${data.cardTitle}"`
+
+      const toastId = `attach-all-${data.boardId}-${data.cardId}-${Date.now()}`
+
+      toast.info(message, {
+        toastId,
+        position: 'bottom-left',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#1565c0',
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #1976d2',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)'
+            : '0 6px 20px rgba(21, 101, 192, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#1976d2',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '📎'
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
+  // 🗑️ Attachment deleted handler (Universal Notifications Pattern)
+  const onAttachmentDeleted = (data) => {
+    console.log('🗑️ Board: Attachment deleted event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.cardTitle && data.attachmentName) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+
+      // Shorten file name if too long
+      const fileName = data.attachmentName
+      const shortName = fileName.length > 20 ? fileName.substring(0, 17) + '...' : fileName
+
+      const message = isCurrentUser
+        ? `✅ Bạn đã xóa "${shortName}" khỏi thẻ: "${data.cardTitle}"`
+        : `🗑️ ${actorName} đã xóa "${shortName}" khỏi thẻ: "${data.cardTitle}"`
+
+      const toastId = `attach-delete-${data.boardId}-${data.cardId}-${Date.now()}`
+
+      toast.info(message, {
+        toastId,
+        position: 'bottom-left',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#f57c00',
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #ff9800',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)'
+            : '0 6px 20px rgba(245, 124, 0, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#ff9800',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '🗑️'
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
+  // Label update handler with Universal Notifications Pattern
+  const onLabelUpdated = (data) => {
+    console.log('🏷️ Board: Label updated event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.cardTitle && data.labelName) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+      
+      const action = data.action === 'ADD' ? 'thêm' : 'xóa'
+      const preposition = data.action === 'ADD' ? 'vào' : 'khỏi'
+
+      // Shorten label name if too long
+      const labelName = data.labelName
+      const shortLabelName = labelName.length > 15 ? labelName.substring(0, 12) + '...' : labelName
+
+      const message = isCurrentUser
+        ? `✅ Bạn đã ${action} nhãn "${shortLabelName}" ${preposition} thẻ: "${data.cardTitle}"`
+        : `🏷️ ${actorName} đã ${action} nhãn "${shortLabelName}" ${preposition} thẻ: "${data.cardTitle}"`
+
+      const toastId = `label-${data.action.toLowerCase()}-${data.boardId}-${data.cardId}-${Date.now()}`
+
+      toast.info(message, {
+        toastId,
+        position: 'bottom-left',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : (data.action === 'ADD' ? '#1976d2' : '#f57c00'),
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : (data.action === 'ADD' ? '1px solid #2196f3' : '1px solid #ff9800'),
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)'
+            : (data.action === 'ADD' 
+                ? '0 6px 20px rgba(25, 118, 210, 0.3)' 
+                : '0 6px 20px rgba(245, 124, 0, 0.3)'),
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : (data.action === 'ADD' ? '#2196f3' : '#ff9800'),
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : (data.action === 'ADD' ? '🏷️' : '🗑️')
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
+  // Checklist deletion handler with Universal Notifications Pattern & Duplicate Prevention
+  const onChecklistDeleted = (data) => {
+    console.log('📝 Board: Checklist deleted event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.checklistName && data.cardTitle) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+
+      // Shorten names if too long
+      const checklistName = data.checklistName
+      const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+      const cardTitle = data.cardTitle
+      const shortCardTitle = cardTitle.length > 25 ? cardTitle.substring(0, 22) + '...' : cardTitle
+
+      const message = isCurrentUser
+        ? `✅ Bạn đã xóa checklist "${shortChecklistName}" khỏi thẻ: "${shortCardTitle}"`
+        : `🗑️ ${actorName} đã xóa checklist "${shortChecklistName}" khỏi thẻ: "${shortCardTitle}"`
+
+      // Create deterministic toast ID to prevent duplicates (exclude timestamp)
+      const toastId = `checklist-deleted-${data.boardId}-${data.cardId}-${data.checklistId}`
+
+      // Additional duplicate prevention: check if this exact toast was shown recently
+      if (toast.isActive(toastId)) {
+        console.log('📝 Board: Duplicate checklist deletion toast prevented:', toastId)
+        return
+      }
+
+      toast.info(message, {
+        toastId, // This prevents duplicate toasts
+        position: 'bottom-left',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#f57c00',
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #ff9800',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)'
+            : '0 6px 20px rgba(245, 124, 0, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#ff9800',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '🗑️'
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
+  // Checklist item deletion handler with Universal Notifications Pattern & Duplicate Prevention
+  const onChecklistItemDeleted = (data) => {
+    console.log('📝 Board: Checklist item deleted event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.itemName && data.checklistName) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+
+      // Shorten names if too long
+      const itemName = data.itemName
+      const shortItemName = itemName.length > 20 ? itemName.substring(0, 17) + '...' : itemName
+      const checklistName = data.checklistName
+      const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+
+      const message = isCurrentUser
+        ? `✅ Bạn đã xóa "${shortItemName}" khỏi checklist "${shortChecklistName}"`
+        : `🗑️ ${actorName} đã xóa "${shortItemName}" khỏi checklist "${shortChecklistName}"`
+
+      // Create deterministic toast ID to prevent duplicates (exclude timestamp)
+      const toastId = `checklist-item-deleted-${data.boardId}-${data.cardId}-${data.checklistId}-${data.itemId}`
+
+      // Additional duplicate prevention: check if this exact toast was shown recently
+      if (toast.isActive(toastId)) {
+        console.log('📝 Board: Duplicate checklist item deletion toast prevented:', toastId)
+        return
+      }
+
+      toast.info(message, {
+        toastId, // This prevents duplicate toasts
+        position: 'bottom-left',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#f57c00',
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #ff9800',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)'
+            : '0 6px 20px rgba(245, 124, 0, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#ff9800',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '🗑️'
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
+    // Regular event listeners (excluding dedicated handlers)
     socketIoInstance.on('BE_COLUMN_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_NEW_COMMENT', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_UPDATED', onRealtimeEvent)
-    socketIoInstance.on('BE_LABEL_UPDATED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_DELETED', onRealtimeEvent)
     socketIoInstance.on('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
-    socketIoInstance.on('BE_CHECKLIST_DELETED', onRealtimeEvent)
-    socketIoInstance.on('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
     
     // Special handlers with Universal Notifications pattern
     socketIoInstance.on('BE_COLUMN_CREATED', onColumnCreated)
@@ -805,17 +1088,19 @@ function Board() {
     socketIoInstance.on('BE_CARD_MOVED', onCardMoved)
     socketIoInstance.on('BE_CARD_MEMBER_UPDATED', onCardMemberUpdated)
     socketIoInstance.on('BE_CARD_COVER_UPDATED', onCardCoverUpdated)
+    socketIoInstance.on('BE_ATTACHMENT_UPLOADED', onAttachmentUploaded)
+    socketIoInstance.on('BE_ATTACHMENT_DELETED', onAttachmentDeleted)
+    socketIoInstance.on('BE_LABEL_UPDATED', onLabelUpdated)
+    socketIoInstance.on('BE_CHECKLIST_DELETED', onChecklistDeleted)
+    socketIoInstance.on('BE_CHECKLIST_ITEM_DELETED', onChecklistItemDeleted)
     
     // ... có thể thêm các event khác nếu cần
     return () => {
       socketIoInstance.off('BE_COLUMN_MOVED', onRealtimeEvent)
       socketIoInstance.off('BE_NEW_COMMENT', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_UPDATED', onRealtimeEvent)
-      socketIoInstance.off('BE_LABEL_UPDATED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_CARD_SORTED_IN_COLUMN', onRealtimeEvent)
-      socketIoInstance.off('BE_CHECKLIST_DELETED', onRealtimeEvent)
-      socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', onRealtimeEvent)
       socketIoInstance.off('BE_COLUMN_CREATED', onColumnCreated)
       socketIoInstance.off('BE_COLUMN_DELETED', onColumnDeleted)
       socketIoInstance.off('BE_COLUMN_UPDATED', onColumnTitleUpdated)
@@ -824,6 +1109,11 @@ function Board() {
       socketIoInstance.off('BE_CARD_MOVED', onCardMoved)
       socketIoInstance.off('BE_CARD_MEMBER_UPDATED', onCardMemberUpdated)
       socketIoInstance.off('BE_CARD_COVER_UPDATED', onCardCoverUpdated)
+      socketIoInstance.off('BE_ATTACHMENT_UPLOADED', onAttachmentUploaded)
+      socketIoInstance.off('BE_ATTACHMENT_DELETED', onAttachmentDeleted)
+      socketIoInstance.off('BE_LABEL_UPDATED', onLabelUpdated)
+      socketIoInstance.off('BE_CHECKLIST_DELETED', onChecklistDeleted)
+      socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', onChecklistItemDeleted)
       if (reloadTimeout) clearTimeout(reloadTimeout)
     }
   }, [dispatch, boardId, currentUser])

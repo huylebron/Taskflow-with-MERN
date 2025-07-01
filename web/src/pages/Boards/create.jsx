@@ -72,7 +72,7 @@ function SidebarCreateBoardModal({ afterCreateNewBoard }) {
     <>
       <SidebarItem onClick={handleOpenModal}>
         <LibraryAddIcon fontSize="small" />
-        Create a new board
+        Tạo bảng mới
       </SidebarItem>
 
       <Modal
@@ -108,7 +108,7 @@ function SidebarCreateBoardModal({ afterCreateNewBoard }) {
           </Box>
           <Box id="modal-modal-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <LibraryAddIcon />
-            <Typography variant="h6" component="h2"> Create a new board</Typography>
+            <Typography variant="h6" component="h2"> Tạo bảng mới</Typography>
           </Box>
           <Box id="modal-modal-description" sx={{ my: 2 }}>
             <form onSubmit={handleSubmit(submitCreateNewBoard)}>
@@ -116,7 +116,7 @@ function SidebarCreateBoardModal({ afterCreateNewBoard }) {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Title"
+                    label="Tiêu đề"
                     type="text"
                     variant="outlined"
                     InputProps={{
@@ -128,8 +128,8 @@ function SidebarCreateBoardModal({ afterCreateNewBoard }) {
                     }}
                     {...register('title', {
                       required: FIELD_REQUIRED_MESSAGE,
-                      minLength: { value: 3, message: 'Min Length is 3 characters' },
-                      maxLength: { value: 50, message: 'Max Length is 50 characters' }
+                      minLength: { value: 3, message: 'Độ dài tối thiểu 3 ký tự' },
+                      maxLength: { value: 50, message: 'Độ dài tối đa 50 ký tự' }
                     })}
                     error={!!errors['title']}
                   />
@@ -139,7 +139,7 @@ function SidebarCreateBoardModal({ afterCreateNewBoard }) {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Description"
+                    label="Mô tả"
                     type="text"
                     variant="outlined"
                     multiline
@@ -152,8 +152,8 @@ function SidebarCreateBoardModal({ afterCreateNewBoard }) {
                     }}
                     {...register('description', {
                       required: FIELD_REQUIRED_MESSAGE,
-                      minLength: { value: 3, message: 'Min Length is 3 characters' },
-                      maxLength: { value: 255, message: 'Max Length is 255 characters' }
+                      minLength: { value: 3, message: 'Độ dài tối thiểu 3 ký tự' },
+                      maxLength: { value: 255, message: 'Độ dài tối đa 255 ký tự' }
                     })}
                     error={!!errors['description']}
                   />
@@ -179,13 +179,13 @@ function SidebarCreateBoardModal({ afterCreateNewBoard }) {
                       <FormControlLabel
                         value={BOARD_TYPES.PUBLIC}
                         control={<Radio size="small" />}
-                        label="Public"
+                        label="Công khai"
                         labelPlacement="start"
                       />
                       <FormControlLabel
                         value={BOARD_TYPES.PRIVATE}
                         control={<Radio size="small" />}
-                        label="Private"
+                        label="Riêng tư"
                         labelPlacement="start"
                       />
                     </RadioGroup>
@@ -199,7 +199,7 @@ function SidebarCreateBoardModal({ afterCreateNewBoard }) {
                     variant="contained"
                     color="primary"
                   >
-                    Create
+                    Tạo
                   </Button>
                 </Box>
               </Box>

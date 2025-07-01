@@ -54,6 +54,14 @@ const moveCardToDifferentColumn = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+/**
+ * Lấy danh sách các boards của một user
+ * @param {Object} req.query - query url có các thông tin page, itemsPerPage, q
+ * @param {number} req.query.page - số trang
+ * @param {number} req.query.itemsPerPage - số lượng item trên một trang
+ * @param {string} req.query.q - chuỗi tìm kiếm
+ * @returns {Promise<Board[]>} - danh sách các boards
+ */
 const getBoards = async (req, res, next) => {
   try {
     const userId = req.jwtDecoded._id

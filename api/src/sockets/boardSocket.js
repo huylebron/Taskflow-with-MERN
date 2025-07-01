@@ -49,9 +49,19 @@ export const boardSocket = (io, socket) => {
     socket.to(data.boardId).emit('BE_CARD_UPDATED', data)
   })
 
-  // Cập nhật label
+  // Cập nhật label (Universal Notifications)
   socket.on('FE_LABEL_UPDATED', (data) => {
-    socket.to(data.boardId).emit('BE_LABEL_UPDATED', data)
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🏷️ Socket FE_LABEL_UPDATED received:', enhancedData)
+    console.log('🏷️ Broadcasting label update to all members in board:', data.boardId)
+    
+    // Use io.to() to broadcast to ALL members (including sender) for Universal Notifications
+    io.to(data.boardId).emit('BE_LABEL_UPDATED', enhancedData)
+    
+    console.log('🏷️ Socket: Broadcasted label update to all board members')
   })
 
   // Thêm cột realtime
@@ -150,5 +160,35 @@ export const boardSocket = (io, socket) => {
     io.to(data.boardId).emit('BE_CARD_CREATED', enhancedData)
 
     console.log('📝 Socket: Broadcasted card creation to all board members')
+  })
+
+  // Tải lên tệp đính kèm cho card (Universal Notifications)
+  socket.on('FE_ATTACHMENT_UPLOADED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('📎 Socket FE_ATTACHMENT_UPLOADED received:', enhancedData)
+    console.log('📎 Broadcasting attachment upload to all members in board:', data.boardId)
+
+    // Broadcast to all members (including the actor) for universal notifications
+    io.to(data.boardId).emit('BE_ATTACHMENT_UPLOADED', enhancedData)
+
+    console.log('📎 Socket: Broadcasted attachment upload to all board members')
+  })
+
+  // Xóa tệp đính kèm cho card (Universal Notifications)
+  socket.on('FE_ATTACHMENT_DELETED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🗑️ Socket FE_ATTACHMENT_DELETED received:', enhancedData)
+    console.log('🗑️ Broadcasting attachment delete to all members in board:', data.boardId)
+
+    // Broadcast to all members (including the actor) for universal notifications
+    io.to(data.boardId).emit('BE_ATTACHMENT_DELETED', enhancedData)
+
+    console.log('🗑️ Socket: Broadcasted attachment delete to all board members')
   })
 } 

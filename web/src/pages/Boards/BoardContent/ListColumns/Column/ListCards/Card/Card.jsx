@@ -163,7 +163,7 @@ function Card({ card, shouldShake = false }) {
     } catch (error) {
       // Revert optimistic update on failure
       dispatch(fetchBoardDetailsAPI(/* boardId required */))
-      toast.error('Failed to delete card! Rolling back.', { position: 'bottom-right' })
+      toast.error('Xóa thẻ thất bại! Đang khôi phục.', { position: 'bottom-right' })
     } finally {
       setIsDeleting(false)
     }
