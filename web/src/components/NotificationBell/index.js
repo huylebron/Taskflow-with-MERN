@@ -1,6 +1,5 @@
 // Export the board-level NotificationBell as default (for backward compatibility)
 export { default } from './NotificationBell'
 
-// Export both components as named exports
+// Export NotificationBell component
 export { default as NotificationBell } from './NotificationBell'
-export { default as CardNotificationBell } from './CardNotificationBell' 

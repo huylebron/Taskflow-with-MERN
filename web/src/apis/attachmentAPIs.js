@@ -17,11 +17,11 @@ export const uploadAttachmentsAPI = async (cardId, files) => {
   try {
     // Validate input
     if (!cardId) {
-      throw new Error('Card ID is required')
+      throw new Error('Card ID là bắt buộc')
     }
 
     if (!files || files.length === 0) {
-      throw new Error('At least one file is required')
+      throw new Error('Vui lòng chọn ít nhất một file')
     }
 
     // ⚠️ CẨN THẬN: Tạo FormData đúng cách
@@ -50,7 +50,7 @@ export const uploadAttachmentsAPI = async (cardId, files) => {
 
     // Validate response format
     if (!response.data.success) {
-      throw new Error(response.data.message || 'Upload failed')
+      throw new Error(response.data.message || 'Tải lên thất bại')
     }
 
     return response.data
@@ -60,13 +60,13 @@ export const uploadAttachmentsAPI = async (cardId, files) => {
 
     // ⚠️ LƯU Ý: Handle different error types
     if (error.response?.status === 422) {
-      toast.error(error.response.data.message || 'Invalid file format or size')
+      toast.error(error.response.data.message || 'Định dạng hoặc kích thước file không hợp lệ')
     } else if (error.response?.status === 413) {
-      toast.error('File too large. Maximum size is 10MB')
+      toast.error('File quá lớn. Kích thước tối đa là 10MB')
     } else if (error.response?.status === 404) {
-      toast.error('Card not found')
+      toast.error('Không tìm thấy thẻ')
     } else {
-      toast.error(error.message || 'Failed to upload attachments')
+      toast.error(error.message || 'Tải lên tệp đính kèm thất bại')
     }
 
     throw error
@@ -81,7 +81,7 @@ export const uploadAttachmentsAPI = async (cardId, files) => {
 export const getAttachmentsAPI = async (cardId) => {
   try {
     if (!cardId) {
-      throw new Error('Card ID is required')
+      throw new Error('Card ID là bắt buộc')
     }
 
     const response = await authorizedAxiosInstance.get(
@@ -89,7 +89,7 @@ export const getAttachmentsAPI = async (cardId) => {
     )
 
     if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to get attachments')
+      throw new Error(response.data.message || 'Không thể lấy danh sách tệp đính kèm')
     }
 
     return response.data.data
@@ -98,9 +98,9 @@ export const getAttachmentsAPI = async (cardId) => {
     console.error('Get attachments error:', error)
 
     if (error.response?.status === 404) {
-      toast.error('Card not found')
+      toast.error('Không tìm thấy thẻ')
     } else {
-      toast.error(error.message || 'Failed to load attachments')
+      toast.error(error.message || 'Không thể tải danh sách tệp đính kèm')
     }
 
     throw error
@@ -115,7 +115,7 @@ export const getAttachmentsAPI = async (cardId) => {
 export const deleteAttachmentAPI = async (attachmentId) => {
   try {
     if (!attachmentId) {
-      throw new Error('Attachment ID is required')
+      throw new Error('Attachment ID là bắt buộc')
     }
 
     const response = await authorizedAxiosInstance.delete(
@@ -123,7 +123,7 @@ export const deleteAttachmentAPI = async (attachmentId) => {
     )
 
     if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to delete attachment')
+      throw new Error(response.data.message || 'Không thể xóa tệp đính kèm')
     }
 
     return response.data
@@ -152,7 +152,7 @@ export const deleteAttachmentAPI = async (attachmentId) => {
 export const downloadAttachmentAPI = async (attachmentId, fileName) => {
   try {
     if (!attachmentId) {
-      throw new Error('Attachment ID is required')
+      throw new Error('Attachment ID là bắt buộc')
     }
 
     console.log('🔄 Starting download for attachment:', attachmentId, 'fileName:', fileName)
@@ -164,7 +164,7 @@ export const downloadAttachmentAPI = async (attachmentId, fileName) => {
     console.log('📥 Download response:', response.data)
 
     if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to download attachment')
+      throw new Error(response.data.message || 'Không thể tải xuống tệp đính kèm')
     }
 
     // 🔥 QUAN TRỌNG: Multiple download methods
@@ -226,7 +226,7 @@ export const downloadAttachmentAPI = async (attachmentId, fileName) => {
     }
 
     // No download method available
-    throw new Error('No download URL provided by server')
+    throw new Error('Máy chủ không cung cấp URL tải xuống')
 
   } catch (error) {
     console.error('❌ Download attachment error:', error)
@@ -252,7 +252,7 @@ export const downloadAttachmentAPI = async (attachmentId, fileName) => {
 export const updateAttachmentAPI = async (attachmentId, updateData) => {
   try {
     if (!attachmentId) {
-      throw new Error('Attachment ID is required')
+      throw new Error('Attachment ID là bắt buộc')
     }
 
     const response = await authorizedAxiosInstance.patch(

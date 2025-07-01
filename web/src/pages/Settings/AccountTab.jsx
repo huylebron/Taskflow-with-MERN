@@ -40,11 +40,11 @@ function AccountTab() {
     // Gọi API...
     toast.promise(
       dispatch(updateUserAPI({ displayName })),
-      { pending: 'Updating...' }
+      { pending: 'Đang cập nhật...' }
     ).then(res => {
       // Đoạn này phải kiểm tra không có lỗi (update thành công) thì mới thực hiện các hành động cần thiết
       if (!res.error) {
-        toast.success('User updated successfully!')
+        toast.success('Cập nhật người dùng thành công!')
       }
     })
   }
@@ -70,11 +70,11 @@ function AccountTab() {
     // Gọi API...
     toast.promise(
       dispatch(updateUserAPI(reqData)),
-      { pending: 'Updating...' }
+      { pending: 'Đang cập nhật...' }
     ).then(res => {
       // Đoạn này phải kiểm tra không có lỗi (update thành công) thì mới thực hiện các hành động cần thiết
       if (!res.error) {
-        toast.success('User updated successfully!')
+        toast.success('Cập nhật người dùng thành công!')
       }
       // Lưu ý, dù có lỗi hoặc thành công thì cũng phải clear giá trị của file input, nếu không thì sẽ không thể chọn cùng một file liên tiếp được
       e.target.value = ''
@@ -104,13 +104,13 @@ function AccountTab() {
               alt="TrungQuanDev"
               src={currentUser?.avatar}
             />
-            <Tooltip title="Upload a new image to update your avatar immediately.">
+            <Tooltip title="Tải lên hình ảnh mới để cập nhật avatar của bạn ngay lập tức.">
               <Button
                 component="label"
                 variant="contained"
                 size="small"
                 startIcon={<CloudUploadIcon />}>
-                Upload
+                Tải lên
                 <VisuallyHiddenInput type="file" onChange={uploadAvatar} />
               </Button>
             </Tooltip>
@@ -128,7 +128,7 @@ function AccountTab() {
                 disabled
                 defaultValue={currentUser?.email}
                 fullWidth
-                label="Your Email"
+                label="Email của bạn"
                 type="text"
                 variant="filled"
                 InputProps={{
@@ -146,7 +146,7 @@ function AccountTab() {
                 disabled
                 defaultValue={currentUser?.username}
                 fullWidth
-                label="Your Username"
+                label="Tên đăng nhập của bạn"
                 type="text"
                 variant="filled"
                 InputProps={{
@@ -162,7 +162,7 @@ function AccountTab() {
             <Box>
               <TextField
                 fullWidth
-                label="Your Display Name"
+                label="Tên hiển thị của bạn"
                 type="text"
                 variant="outlined"
                 InputProps={{
@@ -187,7 +187,7 @@ function AccountTab() {
                 variant="contained"
                 color="primary"
                 fullWidth>
-                Update
+                Cập nhật
               </Button>
             </Box>
           </Box>

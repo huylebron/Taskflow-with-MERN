@@ -26,22 +26,22 @@ function SecurityTab() {
     confirmChangePassword({
       // Title, Description, Content...vv của gói material-ui-confirm đều có type là ReactNode nên có thể thoải sử dụng MUI components, rất tiện lợi khi cần custom styles
       title: <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <LogoutIcon sx={{ color: 'warning.dark' }} /> Change Password
+        <LogoutIcon sx={{ color: 'warning.dark' }} /> Đổi mật khẩu
       </Box>,
-      description: 'You have to login again after successfully changing your password. Continue?',
-      confirmationText: 'Confirm',
-      cancellationText: 'Cancel'
+      description: 'Bạn sẽ phải đăng nhập lại sau khi đổi mật khẩu thành công. Tiếp tục?',
+      confirmationText: 'Xác nhận',
+      cancellationText: 'Hủy'
     }).then(() => {
       const { current_password, new_password } = data
 
       // Gọi API...
       toast.promise(
         dispatch(updateUserAPI({ current_password, new_password })),
-        { pending: 'Updating...' }
+        { pending: 'Đang cập nhật...' }
       ).then(res => {
         // Đoạn này phải kiểm tra không có lỗi (update thành công) thì mới thực hiện các hành động cần thiết
         if (!res.error) {
-          toast.success('Successfully changed your password, please login again!')
+          toast.success('Đổi mật khẩu thành công, vui lòng đăng nhập lại!')
           dispatch(logoutUserAPI(false))
         }
       })
@@ -65,14 +65,14 @@ function SecurityTab() {
         gap: 3
       }}>
         <Box>
-          <Typography variant="h5">Security Dashboard</Typography>
+          <Typography variant="h5">Bảng điều khiển bảo mật</Typography>
         </Box>
         <form onSubmit={handleSubmit(submitChangePassword)}>
           <Box sx={{ width: '400px', display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box>
               <TextField
                 fullWidth
-                label="Current Password"
+                label="Mật khẩu hiện tại"
                 type="password"
                 variant="outlined"
                 InputProps={{
@@ -97,7 +97,7 @@ function SecurityTab() {
             <Box>
               <TextField
                 fullWidth
-                label="New Password"
+                label="Mật khẩu mới"
                 type="password"
                 variant="outlined"
                 InputProps={{
@@ -122,7 +122,7 @@ function SecurityTab() {
             <Box>
               <TextField
                 fullWidth
-                label="New Password Confirmation"
+                label="Xác nhận mật khẩu mới"
                 type="password"
                 variant="outlined"
                 InputProps={{
@@ -135,7 +135,7 @@ function SecurityTab() {
                 {...register('new_password_confirmation', {
                   validate: (value) => {
                     if (value === watch('new_password')) return true
-                    return 'Password confirmation does not match.'
+                    return 'Xác nhận mật khẩu không khớp.'
                   }
                 })}
                 error={!!errors['new_password_confirmation']}
@@ -150,7 +150,7 @@ function SecurityTab() {
                 variant="contained"
                 color="primary"
                 fullWidth>
-                Change
+                Đổi mật khẩu
               </Button>
             </Box>
           </Box>

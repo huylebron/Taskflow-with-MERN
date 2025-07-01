@@ -15,15 +15,25 @@ export const cardSocket = (io, socket) => {
     socket.to(data.boardId).emit('BE_CARD_DELETED', data)
   })
 
-  // Xóa checklist realtime
+  // Xóa checklist realtime - Universal Notifications Pattern ✅
   socket.on('FE_CHECKLIST_DELETED', (data) => {
-    // data: { boardId, cardId, checklistId }
-    socket.to(data.boardId).emit('BE_CHECKLIST_DELETED', data)
+    const enhancedData = { 
+      ...data, 
+      timestamp: new Date().toISOString() 
+    }
+    console.log('🔄 Socket FE_CHECKLIST_DELETED received:', enhancedData)
+    io.to(data.boardId).emit('BE_CHECKLIST_DELETED', enhancedData) // ALL members
+    console.log('🔄 Socket: Broadcasted checklist deletion to all board members')
   })
 
-  // Xóa checklist item realtime
+  // Xóa checklist item realtime - Universal Notifications Pattern ✅  
   socket.on('FE_CHECKLIST_ITEM_DELETED', (data) => {
-    // data: { boardId, cardId, checklistId, itemId }
-    socket.to(data.boardId).emit('BE_CHECKLIST_ITEM_DELETED', data)
+    const enhancedData = { 
+      ...data, 
+      timestamp: new Date().toISOString() 
+    }
+    console.log('🔄 Socket FE_CHECKLIST_ITEM_DELETED received:', enhancedData)
+    io.to(data.boardId).emit('BE_CHECKLIST_ITEM_DELETED', enhancedData) // ALL members
+    console.log('🔄 Socket: Broadcasted checklist item deletion to all board members')
   })
 } 

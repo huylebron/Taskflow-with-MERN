@@ -38,14 +38,14 @@ function Settings() {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <TabList onChange={handleChangeTab}>
             <Tab
-              label="Account"
+              label="Tài khoản"
               value={TABS.ACCOUNT}
               icon={<PersonIcon />}
               iconPosition="start"
               component={Link}
               to="/settings/account" />
             <Tab
-              label="Security"
+              label="Bảo mật"
               value={TABS.SECURITY}
               icon={<SecurityIcon />}
               iconPosition="start"

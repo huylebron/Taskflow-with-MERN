@@ -72,13 +72,13 @@ export const createNewCardAPI = async (newCardData) => {
 /** Users */
 export const registerUserAPI = async (data) => {
   const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/users/register`, data)
-  toast.success('Account created successfully! Please check and verify your account before logging in!', { theme: 'colored' })
+  toast.success('Tạo tài khoản thành công! Vui lòng kiểm tra và xác thực tài khoản trước khi đăng nhập!', { theme: 'colored' })
   return response.data
 }
 
 export const verifyUserAPI = async (data) => {
   const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/users/verify`, data)
-  toast.success('Account verified successfully! Now you can login to enjoy our services! Have a good day!', { theme: 'colored' })
+  toast.success('Xác thực tài khoản thành công! Bây giờ bạn có thể đăng nhập để sử dụng dịch vụ! Chúc bạn một ngày tốt lành!', { theme: 'colored' })
   return response.data
 }
 
@@ -106,7 +106,7 @@ export const fetchBoardsAPI = async (searchPath) => {
 
 export const createNewBoardAPI = async (data) => {
   const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/boards`, data)
-  toast.success('Board created successfully')
+  toast.success('Tạo board thành công')
   return response.data
 }
 
@@ -120,7 +120,7 @@ export const updateCardDetailsAPI = async (cardId, updateData) => {
  */
 export const deleteCardAPI = async (cardId) => {
   const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/cards/${cardId}`)
-  toast.success('Card deleted successfully!', { position: 'bottom-right' })
+  toast.success('Xóa thẻ thành công!', { position: 'bottom-right' })
   return response.data
 }
 
@@ -139,13 +139,13 @@ export const updateCardDueDateAPI = async (cardId, dueDate) => {
 
 export const inviteUserToBoardAPI = async (data) => {
   const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/invitations/board`, data)
-  toast.success('User invited to board successfully!')
+  toast.success('Mời người dùng vào board thành công!')
   return response.data
 }
 
 export const deleteBoardAPI = async (boardId) => {
   const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/boards/${boardId}`)
-  toast.success('Board deleted successfully!')
+  toast.success('Xóa board thành công!')
   return response.data
 }
 
@@ -202,11 +202,8 @@ export const deleteChecklistAPI = async (cardId, checklistId) => {
 
     const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/cards/${cardId}/checklists/${checklistId}`)
 
-    // Success toast notification
-    toast.success('Checklist deleted successfully!', {
-      position: 'bottom-right',
-      autoClose: 3000
-    })
+    // Remove success toast - handled by component layer for better UX
+    // toast.success('Checklist deleted successfully!') - REMOVED to prevent duplicate toasts
 
     return response.data
   } catch (error) {
@@ -243,11 +240,8 @@ export const deleteChecklistItemAPI = async (cardId, checklistId, itemId) => {
 
     const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/cards/${cardId}/checklists/${checklistId}/items/${itemId}`)
 
-    // Success toast notification
-    toast.success('Checklist item deleted successfully!', {
-      position: 'bottom-right',
-      autoClose: 3000
-    })
+    // Remove success toast - handled by component layer for better UX
+    // toast.success('Checklist item deleted successfully!') - REMOVED to prevent duplicate toasts
 
     return response.data
   } catch (error) {

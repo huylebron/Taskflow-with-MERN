@@ -25,6 +25,10 @@ import Tooltip from '@mui/material/Tooltip'
 import { toast } from 'react-toastify'
 import { v4 as uuidv4 } from 'uuid'
 import { multipleFilesValidator, ALLOW_ATTACHMENT_FILE_TYPES } from '~/utils/validators'
+import { useSelector } from 'react-redux'
+import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
+import { selectCurrentUser } from '~/redux/user/userSlice'
+import { socketIoInstance } from '~/socketClient'
 
 // 🚨 CRITICAL: Import attachment APIs để thay thế mock data
 import {
@@ -291,6 +295,7 @@ function AttachmentModal({
   isOpen,
   onClose,
   cardId,
+  cardTitle = 'Thẻ không có tiêu đề',
   attachments = [],
   onAddAttachment,
   onDeleteAttachment,
@@ -301,6 +306,10 @@ function AttachmentModal({
   const [isLoading, setIsLoading] = useState(false)
   const [deletingAttachments, setDeletingAttachments] = useState(new Set())
   const [localAttachments, setLocalAttachments] = useState(attachments)
+
+  // Get board & current user info for realtime socket emission
+  const activeBoard = useSelector(selectCurrentActiveBoard)
+  const currentUser = useSelector(selectCurrentUser)
 
   // 🔍 DEBUG: Track localAttachments changes
   useEffect(() => {
@@ -406,7 +415,7 @@ function AttachmentModal({
     try {
       setIsUploading(true)
 
-      // 🔥 QUAN TRỌNG: Upload thật thay vì mock
+      // 🎨 QUAN TRỌNG: Upload thật thay vì mock
       const result = await uploadAttachmentsAPI(cardId, files)
 
       // 🔍 DEBUG: Log upload response structure
@@ -426,6 +435,31 @@ function AttachmentModal({
         if (failedFiles.length > 0) {
           failedFiles.forEach(failedFile => {
             toast.error(`Upload failed: ${failedFile.name} - ${failedFile.error}`)
+          })
+        }
+
+        // 🚨 CRITICAL: Emit realtime event for universal notifications
+        if (activeBoard?._id) {
+          socketIoInstance.emit('FE_ATTACHMENT_UPLOADED', {
+            boardId: activeBoard._id,
+            cardId: cardId,
+            cardTitle: cardTitle || 'Thẻ không có tiêu đề',
+            attachmentsCount: successCount,
+            fileNames: uploadResults.successFiles ? uploadResults.successFiles.map(f => f.name) : [],
+            userInfo: {
+              _id: currentUser?._id,
+              displayName: currentUser?.displayName || currentUser?.username || 'Người dùng',
+              username: currentUser?.username,
+              avatar: currentUser?.avatar
+            },
+            timestamp: new Date().toISOString()
+          })
+
+          console.log('📎 AttachmentModal: Emitted FE_ATTACHMENT_UPLOADED event:', {
+            boardId: activeBoard._id,
+            cardId,
+            attachmentsCount: successCount,
+            actor: currentUser?.displayName
           })
         }
 
@@ -470,7 +504,36 @@ function AttachmentModal({
     try {
       setDeletingAttachments(prev => new Set([...prev, attachmentId]))
 
+      // Get attachment info before deletion for socket emission
+      const attachmentToDelete = localAttachments.find(att => att._id === attachmentId || att.id === attachmentId)
+      const attachmentName = attachmentToDelete?.name || 'file'
+
       await deleteAttachmentAPI(attachmentId)
+
+      // 🚨 CRITICAL: Emit socket event for real-time notifications  
+      if (activeBoard?._id && attachmentToDelete) {
+        socketIoInstance.emit('FE_ATTACHMENT_DELETED', {
+          boardId: activeBoard._id,
+          cardId: cardId,
+          cardTitle: cardTitle || 'Thẻ không có tiêu đề',
+          attachmentName: attachmentName,
+          attachmentId: attachmentId,
+          userInfo: {
+            _id: currentUser?._id,
+            displayName: currentUser?.displayName || currentUser?.username || 'Người dùng',
+            username: currentUser?.username,
+            avatar: currentUser?.avatar
+          },
+          timestamp: new Date().toISOString()
+        })
+
+        console.log('🗑️ AttachmentModal: Emitted FE_ATTACHMENT_DELETED event:', {
+          boardId: activeBoard._id,
+          cardId,
+          attachmentName,
+          actor: currentUser?.displayName
+        })
+      }
 
       // 🚨 CRITICAL: Reload attachments từ server thay vì chỉ remove local
       console.log('🔄 Delete success - Reloading attachments...')

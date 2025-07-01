@@ -630,6 +630,287 @@ function NotificationBell({ boardId, onNotification }) {
       }
     }
 
+    // Handle attachment upload with Universal Notifications pattern
+    const handleAttachmentUploaded = (data) => {
+      try {
+        console.log('📎 NotificationBell: Attachment uploaded event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          cardTitle: data.cardTitle,
+          attachmentsCount: data.attachmentsCount
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const cardTitle = data.cardTitle || 'thẻ'
+          const filesText = data.attachmentsCount > 1 ? `${data.attachmentsCount} tệp` : '1 tệp'
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã tải lên ${filesText} cho thẻ '${cardTitle}'`
+            : `${userName} đã tải lên ${filesText} cho thẻ '${cardTitle}'`
+          
+          console.log('📎 NotificationBell: Triggering attachment upload notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            cardTitle,
+            attachmentsCount: data.attachmentsCount
+          })
+          
+          triggerShake({ 
+            type: 'ATTACHMENT_UPLOADED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            cardTitle,
+            attachmentsCount: data.attachmentsCount,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('📎 NotificationBell: Attachment upload event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('📎 NotificationBell: Error handling attachment upload event:', error)
+      }
+    }
+
+    // Handle attachment deletion with Universal Notifications pattern
+    const handleAttachmentDeleted = (data) => {
+      try {
+        console.log('🗑️ NotificationBell: Attachment deleted event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          cardTitle: data.cardTitle,
+          attachmentName: data.attachmentName
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const cardTitle = data.cardTitle || 'thẻ'
+          const fileName = data.attachmentName || 'tệp'
+          const shortName = fileName.length > 25 ? fileName.substring(0, 22) + '...' : fileName
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã xóa "${shortName}" khỏi thẻ '${cardTitle}'`
+            : `${userName} đã xóa "${shortName}" khỏi thẻ '${cardTitle}'`
+          
+          console.log('🗑️ NotificationBell: Triggering attachment delete notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            cardTitle,
+            attachmentName: fileName
+          })
+          
+          triggerShake({ 
+            type: 'ATTACHMENT_DELETED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            cardTitle,
+            attachmentName: fileName,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('🗑️ NotificationBell: Attachment delete event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('🗑️ NotificationBell: Error handling attachment delete event:', error)
+      }
+    }
+
+    // Handle label updates with Universal Notifications pattern
+    const handleLabelUpdated = (data) => {
+      try {
+        console.log('🏷️ NotificationBell: Label updated event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          action: data.action,
+          labelName: data.labelName,
+          cardTitle: data.cardTitle
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const action = data.action === 'ADD' ? 'thêm' : 'xóa'
+          const preposition = data.action === 'ADD' ? 'vào' : 'khỏi'
+          const labelName = data.labelName || 'nhãn'
+          const cardTitle = data.cardTitle || 'thẻ'
+          
+          // Shorten names if too long for notification
+          const shortLabelName = labelName.length > 15 ? labelName.substring(0, 12) + '...' : labelName
+          const shortCardTitle = cardTitle.length > 25 ? cardTitle.substring(0, 22) + '...' : cardTitle
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã ${action} nhãn '${shortLabelName}' ${preposition} thẻ '${shortCardTitle}'`
+            : `${userName} đã ${action} nhãn '${shortLabelName}' ${preposition} thẻ '${shortCardTitle}'`
+          
+          console.log('🏷️ NotificationBell: Triggering label notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            action,
+            labelName: shortLabelName,
+            cardTitle: shortCardTitle
+          })
+          
+          triggerShake({ 
+            type: 'LABEL_UPDATED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            action: data.action,
+            labelName: shortLabelName,
+            cardTitle: shortCardTitle,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('🏷️ NotificationBell: Label updated event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('🏷️ NotificationBell: Error handling label updated event:', error)
+      }
+    }
+
+    const handleChecklistDeleted = (data) => {
+      try {
+        console.log('📝 NotificationBell: Checklist deleted event received:', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          checklistName: data.checklistName,
+          cardTitle: data.cardTitle
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const checklistName = data.checklistName || 'checklist'
+          const cardTitle = data.cardTitle || 'thẻ'
+          
+          // Shorten names if too long for notification
+          const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+          const shortCardTitle = cardTitle.length > 25 ? cardTitle.substring(0, 22) + '...' : cardTitle
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã xóa checklist '${shortChecklistName}' khỏi thẻ '${shortCardTitle}'`
+            : `${userName} đã xóa checklist '${shortChecklistName}' khỏi thẻ '${shortCardTitle}'`
+          
+          console.log('📝 NotificationBell: Triggering checklist deletion notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            checklistName: shortChecklistName,
+            cardTitle: shortCardTitle
+          })
+          
+          triggerShake({ 
+            type: 'CHECKLIST_DELETED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            checklistName: shortChecklistName,
+            cardTitle: shortCardTitle,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('📝 NotificationBell: Checklist deleted event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('📝 NotificationBell: Error handling checklist deleted event:', error)
+      }
+    }
+
+    const handleChecklistItemDeleted = (data) => {
+      try {
+        console.log('📝 NotificationBell: Checklist item deleted event received:', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          itemName: data.itemName,
+          checklistName: data.checklistName
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const itemName = data.itemName || 'item'
+          const checklistName = data.checklistName || 'checklist'
+          
+          // Shorten names if too long for notification
+          const shortItemName = itemName.length > 20 ? itemName.substring(0, 17) + '...' : itemName
+          const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã xóa '${shortItemName}' khỏi checklist '${shortChecklistName}'`
+            : `${userName} đã xóa '${shortItemName}' khỏi checklist '${shortChecklistName}'`
+          
+          console.log('📝 NotificationBell: Triggering checklist item deletion notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            itemName: shortItemName,
+            checklistName: shortChecklistName
+          })
+          
+          triggerShake({ 
+            type: 'CHECKLIST_ITEM_DELETED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            itemName: shortItemName,
+            checklistName: shortChecklistName,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('📝 NotificationBell: Checklist item deleted event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('📝 NotificationBell: Error handling checklist item deleted event:', error)
+      }
+    }
+
     // Socket connection event handlers
     const handleConnect = () => {
       console.log('🔔 NotificationBell: Socket connected')
@@ -665,6 +946,14 @@ function NotificationBell({ boardId, onNotification }) {
     socketIoInstance.on('BE_CARD_COVER_UPDATED', handleCardCoverUpdated)
     // Add card creation listener
     socketIoInstance.on('BE_CARD_CREATED', handleCardCreated)
+    // Add attachment listeners
+    socketIoInstance.on('BE_ATTACHMENT_UPLOADED', handleAttachmentUploaded)
+    socketIoInstance.on('BE_ATTACHMENT_DELETED', handleAttachmentDeleted)
+    // Add label listener
+    socketIoInstance.on('BE_LABEL_UPDATED', handleLabelUpdated)
+    // Add checklist listeners
+    socketIoInstance.on('BE_CHECKLIST_DELETED', handleChecklistDeleted)
+    socketIoInstance.on('BE_CHECKLIST_ITEM_DELETED', handleChecklistItemDeleted)
 
     // Check initial connection state
     setIsConnected(socketIoInstance.connected)
@@ -686,6 +975,14 @@ function NotificationBell({ boardId, onNotification }) {
       socketIoInstance.off('BE_CARD_COVER_UPDATED', handleCardCoverUpdated)
       // Remove card creation listener
       socketIoInstance.off('BE_CARD_CREATED', handleCardCreated)
+      // Remove attachment listeners
+      socketIoInstance.off('BE_ATTACHMENT_UPLOADED', handleAttachmentUploaded)
+      socketIoInstance.off('BE_ATTACHMENT_DELETED', handleAttachmentDeleted)
+      // Remove label listener
+      socketIoInstance.off('BE_LABEL_UPDATED', handleLabelUpdated)
+      // Remove checklist listeners
+      socketIoInstance.off('BE_CHECKLIST_DELETED', handleChecklistDeleted)
+      socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', handleChecklistItemDeleted)
       
       if (shakeTimeoutRef.current) {
         clearTimeout(shakeTimeoutRef.current)
@@ -852,7 +1149,19 @@ function NotificationBell({ boardId, onNotification }) {
                             ? 'rgba(156, 39, 176, 0.15)' // Purple for card cover actions
                             : notification.type === 'CARD_CREATED'
                               ? 'rgba(33, 150, 243, 0.15)' // Blue for card creation actions
-                              : 'rgba(255, 152, 0, 0.1)', // Default orange
+                              : notification.type === 'ATTACHMENT_UPLOADED'
+                                ? 'rgba(33, 150, 243, 0.15)' // Blue for attachment upload actions
+                                : notification.type === 'ATTACHMENT_DELETED'
+                                  ? 'rgba(255, 152, 0, 0.15)' // Orange for attachment delete actions
+                                  : notification.type === 'LABEL_UPDATED'
+                                    ? (notification.action === 'ADD' 
+                                        ? 'rgba(33, 150, 243, 0.15)'  // Blue for label add actions
+                                        : 'rgba(255, 152, 0, 0.15)')  // Orange for label remove actions
+                                    : notification.type === 'CHECKLIST_DELETED'
+                                      ? 'rgba(255, 152, 0, 0.15)' // Orange for checklist delete actions
+                                      : notification.type === 'CHECKLIST_ITEM_DELETED'
+                                        ? 'rgba(255, 152, 0, 0.15)' // Orange for checklist item delete actions
+                                        : 'rgba(255, 152, 0, 0.1)', // Default orange
                     borderLeft: notification.isRead 
                       ? 'none'
                       : notification.type === 'COLUMN_DELETED'
@@ -867,7 +1176,19 @@ function NotificationBell({ boardId, onNotification }) {
                                 ? '3px solid #9c27b0' // Purple border for card cover actions
                                 : notification.type === 'CARD_CREATED'
                                   ? '3px solid #2196f3' // Blue border for card creation actions
-                                  : '3px solid #ff9800' // Default orange border
+                                  : notification.type === 'ATTACHMENT_UPLOADED'
+                                    ? '3px solid #2196f3' // Blue border for attachment upload actions
+                                    : notification.type === 'ATTACHMENT_DELETED'
+                                      ? '3px solid #ff9800' // Orange border for attachment delete actions
+                                      : notification.type === 'LABEL_UPDATED'
+                                        ? (notification.action === 'ADD' 
+                                            ? '3px solid #2196f3'  // Blue border for label add actions
+                                            : '3px solid #ff9800')  // Orange border for label remove actions
+                                        : notification.type === 'CHECKLIST_DELETED'
+                                          ? '3px solid #ff9800' // Orange border for checklist delete actions
+                                          : notification.type === 'CHECKLIST_ITEM_DELETED'
+                                            ? '3px solid #ff9800' // Orange border for checklist item delete actions
+                                            : '3px solid #ff9800' // Default orange border
                   }}>
                     <Box sx={{ width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -920,6 +1241,46 @@ function NotificationBell({ boardId, onNotification }) {
                           }}>
                             {notification.isCurrentUser ? '✅' : '📝'}
                           </Box>
+                        ) : notification.type === 'ATTACHMENT_UPLOADED' ? (
+                          // Attachment upload action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#2196f3',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '📎'}
+                          </Box>
+                        ) : notification.type === 'ATTACHMENT_DELETED' ? (
+                          // Attachment delete action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#ff9800',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '🗑️'}
+                          </Box>
+                        ) : notification.type === 'LABEL_UPDATED' ? (
+                          // Label update action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : (notification.action === 'ADD' ? '#2196f3' : '#ff9800'),
+                          }}>
+                            {notification.isCurrentUser ? '✅' : (notification.action === 'ADD' ? '🏷️' : '🗑️')}
+                          </Box>
+                        ) : notification.type === 'CHECKLIST_DELETED' ? (
+                          // Checklist delete action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#ff9800',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '🗑️'}
+                          </Box>
+                        ) : notification.type === 'CHECKLIST_ITEM_DELETED' ? (
+                          // Checklist item delete action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#ff9800',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '🗑️'}
+                          </Box>
                         ) : (
                           // Default person icon for other actions  
                           <PersonIcon sx={{ 
@@ -939,7 +1300,17 @@ function NotificationBell({ boardId, onNotification }) {
                                   ? (notification.isCurrentUser ? '#4caf50' : '#2196f3')
                                   : notification.type === 'CARD_CREATED'
                                     ? (notification.isCurrentUser ? '#4caf50' : '#2196f3')
-                                    : (notification.isCurrentUser ? '#4caf50' : '#3498db')
+                                    : notification.type === 'ATTACHMENT_UPLOADED'
+                                      ? (notification.isCurrentUser ? '#4caf50' : '#2196f3')
+                                      : notification.type === 'ATTACHMENT_DELETED'
+                                        ? (notification.isCurrentUser ? '#4caf50' : '#ff9800')
+                                        : notification.type === 'LABEL_UPDATED'
+                                          ? (notification.isCurrentUser ? '#4caf50' : (notification.action === 'ADD' ? '#2196f3' : '#ff9800'))
+                                          : notification.type === 'CHECKLIST_DELETED'
+                                            ? (notification.isCurrentUser ? '#4caf50' : '#ff9800')
+                                            : notification.type === 'CHECKLIST_ITEM_DELETED'
+                                              ? (notification.isCurrentUser ? '#4caf50' : '#ff9800')
+                                              : (notification.isCurrentUser ? '#4caf50' : '#3498db')
                         }}>
                           {notification.isCurrentUser ? 'Bạn' : notification.userName}
                         </Typography>

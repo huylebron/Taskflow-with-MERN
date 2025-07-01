@@ -29,7 +29,7 @@ const MemberManagement = ({ open, onClose, boardId }) => {
       setOwners(response.data.owners || [])
     } catch (error) {
       console.error('Error fetching members:', error)
-      toast.error('Failed to fetch board members', { position: 'bottom-right' })
+      toast.error('Không thể tải danh sách thành viên', { position: 'bottom-right' })
     } finally {
       setLoading(false)
     }
@@ -47,11 +47,11 @@ const MemberManagement = ({ open, onClose, boardId }) => {
     try {
       setLoading(true)
       await authorizedAxiosInstance.delete(`${API_ROOT}/v1/members/${boardId}/${memberId}`)
-      toast.success('Member removed successfully', { position: 'bottom-right' })
+      toast.success('Xóa thành viên thành công', { position: 'bottom-right' })
       fetchMembers() // Refresh the list
     } catch (error) {
       console.error('Error removing member:', error)
-      toast.error('Failed to remove member', { position: 'bottom-right' })
+      toast.error('Xóa thành viên thất bại', { position: 'bottom-right' })
     } finally {
       setLoading(false)
     }
@@ -59,10 +59,10 @@ const MemberManagement = ({ open, onClose, boardId }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Manage Board Members</DialogTitle>
+      <DialogTitle>Quản lý thành viên</DialogTitle>
       <DialogContent>
         {loading ? (
-          <div>Loading...</div>
+          <div>Đang tải...</div>
         ) : (
           <List>
             {owners.map(owner => (
@@ -71,7 +71,7 @@ const MemberManagement = ({ open, onClose, boardId }) => {
                   primary={owner.displayName}
                   secondary={owner.email}
                 />
-                <Chip label="Admin" color="primary" size="small" />
+                <Chip label="Quản trị" color="primary" size="small" />
               </ListItem>
             ))}
             {members.map(member => (
@@ -80,7 +80,7 @@ const MemberManagement = ({ open, onClose, boardId }) => {
                   primary={member.displayName}
                   secondary={member.email}
                 />
-                <Chip label="Member" color="default" size="small" />
+                <Chip label="Thành viên" color="default" size="small" />
                 <Button
                   color="error"
                   onClick={() => handleRemoveMember(member._id)}
@@ -88,13 +88,13 @@ const MemberManagement = ({ open, onClose, boardId }) => {
                   sx={{ ml: 1 }}
                   size="small"
                 >
-                  Remove
+                  Xóa
                 </Button>
               </ListItem>
             ))}
             {owners.length === 0 && members.length === 0 && !loading && (
               <ListItem>
-                <ListItemText primary="No members found" />
+                <ListItemText primary="Không tìm thấy thành viên nào" />
               </ListItem>
             )}
           </List>

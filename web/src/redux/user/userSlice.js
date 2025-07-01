@@ -25,7 +25,7 @@ export const logoutUserAPI = createAsyncThunk(
   async (showSuccessMessage = true) => {
     const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/users/logout`)
     if (showSuccessMessage) {
-      toast.success('Logged out successfully!')
+      toast.success('Đăng xuất thành công!')
     }
     return response.data
   }
