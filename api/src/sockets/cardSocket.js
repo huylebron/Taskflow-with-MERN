@@ -36,4 +36,59 @@ export const cardSocket = (io, socket) => {
     io.to(data.boardId).emit('BE_CHECKLIST_ITEM_DELETED', enhancedData) // ALL members
     console.log('🔄 Socket: Broadcasted checklist item deletion to all board members')
   })
+
+  // Tạo checklist mới realtime - Universal Notifications Pattern ✅
+  socket.on('FE_CHECKLIST_CREATED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🔄 Socket FE_CHECKLIST_CREATED received:', enhancedData)
+    io.to(data.boardId).emit('BE_CHECKLIST_CREATED', enhancedData) // ALL members
+    console.log('🔄 Socket: Broadcasted checklist creation to all board members')
+  })
+
+  // Tạo checklist item mới realtime - Universal Notifications Pattern ✅
+  socket.on('FE_CHECKLIST_ITEM_CREATED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🔄 Socket FE_CHECKLIST_ITEM_CREATED received:', enhancedData)
+    io.to(data.boardId).emit('BE_CHECKLIST_ITEM_CREATED', enhancedData) // ALL members
+    console.log('🔄 Socket: Broadcasted checklist item creation to all board members')
+  })
+
+  // Cập nhật trạng thái checklist item realtime - Universal Notifications Pattern ✅
+  socket.on('FE_CHECKLIST_ITEM_STATUS_UPDATED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🔄 Socket FE_CHECKLIST_ITEM_STATUS_UPDATED received:', enhancedData)
+    io.to(data.boardId).emit('BE_CHECKLIST_ITEM_STATUS_UPDATED', enhancedData) // ALL members
+    console.log('🔄 Socket: Broadcasted checklist item status update to all board members')
+  })
+
+  // Cập nhật checklist title realtime - Universal Notifications Pattern ✅
+  socket.on('FE_CHECKLIST_UPDATED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🔄 Socket FE_CHECKLIST_UPDATED received:', enhancedData)
+    io.to(data.boardId).emit('BE_CHECKLIST_UPDATED', enhancedData) // ALL members
+    console.log('🔄 Socket: Broadcasted checklist update to all board members')
+  })
+
+  // Cập nhật checklist item title realtime - Universal Notifications Pattern ✅
+  socket.on('FE_CHECKLIST_ITEM_UPDATED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🔄 Socket FE_CHECKLIST_ITEM_UPDATED received:', enhancedData)
+    io.to(data.boardId).emit('BE_CHECKLIST_ITEM_UPDATED', enhancedData) // ALL members
+    console.log('🔄 Socket: Broadcasted checklist item update to all board members')
+  })
 } 

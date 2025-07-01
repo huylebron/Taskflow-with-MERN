@@ -911,6 +911,301 @@ function NotificationBell({ boardId, onNotification }) {
       }
     }
 
+    const handleChecklistCreated = (data) => {
+      try {
+        console.log('📝 NotificationBell: Checklist created event received:', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          checklistName: data.checklistName,
+          cardTitle: data.cardTitle
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const checklistName = data.checklistName || 'checklist'
+          const cardTitle = data.cardTitle || 'thẻ'
+          
+          // Shorten names if too long for notification
+          const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+          const shortCardTitle = cardTitle.length > 25 ? cardTitle.substring(0, 22) + '...' : cardTitle
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã tạo checklist '${shortChecklistName}' trong thẻ '${shortCardTitle}'`
+            : `${userName} đã tạo checklist '${shortChecklistName}' trong thẻ '${shortCardTitle}'`
+          
+          console.log('📝 NotificationBell: Triggering checklist creation notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            checklistName: shortChecklistName,
+            cardTitle: shortCardTitle
+          })
+          
+          triggerShake({ 
+            type: 'CHECKLIST_CREATED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            checklistName: shortChecklistName,
+            cardTitle: shortCardTitle,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('📝 NotificationBell: Checklist created event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('📝 NotificationBell: Error handling checklist created event:', error)
+      }
+    }
+
+    const handleChecklistItemCreated = (data) => {
+      try {
+        console.log('📝 NotificationBell: Checklist item created event received:', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          itemName: data.itemName,
+          checklistName: data.checklistName
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const itemName = data.itemName || 'item'
+          const checklistName = data.checklistName || 'checklist'
+          
+          // Shorten names if too long for notification
+          const shortItemName = itemName.length > 20 ? itemName.substring(0, 17) + '...' : itemName
+          const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã thêm '${shortItemName}' vào checklist '${shortChecklistName}'`
+            : `${userName} đã thêm '${shortItemName}' vào checklist '${shortChecklistName}'`
+          
+          console.log('📝 NotificationBell: Triggering checklist item creation notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            itemName: shortItemName,
+            checklistName: shortChecklistName
+          })
+          
+          triggerShake({ 
+            type: 'CHECKLIST_ITEM_CREATED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            itemName: shortItemName,
+            checklistName: shortChecklistName,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('📝 NotificationBell: Checklist item created event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('📝 NotificationBell: Error handling checklist item created event:', error)
+      }
+    }
+
+    const handleChecklistItemStatusUpdated = (data) => {
+      try {
+        console.log('📝 NotificationBell: Checklist item status updated event received:', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          itemName: data.itemName,
+          checklistName: data.checklistName,
+          isCompleted: data.isCompleted
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const itemName = data.itemName || 'item'
+          const checklistName = data.checklistName || 'checklist'
+          const statusText = data.isCompleted ? 'hoàn thành' : 'bỏ hoàn thành'
+          
+          // Shorten names if too long for notification
+          const shortItemName = itemName.length > 20 ? itemName.substring(0, 17) + '...' : itemName
+          const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã ${statusText} '${shortItemName}' trong checklist '${shortChecklistName}'`
+            : `${userName} đã ${statusText} '${shortItemName}' trong checklist '${shortChecklistName}'`
+          
+          console.log('📝 NotificationBell: Triggering checklist item status notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            itemName: shortItemName,
+            checklistName: shortChecklistName,
+            statusText
+          })
+          
+          triggerShake({ 
+            type: 'CHECKLIST_ITEM_STATUS_UPDATED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            itemName: shortItemName,
+            checklistName: shortChecklistName,
+            statusText,
+            isCompleted: data.isCompleted,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('📝 NotificationBell: Checklist item status event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('📝 NotificationBell: Error handling checklist item status event:', error)
+      }
+    }
+
+    const handleChecklistUpdated = (data) => {
+      try {
+        console.log('📝 NotificationBell: Checklist updated event received:', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          oldTitle: data.oldTitle,
+          newTitle: data.newTitle,
+          cardTitle: data.cardTitle
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const oldTitle = data.oldTitle || 'checklist'
+          const newTitle = data.newTitle || 'checklist'
+          const cardTitle = data.cardTitle || 'thẻ'
+          
+          // Shorten names if too long for notification
+          const shortOldTitle = oldTitle.length > 20 ? oldTitle.substring(0, 17) + '...' : oldTitle
+          const shortNewTitle = newTitle.length > 20 ? newTitle.substring(0, 17) + '...' : newTitle
+          const shortCardTitle = cardTitle.length > 25 ? cardTitle.substring(0, 22) + '...' : cardTitle
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã đổi tên checklist '${shortOldTitle}' thành '${shortNewTitle}' trong thẻ '${shortCardTitle}'`
+            : `${userName} đã đổi tên checklist '${shortOldTitle}' thành '${shortNewTitle}' trong thẻ '${shortCardTitle}'`
+          
+          console.log('📝 NotificationBell: Triggering checklist update notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            oldTitle: shortOldTitle,
+            newTitle: shortNewTitle,
+            cardTitle: shortCardTitle
+          })
+          
+          triggerShake({ 
+            type: 'CHECKLIST_UPDATED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            oldTitle: shortOldTitle,
+            newTitle: shortNewTitle,
+            cardTitle: shortCardTitle,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('📝 NotificationBell: Checklist updated event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('📝 NotificationBell: Error handling checklist updated event:', error)
+      }
+    }
+
+    const handleChecklistItemUpdated = (data) => {
+      try {
+        console.log('📝 NotificationBell: Checklist item updated event received:', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id,
+          oldTitle: data.oldTitle,
+          newTitle: data.newTitle,
+          checklistName: data.checklistName
+        })
+        
+        if (data.boardId === boardId && data.userInfo) {
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const userName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+          const oldTitle = data.oldTitle || 'item'
+          const newTitle = data.newTitle || 'item'
+          const checklistName = data.checklistName || 'checklist'
+          
+          // Shorten names if too long for notification
+          const shortOldTitle = oldTitle.length > 20 ? oldTitle.substring(0, 17) + '...' : oldTitle
+          const shortNewTitle = newTitle.length > 20 ? newTitle.substring(0, 17) + '...' : newTitle
+          const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã đổi tên '${shortOldTitle}' thành '${shortNewTitle}' trong checklist '${shortChecklistName}'`
+            : `${userName} đã đổi tên '${shortOldTitle}' thành '${shortNewTitle}' trong checklist '${shortChecklistName}'`
+          
+          console.log('📝 NotificationBell: Triggering checklist item update notification:', {
+            notificationText,
+            isCurrentUser,
+            userName,
+            oldTitle: shortOldTitle,
+            newTitle: shortNewTitle,
+            checklistName: shortChecklistName
+          })
+          
+          triggerShake({ 
+            type: 'CHECKLIST_ITEM_UPDATED', 
+            notificationText, 
+            isCurrentUser,
+            userName,
+            oldTitle: shortOldTitle,
+            newTitle: shortNewTitle,
+            checklistName: shortChecklistName,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar
+          })
+        } else {
+          console.log('📝 NotificationBell: Checklist item updated event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('📝 NotificationBell: Error handling checklist item updated event:', error)
+      }
+    }
+
     // Socket connection event handlers
     const handleConnect = () => {
       console.log('🔔 NotificationBell: Socket connected')
@@ -954,6 +1249,11 @@ function NotificationBell({ boardId, onNotification }) {
     // Add checklist listeners
     socketIoInstance.on('BE_CHECKLIST_DELETED', handleChecklistDeleted)
     socketIoInstance.on('BE_CHECKLIST_ITEM_DELETED', handleChecklistItemDeleted)
+    socketIoInstance.on('BE_CHECKLIST_CREATED', handleChecklistCreated)
+    socketIoInstance.on('BE_CHECKLIST_ITEM_CREATED', handleChecklistItemCreated)
+    socketIoInstance.on('BE_CHECKLIST_ITEM_STATUS_UPDATED', handleChecklistItemStatusUpdated)
+    socketIoInstance.on('BE_CHECKLIST_UPDATED', handleChecklistUpdated)
+    socketIoInstance.on('BE_CHECKLIST_ITEM_UPDATED', handleChecklistItemUpdated)
 
     // Check initial connection state
     setIsConnected(socketIoInstance.connected)
@@ -983,6 +1283,11 @@ function NotificationBell({ boardId, onNotification }) {
       // Remove checklist listeners
       socketIoInstance.off('BE_CHECKLIST_DELETED', handleChecklistDeleted)
       socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', handleChecklistItemDeleted)
+      socketIoInstance.off('BE_CHECKLIST_CREATED', handleChecklistCreated)
+      socketIoInstance.off('BE_CHECKLIST_ITEM_CREATED', handleChecklistItemCreated)
+      socketIoInstance.off('BE_CHECKLIST_ITEM_STATUS_UPDATED', handleChecklistItemStatusUpdated)
+      socketIoInstance.off('BE_CHECKLIST_UPDATED', handleChecklistUpdated)
+      socketIoInstance.off('BE_CHECKLIST_ITEM_UPDATED', handleChecklistItemUpdated)
       
       if (shakeTimeoutRef.current) {
         clearTimeout(shakeTimeoutRef.current)
@@ -1209,14 +1514,6 @@ function NotificationBell({ boardId, onNotification }) {
                           }}>
                             {notification.isCurrentUser ? '✅' : '📝'}
                           </Box>
-                        ) : notification.type === 'CARD_COMPLETED' ? (
-                          // Card completion action icon with appropriate color
-                          <Box sx={{ 
-                            fontSize: '16px',
-                            color: notification.isCurrentUser ? '#4caf50' : '#66bb6a',
-                          }}>
-                            {notification.isCurrentUser ? '✅' : '✅'}
-                          </Box>
                         ) : notification.type === 'CARD_MOVED' ? (
                           // Card movement action icon with appropriate color
                           <Box sx={{ 
@@ -1352,4 +1649,4 @@ function NotificationBell({ boardId, onNotification }) {
   )
 }
 
-export default NotificationBell 
+export default NotificationBell
