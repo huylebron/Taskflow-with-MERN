@@ -7,6 +7,19 @@ import { StatusCodes } from 'http-status-codes'
 import { cardService } from '~/services/cardService'
 import { CARD_COVER_COLORS, CARD_COVER_GRADIENTS } from '~/utils/constants'
 import ApiError from '~/utils/ApiError'
+import { userModel } from '~/models/userModel'
+import { pickUser } from '~/utils/formatters'
+
+// Helper function để lấy thông tin user đầy đủ cho socket events
+const getUserFullInfo = async (userId) => {
+  try {
+    const user = await userModel.findOneById(userId)
+    return user ? pickUser(user) : null
+  } catch (error) {
+    console.error('Error fetching user info:', error)
+    return null
+  }
+}
 
 const createNew = async (req, res, next) => {
   try {
@@ -100,70 +113,201 @@ export const updateCardLabels = async (req, res, next) => {
  */
 const createChecklist = async (req, res, next) => {
   try {
-    const { cardId } = req.params;
-    const { title } = req.body;
+    const { cardId } = req.params
+    const { title } = req.body
+    const userTokenInfo = req.jwtDecoded
     
     if (!title) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'Checklist title is required'
-      });
+      })
     }
     
-    const result = await cardService.createChecklist(cardId, title);
-    res.status(StatusCodes.OK).json(result);
-  } catch (error) { next(error); }
-};
+    const result = await cardService.createChecklist(cardId, title)
+    
+    // Emit real-time event for checklist creation
+    if (global._io && result.boardId && userTokenInfo) {
+      // Lấy thông tin user đầy đủ từ database
+      const fullUserInfo = await getUserFullInfo(userTokenInfo._id)
+      
+      const enhancedData = {
+        boardId: result.boardId.toString(),
+        cardId,
+        checklistId: result.newChecklist._id,
+        checklistName: result.newChecklist.title,
+        cardTitle: result.cardTitle || 'Unknown Card',
+        userInfo: {
+          _id: fullUserInfo?._id || userTokenInfo._id,
+          displayName: fullUserInfo?.displayName || fullUserInfo?.username || 'Unknown User',
+          username: fullUserInfo?.username || 'unknown',
+          avatar: fullUserInfo?.avatar || null
+        },
+        timestamp: new Date().toISOString(),
+        message: 'Checklist mới đã được tạo',
+        data: {
+          checklist: result.newChecklist
+        }
+      }
+      
+      console.log('🔄 Socket: Emitting checklist creation event:', {
+        checklistName: enhancedData.checklistName,
+        cardTitle: enhancedData.cardTitle,
+        userDisplayName: enhancedData.userInfo.displayName
+      })
+      
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_CREATED', enhancedData)
+      console.log('🔄 Socket: Broadcasted checklist creation to all board members')
+    }
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) { 
+    console.error('❌ Create checklist error:', error)
+    next(error) 
+  }
+}
 
 /**
  * Thêm item vào checklist
  */
 const addChecklistItem = async (req, res, next) => {
   try {
-    const { cardId, checklistId } = req.params;
-    const { title } = req.body;
+    const { cardId, checklistId } = req.params
+    const { title } = req.body
+    const userTokenInfo = req.jwtDecoded
     
     if (!title) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'Item title is required'
-      });
+      })
     }
     
-    const result = await cardService.addChecklistItem(cardId, checklistId, title);
-    res.status(StatusCodes.OK).json(result);
-  } catch (error) { next(error); }
-};
+    const result = await cardService.addChecklistItem(cardId, checklistId, title)
+    
+    // Emit real-time event for checklist item creation
+    if (global._io && result.boardId && userTokenInfo) {
+      // Lấy thông tin user đầy đủ từ database
+      const fullUserInfo = await getUserFullInfo(userTokenInfo._id)
+      
+      const enhancedData = {
+        boardId: result.boardId.toString(),
+        cardId,
+        checklistId,
+        itemId: result.newItem._id,
+        checklistName: result.checklistName || 'Unknown Checklist',
+        itemName: result.newItem.title,
+        cardTitle: result.cardTitle || 'Unknown Card',
+        userInfo: {
+          _id: fullUserInfo?._id || userTokenInfo._id,
+          displayName: fullUserInfo?.displayName || fullUserInfo?.username || 'Unknown User',
+          username: fullUserInfo?.username || 'unknown',
+          avatar: fullUserInfo?.avatar || null
+        },
+        timestamp: new Date().toISOString(),
+        message: 'Item checklist mới đã được tạo',
+        data: {
+          item: result.newItem
+        }
+      }
+      
+      console.log('🔄 Socket: Emitting checklist item creation event:', {
+        checklistName: enhancedData.checklistName,
+        itemName: enhancedData.itemName,
+        cardTitle: enhancedData.cardTitle,
+        userDisplayName: enhancedData.userInfo.displayName
+      })
+      
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_ITEM_CREATED', enhancedData)
+      console.log('🔄 Socket: Broadcasted checklist item creation to all board members')
+    }
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) { 
+    console.error('❌ Add checklist item error:', error)
+    next(error) 
+  }
+}
 
 /**
  * Cập nhật trạng thái hoàn thành của checklist item
  */
 const updateChecklistItemStatus = async (req, res, next) => {
   try {
-    const { cardId, checklistId, itemId } = req.params;
-    const { isCompleted } = req.body;
+    const { cardId, checklistId, itemId } = req.params
+    const { isCompleted } = req.body
+    const userTokenInfo = req.jwtDecoded
     
     if (typeof isCompleted !== 'boolean') {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'isCompleted must be a boolean value'
-      });
+      })
     }
     
-    const result = await cardService.updateChecklistItemStatus(cardId, checklistId, itemId, isCompleted);
-    res.status(StatusCodes.OK).json(result);
-  } catch (error) { next(error); }
-};
+    const result = await cardService.updateChecklistItemStatus(cardId, checklistId, itemId, isCompleted)
+    
+    // Emit real-time event for checklist item status update
+    if (global._io && result.boardId && userTokenInfo) {
+      // Lấy thông tin user đầy đủ từ database
+      const fullUserInfo = await getUserFullInfo(userTokenInfo._id)
+      
+      const enhancedData = {
+        boardId: result.boardId.toString(),
+        cardId,
+        checklistId,
+        itemId,
+        isCompleted,
+        checklistName: result.checklistName || 'Unknown Checklist',
+        itemName: result.itemName || 'Unknown Item',
+        cardTitle: result.cardTitle || 'Unknown Card',
+        userInfo: {
+          _id: fullUserInfo?._id || userTokenInfo._id,
+          displayName: fullUserInfo?.displayName || fullUserInfo?.username || 'Unknown User',
+          username: fullUserInfo?.username || 'unknown',
+          avatar: fullUserInfo?.avatar || null
+        },
+        timestamp: new Date().toISOString(),
+        message: `Item checklist đã được ${isCompleted ? 'hoàn thành' : 'bỏ hoàn thành'}`,
+        data: {
+          itemStatus: {
+            isCompleted,
+            completedAt: isCompleted ? new Date().toISOString() : null
+          }
+        }
+      }
+      
+      console.log('🔄 Socket: Emitting checklist item status update event:', {
+        checklistName: enhancedData.checklistName,
+        itemName: enhancedData.itemName,
+        isCompleted,
+        cardTitle: enhancedData.cardTitle,
+        userDisplayName: enhancedData.userInfo.displayName
+      })
+      
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_ITEM_STATUS_UPDATED', enhancedData)
+      console.log('🔄 Socket: Broadcasted checklist item status update to all board members')
+    }
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) { 
+    console.error('❌ Update checklist item status error:', error)
+    next(error) 
+  }
+}
 
 /**
  * Xóa checklist khỏi card
  */
 const deleteChecklist = async (req, res, next) => {
   try {
-    const { cardId, checklistId } = req.params;
-    const userInfo = req.jwtDecoded;
+    const { cardId, checklistId } = req.params
+    const userTokenInfo = req.jwtDecoded
     
-    const result = await cardService.deleteChecklist(cardId, checklistId);
+    const result = await cardService.deleteChecklist(cardId, checklistId)
     
     // Emit real-time event for checklist deletion with enhanced data structure
-    if (global._io && result.boardId && userInfo) {
+    if (global._io && result.boardId && userTokenInfo) {
+      // Lấy thông tin user đầy đủ từ database
+      const fullUserInfo = await getUserFullInfo(userTokenInfo._id)
+      
       const enhancedData = {
         boardId: result.boardId.toString(),
         cardId,
@@ -171,44 +315,47 @@ const deleteChecklist = async (req, res, next) => {
         checklistName: result.checklistName || 'Unknown Checklist',
         cardTitle: result.cardTitle || 'Unknown Card',
         userInfo: {
-          _id: userInfo._id,
-          displayName: userInfo.displayName || userInfo.username || 'Unknown User',
-          username: userInfo.username || 'unknown',
-          avatar: userInfo.avatar || null
+          _id: fullUserInfo?._id || userTokenInfo._id,
+          displayName: fullUserInfo?.displayName || fullUserInfo?.username || 'Unknown User',
+          username: fullUserInfo?.username || 'unknown',
+          avatar: fullUserInfo?.avatar || null
         },
         timestamp: new Date().toISOString(),
         message: 'Checklist đã được xóa'
-      };
+      }
       
       console.log('🔄 Socket: Emitting enhanced checklist deletion event:', {
         checklistName: enhancedData.checklistName,
         cardTitle: enhancedData.cardTitle,
         userDisplayName: enhancedData.userInfo.displayName
-      });
+      })
       
-      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_DELETED', enhancedData);
-      console.log('🔄 Socket: Broadcasted checklist deletion to all board members');
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_DELETED', enhancedData)
+      console.log('🔄 Socket: Broadcasted checklist deletion to all board members')
     }
     
-    res.status(StatusCodes.OK).json(result);
+    res.status(StatusCodes.OK).json(result)
   } catch (error) { 
-    console.error('❌ Delete checklist error:', error);
-    next(error); 
+    console.error('❌ Delete checklist error:', error)
+    next(error) 
   }
-};
+}
 
 /**
  * Xóa item khỏi checklist
  */
 const deleteChecklistItem = async (req, res, next) => {
   try {
-    const { cardId, checklistId, itemId } = req.params;
-    const userInfo = req.jwtDecoded;
+    const { cardId, checklistId, itemId } = req.params
+    const userTokenInfo = req.jwtDecoded
     
-    const result = await cardService.deleteChecklistItem(cardId, checklistId, itemId);
+    const result = await cardService.deleteChecklistItem(cardId, checklistId, itemId)
     
     // Emit real-time event for checklist item deletion with enhanced data structure
-    if (global._io && result.boardId && userInfo) {
+    if (global._io && result.boardId && userTokenInfo) {
+      // Lấy thông tin user đầy đủ từ database
+      const fullUserInfo = await getUserFullInfo(userTokenInfo._id)
+      
       const enhancedData = {
         boardId: result.boardId.toString(),
         cardId,
@@ -218,32 +365,32 @@ const deleteChecklistItem = async (req, res, next) => {
         itemName: result.itemName || 'Unknown Item',
         cardTitle: result.cardTitle || 'Unknown Card',
         userInfo: {
-          _id: userInfo._id,
-          displayName: userInfo.displayName || userInfo.username || 'Unknown User',
-          username: userInfo.username || 'unknown',
-          avatar: userInfo.avatar || null
+          _id: fullUserInfo?._id || userTokenInfo._id,
+          displayName: fullUserInfo?.displayName || fullUserInfo?.username || 'Unknown User',
+          username: fullUserInfo?.username || 'unknown',
+          avatar: fullUserInfo?.avatar || null
         },
         timestamp: new Date().toISOString(),
         message: 'Item checklist đã được xóa'
-      };
+      }
       
       console.log('🔄 Socket: Emitting enhanced checklist item deletion event:', {
         checklistName: enhancedData.checklistName,
         itemName: enhancedData.itemName,
         cardTitle: enhancedData.cardTitle,
         userDisplayName: enhancedData.userInfo.displayName
-      });
+      })
       
-      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_ITEM_DELETED', enhancedData);
-      console.log('🔄 Socket: Broadcasted checklist item deletion to all board members');
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_ITEM_DELETED', enhancedData)
+      console.log('🔄 Socket: Broadcasted checklist item deletion to all board members')
     }
     
-    res.status(StatusCodes.OK).json(result);
+    res.status(StatusCodes.OK).json(result)
   } catch (error) { 
-    console.error('❌ Delete checklist item error:', error);
-    next(error); 
+    console.error('❌ Delete checklist item error:', error)
+    next(error) 
   }
-};
+}
 
 /**
 
@@ -298,6 +445,134 @@ const deleteCard = async (req, res, next) => {
   }
 }
 
+/**
+ * Cập nhật title của checklist
+ */
+const updateChecklist = async (req, res, next) => {
+  try {
+    const { cardId, checklistId } = req.params
+    const { title } = req.body
+    const userTokenInfo = req.jwtDecoded
+    
+    if (!title || title.trim().length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Checklist title is required'
+      })
+    }
+    
+    const result = await cardService.updateChecklist(cardId, checklistId, title.trim())
+    
+    // Emit real-time event for checklist update
+    if (global._io && result.boardId && userTokenInfo) {
+      // Lấy thông tin user đầy đủ từ database
+      const fullUserInfo = await getUserFullInfo(userTokenInfo._id)
+      
+      const enhancedData = {
+        boardId: result.boardId.toString(),
+        cardId,
+        checklistId,
+        newTitle: title.trim(),
+        oldTitle: result.oldTitle || 'Unknown Title',
+        cardTitle: result.cardTitle || 'Unknown Card',
+        userInfo: {
+          _id: fullUserInfo?._id || userTokenInfo._id,
+          displayName: fullUserInfo?.displayName || fullUserInfo?.username || 'Unknown User',
+          username: fullUserInfo?.username || 'unknown',
+          avatar: fullUserInfo?.avatar || null
+        },
+        timestamp: new Date().toISOString(),
+        message: 'Checklist đã được cập nhật',
+        data: {
+          checklist: {
+            _id: checklistId,
+            title: title.trim()
+          }
+        }
+      }
+      
+      console.log('🔄 Socket: Emitting checklist update event:', {
+        checklistId,
+        newTitle: enhancedData.newTitle,
+        cardTitle: enhancedData.cardTitle,
+        userDisplayName: enhancedData.userInfo.displayName
+      })
+      
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_UPDATED', enhancedData)
+      console.log('🔄 Socket: Broadcasted checklist update to all board members')
+    }
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) { 
+    console.error('❌ Update checklist error:', error)
+    next(error) 
+  }
+}
+
+/**
+ * Cập nhật title của checklist item
+ */
+const updateChecklistItem = async (req, res, next) => {
+  try {
+    const { cardId, checklistId, itemId } = req.params
+    const { title } = req.body
+    const userTokenInfo = req.jwtDecoded
+    
+    if (!title || title.trim().length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Item title is required'
+      })
+    }
+    
+    const result = await cardService.updateChecklistItem(cardId, checklistId, itemId, title.trim())
+    
+    // Emit real-time event for checklist item update
+    if (global._io && result.boardId && userTokenInfo) {
+      // Lấy thông tin user đầy đủ từ database
+      const fullUserInfo = await getUserFullInfo(userTokenInfo._id)
+      
+      const enhancedData = {
+        boardId: result.boardId.toString(),
+        cardId,
+        checklistId,
+        itemId,
+        newTitle: title.trim(),
+        oldTitle: result.oldTitle || 'Unknown Title',
+        checklistName: result.checklistName || 'Unknown Checklist',
+        cardTitle: result.cardTitle || 'Unknown Card',
+        userInfo: {
+          _id: fullUserInfo?._id || userTokenInfo._id,
+          displayName: fullUserInfo?.displayName || fullUserInfo?.username || 'Unknown User',
+          username: fullUserInfo?.username || 'unknown',
+          avatar: fullUserInfo?.avatar || null
+        },
+        timestamp: new Date().toISOString(),
+        message: 'Item checklist đã được cập nhật',
+        data: {
+          item: {
+            _id: itemId,
+            title: title.trim()
+          }
+        }
+      }
+      
+      console.log('🔄 Socket: Emitting checklist item update event:', {
+        checklistName: enhancedData.checklistName,
+        itemId,
+        newTitle: enhancedData.newTitle,
+        cardTitle: enhancedData.cardTitle,
+        userDisplayName: enhancedData.userInfo.displayName
+      })
+      
+      global._io.to(result.boardId.toString()).emit('BE_CHECKLIST_ITEM_UPDATED', enhancedData)
+      console.log('🔄 Socket: Broadcasted checklist item update to all board members')
+    }
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) { 
+    console.error('❌ Update checklist item error:', error)
+    next(error) 
+  }
+}
 
 export const cardController = {
   createNew,
@@ -312,6 +587,8 @@ export const cardController = {
   updateChecklistItemStatus,
   deleteChecklist,
   deleteChecklistItem,
+  updateChecklist,
+  updateChecklistItem,
 
   // Thêm API cập nhật trạng thái hoàn thành của card
   updateCardCompletedStatus,

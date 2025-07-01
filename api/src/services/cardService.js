@@ -539,8 +539,10 @@ const createChecklist = async (cardId, title) => {
     const checklist = {
       _id: newObjectId.toString(), // Chuyển ObjectId thành string
       title: title,
-      items: []
-    };
+      items: [],
+      createdAt: Date.now(),
+      updatedAt: null
+    }
 
     const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(cardId), _destroy: false },
@@ -549,12 +551,21 @@ const createChecklist = async (cardId, title) => {
         $set: { updatedAt: Date.now() }
       },
       { returnDocument: 'after' }
-    );
-    return result;
+    )
+
+    if (!result) {
+      throw new Error('Card not found or has been deleted')
+    }
+
+    // Add enhanced context for socket notifications
+    result.newChecklist = checklist
+    result.cardTitle = result.title || 'Unknown Card'
+
+    return result
   } catch (error) {
-    throw new Error(`Error creating checklist: ${error.message}`);
+    throw new Error(`Error creating checklist: ${error.message}`)
   }
-};
+}
 
 /**
  * Thêm item vào checklist
@@ -565,6 +576,21 @@ const createChecklist = async (cardId, title) => {
  */
 const addChecklistItem = async (cardId, checklistId, title) => {
   try {
+    // Get card and checklist information first for context
+    const card = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOne({
+      _id: new ObjectId(cardId),
+      _destroy: false,
+      'checklists._id': checklistId
+    })
+
+    if (!card) {
+      throw new Error('Card or checklist not found')
+    }
+
+    const checklist = card.checklists?.find(cl => cl._id === checklistId)
+    const checklistName = checklist?.title || 'Unknown Checklist'
+    const cardTitle = card.title || 'Unknown Card'
+
     // Tạo một ObjectId mới cho item
     const newObjectId = new ObjectId()
     
@@ -572,8 +598,9 @@ const addChecklistItem = async (cardId, checklistId, title) => {
       _id: newObjectId.toString(),
       title: title, // Sử dụng title được truyền vào
       isCompleted: false,
-      completedAt: null
-    };
+      completedAt: null,
+      createdAt: Date.now()
+    }
 
     const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
       { 
@@ -586,12 +613,22 @@ const addChecklistItem = async (cardId, checklistId, title) => {
         $set: { updatedAt: Date.now() }
       },
       { returnDocument: 'after' }
-    );
-    return result;
+    )
+
+    if (!result) {
+      throw new Error('Failed to add checklist item - card may have been modified')
+    }
+
+    // Add enhanced context for socket notifications
+    result.newItem = item
+    result.checklistName = checklistName
+    result.cardTitle = cardTitle
+
+    return result
   } catch (error) {
-    throw new Error(`Error adding checklist item: ${error.message}`);
+    throw new Error(`Error adding checklist item: ${error.message}`)
   }
-};
+}
 
 /**
  * Cập nhật trạng thái hoàn thành của checklist item
@@ -603,11 +640,29 @@ const addChecklistItem = async (cardId, checklistId, title) => {
  */
 const updateChecklistItemStatus = async (cardId, checklistId, itemId, isCompleted) => {
   try {
+    // Get card, checklist, and item information first for context
+    const card = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOne({
+      _id: new ObjectId(cardId),
+      _destroy: false,
+      'checklists._id': checklistId,
+      'checklists.items._id': itemId
+    })
+
+    if (!card) {
+      throw new Error('Card, checklist, or item not found')
+    }
+
+    const checklist = card.checklists?.find(cl => cl._id === checklistId)
+    const item = checklist?.items?.find(it => it._id === itemId)
+    const checklistName = checklist?.title || 'Unknown Checklist'
+    const itemName = item?.title || 'Unknown Item'
+    const cardTitle = card.title || 'Unknown Card'
+
     const updateData = {
       'checklists.$[checklist].items.$[item].isCompleted': isCompleted,
       'checklists.$[checklist].items.$[item].completedAt': isCompleted ? Date.now() : null,
       updatedAt: Date.now()
-    };
+    }
 
     const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(cardId), _destroy: false },
@@ -619,12 +674,22 @@ const updateChecklistItemStatus = async (cardId, checklistId, itemId, isComplete
         ],
         returnDocument: 'after'
       }
-    );
-    return result;
+    )
+
+    if (!result) {
+      throw new Error('Failed to update checklist item status - card may have been modified')
+    }
+
+    // Add enhanced context for socket notifications
+    result.checklistName = checklistName
+    result.itemName = itemName
+    result.cardTitle = cardTitle
+
+    return result
   } catch (error) {
-    throw new Error(`Error updating checklist item status: ${error.message}`);
+    throw new Error(`Error updating checklist item status: ${error.message}`)
   }
-};
+}
 
 /**
  * Xóa checklist khỏi card
@@ -762,6 +827,125 @@ const updateCardCompletedStatus = async (cardId, isCardCompleted) => {
   }
 }
 
+/**
+ * Cập nhật title của checklist
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID
+ * @param {string} newTitle - Title mới
+ * @returns {Promise<Object>} - Updated card with enhanced context
+ */
+const updateChecklist = async (cardId, checklistId, newTitle) => {
+  try {
+    // Get current checklist information for context
+    const card = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOne({
+      _id: new ObjectId(cardId),
+      _destroy: false,
+      'checklists._id': checklistId
+    })
+
+    if (!card) {
+      throw new Error('Card or checklist not found')
+    }
+
+    const checklist = card.checklists?.find(cl => cl._id === checklistId)
+    const oldTitle = checklist?.title || 'Unknown Checklist'
+    const cardTitle = card.title || 'Unknown Card'
+
+    const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
+      { 
+        _id: new ObjectId(cardId), 
+        _destroy: false,
+        'checklists._id': checklistId
+      },
+      { 
+        $set: { 
+          'checklists.$.title': newTitle,
+          'checklists.$.updatedAt': Date.now(),
+          updatedAt: Date.now()
+        }
+      },
+      { returnDocument: 'after' }
+    )
+
+    if (!result) {
+      throw new Error('Failed to update checklist - card may have been modified')
+    }
+
+    // Add enhanced context for socket notifications
+    result.oldTitle = oldTitle
+    result.cardTitle = cardTitle
+
+    return result
+  } catch (error) {
+    throw new Error(`Error updating checklist: ${error.message}`)
+  }
+}
+
+/**
+ * Cập nhật title của checklist item
+ * @param {string} cardId - Card ID
+ * @param {string} checklistId - Checklist ID
+ * @param {string} itemId - Item ID
+ * @param {string} newTitle - Title mới
+ * @returns {Promise<Object>} - Updated card with enhanced context
+ */
+const updateChecklistItem = async (cardId, checklistId, itemId, newTitle) => {
+  try {
+    // Get current item information for context
+    const card = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOne({
+      _id: new ObjectId(cardId),
+      _destroy: false,
+      'checklists._id': checklistId,
+      'checklists.items._id': itemId
+    })
+
+    if (!card) {
+      throw new Error('Card, checklist, or item not found')
+    }
+
+    const checklist = card.checklists?.find(cl => cl._id === checklistId)
+    const item = checklist?.items?.find(it => it._id === itemId)
+    const checklistName = checklist?.title || 'Unknown Checklist'
+    const oldTitle = item?.title || 'Unknown Item'
+    const cardTitle = card.title || 'Unknown Card'
+
+    const result = await GET_DB().collection(cardModel.CARD_COLLECTION_NAME).findOneAndUpdate(
+      { 
+        _id: new ObjectId(cardId),
+        _destroy: false,
+        'checklists._id': checklistId,
+        'checklists.items._id': itemId
+      },
+      { 
+        $set: { 
+          'checklists.$[checklist].items.$[item].title': newTitle,
+          updatedAt: Date.now()
+        }
+      },
+      {
+        arrayFilters: [
+          { 'checklist._id': checklistId },
+          { 'item._id': itemId }
+        ],
+        returnDocument: 'after'
+      }
+    )
+
+    if (!result) {
+      throw new Error('Failed to update checklist item - card may have been modified')
+    }
+
+    // Add enhanced context for socket notifications
+    result.checklistName = checklistName
+    result.oldTitle = oldTitle
+    result.cardTitle = cardTitle
+
+    return result
+  } catch (error) {
+    throw new Error(`Error updating checklist item: ${error.message}`)
+  }
+}
+
 export const cardService = {
   createNew,
   update,
@@ -782,6 +966,9 @@ export const cardService = {
   updateCardCompletedStatus,
 
   // Card deletion
-  deleteCard
+  deleteCard,
 
+  // Thêm function cập nhật title cho checklist và checklist item
+  updateChecklist,
+  updateChecklistItem
 }

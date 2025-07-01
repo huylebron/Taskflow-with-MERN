@@ -1072,6 +1072,326 @@ function Board() {
     reloadBoardWithDelay()
   }
 
+  // Checklist creation handler with Universal Notifications Pattern & Duplicate Prevention
+  const onChecklistCreated = (data) => {
+    console.log('📝 Board: Checklist created event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.checklistName && data.cardTitle) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+
+      // Shorten names if too long
+      const checklistName = data.checklistName
+      const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+      const cardTitle = data.cardTitle
+      const shortCardTitle = cardTitle.length > 25 ? cardTitle.substring(0, 22) + '...' : cardTitle
+
+      const message = isCurrentUser
+        ? `✅ Bạn đã tạo checklist "${shortChecklistName}" trong thẻ: "${shortCardTitle}"`
+        : `📋 ${actorName} đã tạo checklist "${shortChecklistName}" trong thẻ: "${shortCardTitle}"`
+
+      // Create deterministic toast ID to prevent duplicates (exclude timestamp)
+      const toastId = `checklist-created-${data.boardId}-${data.cardId}-${data.checklistId}`
+
+      // Additional duplicate prevention: check if this exact toast was shown recently
+      if (toast.isActive(toastId)) {
+        console.log('📝 Board: Duplicate checklist creation toast prevented:', toastId)
+        return
+      }
+
+      toast.success(message, {
+        toastId, // This prevents duplicate toasts
+        position: 'bottom-left',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#1976d2',
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #42a5f5',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)'
+            : '0 6px 20px rgba(25, 118, 210, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#42a5f5',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '📋'
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
+  // Checklist item creation handler with Universal Notifications Pattern & Duplicate Prevention
+  const onChecklistItemCreated = (data) => {
+    console.log('📝 Board: Checklist item created event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.itemName && data.checklistName) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+
+      // Shorten names if too long
+      const itemName = data.itemName
+      const shortItemName = itemName.length > 20 ? itemName.substring(0, 17) + '...' : itemName
+      const checklistName = data.checklistName
+      const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+
+      const message = isCurrentUser
+        ? `✅ Bạn đã thêm "${shortItemName}" vào checklist "${shortChecklistName}"`
+        : `📝 ${actorName} đã thêm "${shortItemName}" vào checklist "${shortChecklistName}"`
+
+      // Create deterministic toast ID to prevent duplicates (exclude timestamp)
+      const toastId = `checklist-item-created-${data.boardId}-${data.cardId}-${data.checklistId}-${data.itemId}`
+
+      // Additional duplicate prevention: check if this exact toast was shown recently
+      if (toast.isActive(toastId)) {
+        console.log('📝 Board: Duplicate checklist item creation toast prevented:', toastId)
+        return
+      }
+
+      toast.success(message, {
+        toastId, // This prevents duplicate toasts
+        position: 'bottom-left',
+        autoClose: 3500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#1976d2',
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #42a5f5',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)'
+            : '0 6px 20px rgba(25, 118, 210, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#42a5f5',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '📝'
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
+  // Checklist item status update handler with Universal Notifications Pattern & Duplicate Prevention
+  const onChecklistItemStatusUpdated = (data) => {
+    console.log('📝 Board: Checklist item status updated event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.itemName && data.checklistName) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+      const isCompleted = data.isCompleted
+
+      // Shorten names if too long
+      const itemName = data.itemName
+      const shortItemName = itemName.length > 20 ? itemName.substring(0, 17) + '...' : itemName
+      const checklistName = data.checklistName
+      const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+
+      const action = isCompleted ? 'hoàn thành' : 'bỏ hoàn thành'
+      const emoji = isCompleted ? '✅' : '⬜'
+      
+      const message = isCurrentUser
+        ? `${emoji} Bạn đã ${action} "${shortItemName}" trong "${shortChecklistName}"`
+        : `${emoji} ${actorName} đã ${action} "${shortItemName}" trong "${shortChecklistName}"`
+
+      // Create deterministic toast ID to prevent duplicates (exclude timestamp)
+      const toastId = `checklist-item-status-${data.boardId}-${data.cardId}-${data.checklistId}-${data.itemId}-${isCompleted}`
+
+      // Additional duplicate prevention: check if this exact toast was shown recently
+      if (toast.isActive(toastId)) {
+        console.log('📝 Board: Duplicate checklist item status toast prevented:', toastId)
+        return
+      }
+
+      toast.info(message, {
+        toastId, // This prevents duplicate toasts
+        position: 'bottom-left',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser 
+            ? (isCompleted ? '#2e7d32' : '#ed6c02') 
+            : (isCompleted ? '#1976d2' : '#f57c00'),
+          color: '#ffffff',
+          border: isCurrentUser 
+            ? (isCompleted ? '1px solid #4caf50' : '1px solid #ff9800') 
+            : (isCompleted ? '1px solid #42a5f5' : '1px solid #ff9800'),
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? (isCompleted ? '0 6px 20px rgba(76, 175, 80, 0.3)' : '0 6px 20px rgba(237, 108, 2, 0.3)')
+            : (isCompleted ? '0 6px 20px rgba(25, 118, 210, 0.3)' : '0 6px 20px rgba(245, 124, 0, 0.3)'),
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser 
+            ? (isCompleted ? '#4caf50' : '#ff9800') 
+            : (isCompleted ? '#42a5f5' : '#ff9800'),
+          height: '3px'
+        },
+        icon: emoji
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
+  // Checklist update handler with Universal Notifications Pattern & Duplicate Prevention
+  const onChecklistUpdated = (data) => {
+    console.log('📝 Board: Checklist updated event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.newTitle && data.cardTitle) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+
+      // Shorten names if too long
+      const newTitle = data.newTitle
+      const shortNewTitle = newTitle.length > 20 ? newTitle.substring(0, 17) + '...' : newTitle
+      const cardTitle = data.cardTitle
+      const shortCardTitle = cardTitle.length > 25 ? cardTitle.substring(0, 22) + '...' : cardTitle
+
+      const message = isCurrentUser
+        ? `✅ Bạn đã cập nhật checklist thành "${shortNewTitle}" trong thẻ: "${shortCardTitle}"`
+        : `📝 ${actorName} đã cập nhật checklist thành "${shortNewTitle}" trong thẻ: "${shortCardTitle}"`
+
+      // Create deterministic toast ID to prevent duplicates (exclude timestamp)
+      const toastId = `checklist-updated-${data.boardId}-${data.cardId}-${data.checklistId}`
+
+      // Additional duplicate prevention: check if this exact toast was shown recently
+      if (toast.isActive(toastId)) {
+        console.log('📝 Board: Duplicate checklist update toast prevented:', toastId)
+        return
+      }
+
+      toast.info(message, {
+        toastId, // This prevents duplicate toasts
+        position: 'bottom-left',
+        autoClose: 3500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#1976d2',
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #42a5f5',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)'
+            : '0 6px 20px rgba(25, 118, 210, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#42a5f5',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '📝'
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
+  // Checklist item update handler with Universal Notifications Pattern & Duplicate Prevention
+  const onChecklistItemUpdated = (data) => {
+    console.log('📝 Board: Checklist item updated event received (all members):', data)
+
+    if (data.userInfo && data.boardId === boardId && data.newTitle && data.checklistName) {
+      const actorName = data.userInfo.displayName || data.userInfo.username || 'Người dùng'
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+
+      // Shorten names if too long
+      const newTitle = data.newTitle
+      const shortNewTitle = newTitle.length > 20 ? newTitle.substring(0, 17) + '...' : newTitle
+      const checklistName = data.checklistName
+      const shortChecklistName = checklistName.length > 20 ? checklistName.substring(0, 17) + '...' : checklistName
+
+      const message = isCurrentUser
+        ? `✅ Bạn đã cập nhật item thành "${shortNewTitle}" trong "${shortChecklistName}"`
+        : `📝 ${actorName} đã cập nhật item thành "${shortNewTitle}" trong "${shortChecklistName}"`
+
+      // Create deterministic toast ID to prevent duplicates (exclude timestamp)
+      const toastId = `checklist-item-updated-${data.boardId}-${data.cardId}-${data.checklistId}-${data.itemId}`
+
+      // Additional duplicate prevention: check if this exact toast was shown recently
+      if (toast.isActive(toastId)) {
+        console.log('📝 Board: Duplicate checklist item update toast prevented:', toastId)
+        return
+      }
+
+      toast.info(message, {
+        toastId, // This prevents duplicate toasts
+        position: 'bottom-left',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#1976d2',
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #42a5f5',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)'
+            : '0 6px 20px rgba(25, 118, 210, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#42a5f5',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '📝'
+      })
+    }
+
+    // Always reload board for sync
+    reloadBoardWithDelay()
+  }
+
     // Regular event listeners (excluding dedicated handlers)
     socketIoInstance.on('BE_COLUMN_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_NEW_COMMENT', onRealtimeEvent)
@@ -1093,6 +1413,11 @@ function Board() {
     socketIoInstance.on('BE_LABEL_UPDATED', onLabelUpdated)
     socketIoInstance.on('BE_CHECKLIST_DELETED', onChecklistDeleted)
     socketIoInstance.on('BE_CHECKLIST_ITEM_DELETED', onChecklistItemDeleted)
+    socketIoInstance.on('BE_CHECKLIST_CREATED', onChecklistCreated)
+    socketIoInstance.on('BE_CHECKLIST_ITEM_CREATED', onChecklistItemCreated)
+    socketIoInstance.on('BE_CHECKLIST_ITEM_STATUS_UPDATED', onChecklistItemStatusUpdated)
+    socketIoInstance.on('BE_CHECKLIST_UPDATED', onChecklistUpdated)
+    socketIoInstance.on('BE_CHECKLIST_ITEM_UPDATED', onChecklistItemUpdated)
     
     // ... có thể thêm các event khác nếu cần
     return () => {
@@ -1114,6 +1439,11 @@ function Board() {
       socketIoInstance.off('BE_LABEL_UPDATED', onLabelUpdated)
       socketIoInstance.off('BE_CHECKLIST_DELETED', onChecklistDeleted)
       socketIoInstance.off('BE_CHECKLIST_ITEM_DELETED', onChecklistItemDeleted)
+      socketIoInstance.off('BE_CHECKLIST_CREATED', onChecklistCreated)
+      socketIoInstance.off('BE_CHECKLIST_ITEM_CREATED', onChecklistItemCreated)
+      socketIoInstance.off('BE_CHECKLIST_ITEM_STATUS_UPDATED', onChecklistItemStatusUpdated)
+      socketIoInstance.off('BE_CHECKLIST_UPDATED', onChecklistUpdated)
+      socketIoInstance.off('BE_CHECKLIST_ITEM_UPDATED', onChecklistItemUpdated)
       if (reloadTimeout) clearTimeout(reloadTimeout)
     }
   }, [dispatch, boardId, currentUser])
