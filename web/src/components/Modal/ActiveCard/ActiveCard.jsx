@@ -701,12 +701,38 @@ function ActiveCard() {
       }
 
       const dueDate = selectedDate.toISOString()
+      const oldDueDate = activeCard?.dueDate || null
 
       // Use the synchronization hook for better state management
       await updateDueDate(activeCard._id, dueDate, {
         optimistic: true,
         showToast: true,
         source: 'active-card-modal'
+      })
+
+      // Emit socket event for real-time notifications following Universal Pattern
+      socketIoInstance.emit('FE_CARD_DUE_DATE_UPDATED', {
+        boardId: activeBoard._id,
+        cardId: activeCard._id,
+        cardTitle: activeCard.title || 'Thẻ không có tiêu đề',
+        oldDueDate: oldDueDate,
+        newDueDate: dueDate,
+        actionType: oldDueDate ? 'UPDATE' : 'SET',
+        userInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName || currentUser.username || 'Người dùng',
+          username: currentUser.username,
+          avatar: currentUser.avatar
+        },
+        timestamp: new Date().toISOString()
+      })
+
+      console.log('🗓️ ActiveCard: Emitted due date update event:', {
+        action: oldDueDate ? 'UPDATE' : 'SET',
+        oldDueDate,
+        newDueDate: dueDate,
+        cardTitle: activeCard.title,
+        actor: currentUser.displayName
       })
 
       // Trigger calendar refresh to show updated due date
@@ -726,11 +752,37 @@ function ActiveCard() {
         return
       }
 
+      const oldDueDate = activeCard?.dueDate || null
+
       // Use the synchronization hook for consistent state management
       await updateDueDate(activeCard._id, null, {
         optimistic: true,
         showToast: true,
         source: 'active-card-modal-remove'
+      })
+
+      // Emit socket event for real-time notifications following Universal Pattern
+      socketIoInstance.emit('FE_CARD_DUE_DATE_REMOVED', {
+        boardId: activeBoard._id,
+        cardId: activeCard._id,
+        cardTitle: activeCard.title || 'Thẻ không có tiêu đề',
+        oldDueDate: oldDueDate,
+        newDueDate: null,
+        actionType: 'REMOVE',
+        userInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName || currentUser.username || 'Người dùng',
+          username: currentUser.username,
+          avatar: currentUser.avatar
+        },
+        timestamp: new Date().toISOString()
+      })
+
+      console.log('🗑️ ActiveCard: Emitted due date removal event:', {
+        action: 'REMOVE',
+        oldDueDate,
+        cardTitle: activeCard.title,
+        actor: currentUser.displayName
       })
 
       // Trigger calendar refresh to show removed due date

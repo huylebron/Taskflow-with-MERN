@@ -1392,6 +1392,217 @@ function Board() {
     reloadBoardWithDelay()
   }
 
+  // Due Date Updated handler - Universal Notifications Pattern ✅
+  const onCardDueDateUpdated = (data) => {
+    console.log('🗓️ Board: Due date updated event received (all members):', {
+      cardTitle: data.cardTitle,
+      oldDueDate: data.oldDueDate,
+      newDueDate: data.newDueDate,
+      actionType: data.actionType,
+      userInfo: data.userInfo,
+      currentUser: currentUser?.displayName,
+      boardId: data.boardId,
+      fullData: data
+    })
+
+    // Show notification for ALL members following Universal Pattern
+    if (data.userInfo && 
+        data.boardId === boardId &&
+        data.cardTitle) {
+      
+      // Enhanced fallback logic
+      const userName = data.userInfo.displayName || 
+                      data.userInfo.username || 
+                      'Người dùng không xác định'
+      
+      const cardName = data.cardTitle || 'thẻ không có tên'
+      
+      // Format dates for Vietnamese display
+      const formatDate = (dateStr) => {
+        if (!dateStr) return 'chưa có'
+        return new Date(dateStr).toLocaleDateString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      }
+
+      const oldDateStr = formatDate(data.oldDueDate)
+      const newDateStr = formatDate(data.newDueDate)
+      
+      // Action type specific messaging
+      const getActionText = (actionType) => {
+        switch (actionType) {
+          case 'SET': return 'đặt deadline'
+          case 'UPDATE': return 'cập nhật deadline'
+          case 'DRAG_DROP': return 'kéo thả deadline'
+          default: return 'cập nhật deadline'
+        }
+      }
+
+      // Different message for actor vs observers
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+      const actionText = getActionText(data.actionType)
+      const dateChangeText = `${oldDateStr} → ${newDateStr}`
+      
+      const message = isCurrentUser 
+        ? `✅ Bạn đã ${actionText} cho "${cardName}": ${dateChangeText}` 
+        : `🗓️ ${userName} đã ${actionText} cho "${cardName}": ${dateChangeText}`
+      
+      console.log('🗓️ Board: Showing due date update notification for all members:', {
+        userName,
+        cardName,
+        actionText,
+        dateChangeText,
+        isCurrentUser,
+        message,
+        boardId: data.boardId
+      })
+      
+      // Create unique toast ID to prevent duplicates
+      const toastId = `due-date-updated-${data.boardId}-${data.cardId}-${data.timestamp || Date.now()}`
+      
+      toast.info(message, {
+        toastId, // Prevent duplicate toasts
+        position: 'bottom-left',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#1976d2', // Green for actor, blue for observers
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #2196f3',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser 
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+            : '0 6px 20px rgba(33, 150, 243, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#2196f3',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '🗓️'
+      })
+    } else {
+      console.log('🗓️ Board: Due date update notification not shown - validation failed:', {
+        hasUserInfo: !!data.userInfo,
+        isCorrectBoard: data.boardId === boardId,
+        hasCardTitle: !!data.cardTitle
+      })
+    }
+    
+    // Always reload the board for all members to ensure sync
+    console.log('🔄 Board: Triggering synchronized board reload for due date update');
+    reloadBoardWithDelay()
+  }
+
+  // Due Date Removed handler - Universal Notifications Pattern ✅
+  const onCardDueDateRemoved = (data) => {
+    console.log('🗑️ Board: Due date removed event received (all members):', {
+      cardTitle: data.cardTitle,
+      oldDueDate: data.oldDueDate,
+      userInfo: data.userInfo,
+      currentUser: currentUser?.displayName,
+      boardId: data.boardId,
+      fullData: data
+    })
+
+    // Show notification for ALL members following Universal Pattern
+    if (data.userInfo && 
+        data.boardId === boardId &&
+        data.cardTitle) {
+      
+      // Enhanced fallback logic
+      const userName = data.userInfo.displayName || 
+                      data.userInfo.username || 
+                      'Người dùng không xác định'
+      
+      const cardName = data.cardTitle || 'thẻ không có tên'
+      
+      // Format old date for display
+      const formatDate = (dateStr) => {
+        if (!dateStr) return 'chưa có'
+        return new Date(dateStr).toLocaleDateString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      }
+
+      const oldDateStr = formatDate(data.oldDueDate)
+      
+      // Different message for actor vs observers for removal action
+      const isCurrentUser = data.userInfo._id === currentUser?._id
+      const message = isCurrentUser 
+        ? `✅ Bạn đã xóa deadline cho "${cardName}": ${oldDateStr} → chưa có` 
+        : `🗑️ ${userName} đã xóa deadline cho "${cardName}": ${oldDateStr} → chưa có`
+      
+      console.log('🗑️ Board: Showing due date removal notification for all members:', {
+        userName,
+        cardName,
+        oldDateStr,
+        isCurrentUser,
+        message,
+        boardId: data.boardId
+      })
+      
+      // Create unique toast ID to prevent duplicates
+      const toastId = `due-date-removed-${data.boardId}-${data.cardId}-${data.timestamp || Date.now()}`
+      
+      toast.info(message, {
+        toastId, // Prevent duplicate toasts
+        position: 'bottom-left',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          backgroundColor: isCurrentUser ? '#2e7d32' : '#ff9800', // Green for actor, orange for observers
+          color: '#ffffff',
+          border: isCurrentUser ? '1px solid #4caf50' : '1px solid #ff9800',
+          borderRadius: '12px',
+          boxShadow: isCurrentUser 
+            ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+            : '0 6px 20px rgba(255, 152, 0, 0.3)',
+          fontFamily: 'inherit'
+        },
+        bodyStyle: {
+          fontSize: '14px',
+          fontWeight: '600',
+          padding: '4px 0'
+        },
+        progressStyle: {
+          backgroundColor: isCurrentUser ? '#4caf50' : '#ff9800',
+          height: '3px'
+        },
+        icon: isCurrentUser ? '✅' : '🗑️'
+      })
+    } else {
+      console.log('🗑️ Board: Due date removal notification not shown - validation failed:', {
+        hasUserInfo: !!data.userInfo,
+        isCorrectBoard: data.boardId === boardId,
+        hasCardTitle: !!data.cardTitle
+      })
+    }
+    
+    // Always reload the board for all members to ensure sync
+    console.log('🔄 Board: Triggering synchronized board reload for due date removal');
+    reloadBoardWithDelay()
+  }
+
     // Regular event listeners (excluding dedicated handlers)
     socketIoInstance.on('BE_COLUMN_MOVED', onRealtimeEvent)
     socketIoInstance.on('BE_NEW_COMMENT', onRealtimeEvent)
@@ -1418,6 +1629,8 @@ function Board() {
     socketIoInstance.on('BE_CHECKLIST_ITEM_STATUS_UPDATED', onChecklistItemStatusUpdated)
     socketIoInstance.on('BE_CHECKLIST_UPDATED', onChecklistUpdated)
     socketIoInstance.on('BE_CHECKLIST_ITEM_UPDATED', onChecklistItemUpdated)
+    socketIoInstance.on('BE_CARD_DUE_DATE_UPDATED', onCardDueDateUpdated)
+    socketIoInstance.on('BE_CARD_DUE_DATE_REMOVED', onCardDueDateRemoved)
     
     // ... có thể thêm các event khác nếu cần
     return () => {
@@ -1444,6 +1657,8 @@ function Board() {
       socketIoInstance.off('BE_CHECKLIST_ITEM_STATUS_UPDATED', onChecklistItemStatusUpdated)
       socketIoInstance.off('BE_CHECKLIST_UPDATED', onChecklistUpdated)
       socketIoInstance.off('BE_CHECKLIST_ITEM_UPDATED', onChecklistItemUpdated)
+      socketIoInstance.off('BE_CARD_DUE_DATE_UPDATED', onCardDueDateUpdated)
+      socketIoInstance.off('BE_CARD_DUE_DATE_REMOVED', onCardDueDateRemoved)
       if (reloadTimeout) clearTimeout(reloadTimeout)
     }
   }, [dispatch, boardId, currentUser])

@@ -32,7 +32,45 @@ import {
 
 // Import board selector and calendar sync hook
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
+import { selectCurrentUser } from '~/redux/user/userSlice'
 import { useCalendarSync } from '~/customHooks/useCalendarSync'
+import { socketIoInstance } from '~/socketClient'
+
+// Enhanced Vietnamese locale configuration for FullCalendar
+const vietnameseLocaleConfig = {
+  code: 'vi',
+  week: {
+    dow: 1, // Monday is the first day of the week
+    doy: 4  // The week that contains Jan 4th is the first week of the year
+  },
+  buttonText: {
+    prev: 'Trước',
+    next: 'Sau',
+    today: 'Hôm nay',
+    year: 'Năm',
+    month: 'Tháng',
+    week: 'Tuần',
+    day: 'Ngày',
+    list: 'Danh sách'
+  },
+  allDayText: 'Cả ngày',
+  moreLinkText: 'thêm',
+  noEventsText: 'Không có sự kiện',
+  monthNames: [
+    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+  ],
+  monthNamesShort: [
+    'T1', 'T2', 'T3', 'T4', 'T5', 'T6',
+    'T7', 'T8', 'T9', 'T10', 'T11', 'T12'
+  ],
+  dayNames: [
+    'Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'
+  ],
+  dayNamesShort: [
+    'CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'
+  ]
+}
 
 function Calendar() {
   const theme = useTheme()
@@ -49,6 +87,7 @@ function Calendar() {
   const currentActiveCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
   const currentActiveBoard = useSelector(selectCurrentActiveBoard)
+  const currentUser = useSelector(selectCurrentUser)
 
   // Use calendar synchronization hook
   const {
@@ -417,6 +456,31 @@ function Calendar() {
         }
       )
 
+      // Emit socket event for real-time notifications following Universal Pattern
+      socketIoInstance.emit('FE_CARD_DUE_DATE_UPDATED', {
+        boardId: extendedProps.boardId || boardId,
+        cardId: extendedProps.cardId,
+        cardTitle: event.title || 'Thẻ không có tiêu đề',
+        oldDueDate: oldEvent.start ? new Date(oldEvent.start).toISOString() : null,
+        newDueDate: newDueDate.toISOString(),
+        actionType: 'DRAG_DROP',
+        userInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName || currentUser.username || 'Người dùng',
+          username: currentUser.username,
+          avatar: currentUser.avatar
+        },
+        timestamp: new Date().toISOString()
+      })
+
+      console.log('🗓️ Calendar: Emitted due date drag-drop event:', {
+        action: 'DRAG_DROP',
+        cardTitle: event.title,
+        oldDate: oldEvent.start,
+        newDate: newDueDate.toISOString(),
+        actor: currentUser.displayName
+      })
+
       // Update the event appearance immediately with enhanced styling
       const newEventStyles = getEnhancedEventStyles(newDueDate.toISOString())
       const newStatus = getDueDateStatus(newDueDate.toISOString())
@@ -729,20 +793,58 @@ function Calendar() {
               eventDrop={handleEventDrop}
               eventResize={handleEventResize}
               height="100%"
-              locale="vi"
-              buttonText={{
-                today: 'Hôm nay',
-                month: 'Tháng',
-                week: 'Tuần',
-                day: 'Ngày'
+              
+              // Enhanced Vietnamese localization
+              locale={vietnameseLocaleConfig}
+              
+              // Enhanced date/time formatting
+              titleFormat={{
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
               }}
               dayHeaderFormat={{
                 weekday: 'short',
-                month: 'numeric',
-                day: 'numeric'
+                day: '2-digit',
+                month: '2-digit'
               }}
+              slotLabelFormat={{
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }}
+              eventTimeFormat={{
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }}
+              
+              // Enhanced display options
               eventDisplay="block"
               eventTextColor="#fff"
+              displayEventTime={true}
+              displayEventEnd={false}
+              
+              // Enhanced responsive configurations
+              aspectRatio={isMobile ? 1.0 : isTablet ? 1.35 : 1.8}
+              slotMinTime="06:00:00"
+              slotMaxTime="22:00:00"
+              slotDuration="01:00:00"
+              slotLabelInterval="01:00:00"
+              allDaySlot={true}
+              nowIndicator={true}
+              weekends={true}
+              
+              // Enhanced styling and interaction
+              eventClassNames="calendar-event"
+              dayMaxEventRows={isMobile ? 2 : 4}
+              moreLinkText="thêm tasks"
+              businessHours={{
+                daysOfWeek: [1, 2, 3, 4, 5, 6, 7],
+                startTime: '08:00',
+                endTime: '18:00'
+              }}
+              
               eventMouseEnter={(info) => {
                 try {
                   info.el.style.cursor = 'pointer'
@@ -751,17 +853,6 @@ function Calendar() {
                   console.warn('Error setting event hover:', error)
                 }
               }}
-              // Responsive configurations
-              aspectRatio={isMobile ? 1.0 : isTablet ? 1.35 : 1.8}
-              slotMinTime="06:00:00"
-              slotMaxTime="22:00:00"
-              allDaySlot={true}
-              nowIndicator={true}
-              weekends={true}
-              // Custom styling
-              eventClassNames="calendar-event"
-              dayMaxEventRows={isMobile ? 2 : 4}
-              moreLinkText="tasks khác"
               // Event rendering
               eventDidMount={(info) => {
                 try {
@@ -786,14 +877,30 @@ function Calendar() {
         )}
       </Paper>
 
-      {/* Custom CSS for FullCalendar */}
+      {/* Enhanced Custom CSS for FullCalendar */}
       <style jsx global>{`
         .fc-theme-standard .fc-scrollgrid {
           border: none;
         }
         
+        /* Enhanced header styling for better date visibility */
         .fc-col-header {
           background-color: ${theme.palette.grey[50]};
+          border-bottom: 2px solid ${theme.palette.divider};
+        }
+        
+        .fc-col-header-cell {
+          padding: 8px 4px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          color: ${theme.palette.text.primary};
+        }
+        
+        .fc-daygrid-day-number {
+          font-size: 1.1rem !important;
+          font-weight: 600 !important;
+          color: ${theme.palette.text.primary} !important;
+          padding: 4px 6px !important;
         }
         
         .fc-daygrid-day:hover {
@@ -802,6 +909,33 @@ function Calendar() {
         
         .fc-daygrid-day.fc-day-today {
           background-color: ${theme.palette.primary.main}10 !important;
+        }
+        
+        .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+          background-color: ${theme.palette.primary.main} !important;
+          color: white !important;
+          border-radius: 6px !important;
+          font-weight: 700 !important;
+        }
+        
+        /* Enhanced title formatting */
+        .fc-toolbar-title {
+          font-size: 1.8rem !important;
+          font-weight: 700 !important;
+          color: ${theme.palette.text.primary} !important;
+          letter-spacing: 0.5px !important;
+        }
+        
+        /* Enhanced time slot styling */
+        .fc-timegrid-slot-label {
+          font-size: 0.85rem !important;
+          font-weight: 600 !important;
+          color: ${theme.palette.text.secondary} !important;
+          padding-right: 8px !important;
+        }
+        
+        .fc-timegrid-axis {
+          border-right: 2px solid ${theme.palette.divider} !important;
         }
         
         /* Drag & Drop Visual Feedback */
@@ -861,25 +995,50 @@ function Calendar() {
           font-size: 0.75rem;
         }
         
-        .fc-toolbar-title {
-          font-size: 1.5rem !important;
-          font-weight: 600 !important;
-          color: ${theme.palette.text.primary};
-        }
-        
+        /* Enhanced button styling */
         .fc-button {
           background-color: ${theme.palette.primary.main} !important;
           border-color: ${theme.palette.primary.main} !important;
-          font-weight: 500 !important;
+          font-weight: 600 !important;
+          font-size: 0.875rem !important;
+          padding: 6px 12px !important;
+          border-radius: 6px !important;
+          transition: all 0.2s ease !important;
         }
         
         .fc-button:hover {
           background-color: ${theme.palette.primary.dark} !important;
           border-color: ${theme.palette.primary.dark} !important;
+          transform: translateY(-1px) !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
         }
         
         .fc-button:disabled {
           opacity: 0.6 !important;
+        }
+        
+        .fc-button:focus {
+          outline: 2px solid ${theme.palette.primary.main}40 !important;
+          outline-offset: 2px !important;
+        }
+        
+        /* Enhanced week view styling */
+        .fc-timegrid-col {
+          border-right: 1px solid ${theme.palette.divider} !important;
+        }
+        
+        .fc-timegrid-divider {
+          background-color: ${theme.palette.divider} !important;
+          height: 2px !important;
+        }
+        
+        /* Better slot highlighting */
+        .fc-timegrid-slot:hover {
+          background-color: ${theme.palette.action.hover}30 !important;
+        }
+        
+        .fc-timegrid-slot.fc-timegrid-slot-minor {
+          border-top: 1px dotted ${theme.palette.divider}60 !important;
         }
         
         .fc-today {
@@ -894,10 +1053,12 @@ function Calendar() {
           margin: 0 1px !important;
         }
         
+        /* Enhanced mobile responsive design */
         @media (max-width: ${theme.breakpoints.values.md}px) {
           .fc-toolbar {
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
+            padding: 8px 0;
           }
           
           .fc-toolbar-chunk {
@@ -905,17 +1066,66 @@ function Calendar() {
             justify-content: center;
           }
           
+          .fc-toolbar-title {
+            font-size: 1.4rem !important;
+            text-align: center;
+            margin-bottom: 8px;
+          }
+          
+          .fc-button {
+            font-size: 0.8rem !important;
+            padding: 4px 8px !important;
+            margin: 0 2px !important;
+          }
+          
+          .fc-daygrid-day-number {
+            font-size: 1rem !important;
+            padding: 2px 4px !important;
+          }
+          
+          .fc-col-header-cell {
+            font-size: 0.8rem !important;
+            padding: 6px 2px !important;
+          }
+          
+          .fc-timegrid-slot-label {
+            font-size: 0.75rem !important;
+            padding-right: 4px !important;
+          }
+          
           .calendar-event {
             font-size: 0.75rem;
             padding: 1px 4px;
+            line-height: 1.2;
           }
           
           .fc-event-title {
-            font-size: 0.75rem;
+            font-size: 0.7rem !important;
+            line-height: 1.1 !important;
           }
           
           .fc-event-time {
-            font-size: 0.7rem;
+            font-size: 0.65rem !important;
+            font-weight: 600 !important;
+          }
+        }
+        
+        /* Enhanced tablet responsive design */
+        @media (max-width: ${theme.breakpoints.values.lg}px) and (min-width: ${theme.breakpoints.values.md + 1}px) {
+          .fc-toolbar-title {
+            font-size: 1.6rem !important;
+          }
+          
+          .fc-daygrid-day-number {
+            font-size: 1.05rem !important;
+          }
+          
+          .fc-col-header-cell {
+            font-size: 0.85rem !important;
+          }
+          
+          .calendar-event {
+            font-size: 0.8rem;
           }
         }
       `}</style>

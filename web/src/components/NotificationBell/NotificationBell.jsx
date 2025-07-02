@@ -1206,6 +1206,197 @@ function NotificationBell({ boardId, onNotification }) {
       }
     }
 
+    // Handle card due date updated with Universal Notifications pattern
+    const handleCardDueDateUpdated = (data) => {
+      try {
+        console.log('🗓️ NotificationBell: Due date updated event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id
+        })
+        
+        // Show notification for ALL members in the correct board
+        if (data.boardId === boardId && data.userInfo) {
+          console.log('🗓️ NotificationBell: Processing due date update notification for all members', {
+            cardTitle: data.cardTitle,
+            oldDueDate: data.oldDueDate,
+            newDueDate: data.newDueDate,
+            actionType: data.actionType,
+            updatedBy: data.userInfo?.displayName,
+            currentUser: currentUser.displayName,
+            isCurrentUser: data.userInfo._id === currentUser._id,
+            fullData: data
+          })
+          
+          // Enhanced fallback logic
+          const userName = data.userInfo?.displayName || 
+                          data.userInfo?.username || 
+                          'Người dùng không xác định'
+          
+          const cardName = data.cardTitle || 'thẻ không có tên'
+          
+          // Format dates for Vietnamese display
+          const formatDate = (dateStr) => {
+            if (!dateStr) return 'chưa có'
+            try {
+              return new Date(dateStr).toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            } catch (error) {
+              return 'chưa có'
+            }
+          }
+
+          const oldDateStr = formatDate(data.oldDueDate)
+          const newDateStr = formatDate(data.newDueDate)
+          
+          // Action type specific messaging
+          const getActionText = (actionType) => {
+            switch (actionType) {
+              case 'SET': return 'đặt deadline'
+              case 'UPDATE': return 'cập nhật deadline'
+              case 'DRAG_DROP': return 'kéo thả deadline'
+              default: return 'cập nhật deadline'
+            }
+          }
+
+          // Different notification text for actor vs observers
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const actionText = getActionText(data.actionType)
+          const dateChangeText = `${oldDateStr} → ${newDateStr}`
+          
+          const notificationText = isCurrentUser
+            ? `Bạn đã ${actionText} cho '${cardName}': ${dateChangeText}`
+            : `${userName} đã ${actionText} cho '${cardName}': ${dateChangeText}`
+          
+          console.log('🗓️ NotificationBell: Due date update notification for all members:', {
+            userName,
+            cardName,
+            actionText,
+            dateChangeText,
+            isCurrentUser,
+            notificationText,
+            timestamp: data.timestamp
+          })
+          
+          // Trigger shake with due date update notification data
+          triggerShake({
+            type: 'CARD_DUE_DATE_UPDATED',
+            userName,
+            cardName,
+            actionType: data.actionType,
+            oldDueDate: data.oldDueDate,
+            newDueDate: data.newDueDate,
+            notificationText,
+            isCurrentUser,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar,
+            originalData: data // For debugging
+          })
+        } else {
+          console.log('🗓️ NotificationBell: Due date update event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('🗓️ NotificationBell: Error handling due date updated event:', error)
+      }
+    }
+
+    // Handle card due date removed with Universal Notifications pattern
+    const handleCardDueDateRemoved = (data) => {
+      try {
+        console.log('🗑️ NotificationBell: Due date removed event received (all members):', {
+          boardId: data.boardId,
+          currentBoard: boardId,
+          isTargetBoard: data.boardId === boardId,
+          userInfo: data.userInfo,
+          currentUser: currentUser.displayName,
+          isFromCurrentUser: data.userInfo?._id === currentUser._id
+        })
+        
+        // Show notification for ALL members in the correct board
+        if (data.boardId === boardId && data.userInfo) {
+          console.log('🗑️ NotificationBell: Processing due date removal notification for all members', {
+            cardTitle: data.cardTitle,
+            oldDueDate: data.oldDueDate,
+            removedBy: data.userInfo?.displayName,
+            currentUser: currentUser.displayName,
+            isCurrentUser: data.userInfo._id === currentUser._id,
+            fullData: data
+          })
+          
+          // Enhanced fallback logic
+          const userName = data.userInfo?.displayName || 
+                          data.userInfo?.username || 
+                          'Người dùng không xác định'
+          
+          const cardName = data.cardTitle || 'thẻ không có tên'
+          
+          // Format old date for display
+          const formatDate = (dateStr) => {
+            if (!dateStr) return 'chưa có'
+            try {
+              return new Date(dateStr).toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            } catch (error) {
+              return 'chưa có'
+            }
+          }
+
+          const oldDateStr = formatDate(data.oldDueDate)
+          
+          // Different notification text for actor vs observers for removal action
+          const isCurrentUser = data.userInfo._id === currentUser._id
+          const notificationText = isCurrentUser
+            ? `Bạn đã xóa deadline cho '${cardName}': ${oldDateStr} → chưa có`
+            : `${userName} đã xóa deadline cho '${cardName}': ${oldDateStr} → chưa có`
+          
+          console.log('🗑️ NotificationBell: Due date removal notification for all members:', {
+            userName,
+            cardName,
+            oldDateStr,
+            isCurrentUser,
+            notificationText,
+            timestamp: data.timestamp
+          })
+          
+          // Trigger shake with due date removal notification data
+          triggerShake({
+            type: 'CARD_DUE_DATE_REMOVED',
+            userName,
+            cardName,
+            oldDueDate: data.oldDueDate,
+            notificationText,
+            isCurrentUser,
+            timestamp: data.timestamp || new Date().toISOString(),
+            userAvatar: data.userInfo?.avatar,
+            originalData: data // For debugging
+          })
+        } else {
+          console.log('🗑️ NotificationBell: Due date removal event ignored:', {
+            reason: !data.userInfo ? 'Missing user info' : 
+                    data.boardId !== boardId ? 'Different board' : 'Unknown'
+          })
+        }
+      } catch (error) {
+        console.error('🗑️ NotificationBell: Error handling due date removed event:', error)
+      }
+    }
+
     // Socket connection event handlers
     const handleConnect = () => {
       console.log('🔔 NotificationBell: Socket connected')
@@ -1254,6 +1445,9 @@ function NotificationBell({ boardId, onNotification }) {
     socketIoInstance.on('BE_CHECKLIST_ITEM_STATUS_UPDATED', handleChecklistItemStatusUpdated)
     socketIoInstance.on('BE_CHECKLIST_UPDATED', handleChecklistUpdated)
     socketIoInstance.on('BE_CHECKLIST_ITEM_UPDATED', handleChecklistItemUpdated)
+    // Add due date listeners
+    socketIoInstance.on('BE_CARD_DUE_DATE_UPDATED', handleCardDueDateUpdated)
+    socketIoInstance.on('BE_CARD_DUE_DATE_REMOVED', handleCardDueDateRemoved)
 
     // Check initial connection state
     setIsConnected(socketIoInstance.connected)
@@ -1288,6 +1482,9 @@ function NotificationBell({ boardId, onNotification }) {
       socketIoInstance.off('BE_CHECKLIST_ITEM_STATUS_UPDATED', handleChecklistItemStatusUpdated)
       socketIoInstance.off('BE_CHECKLIST_UPDATED', handleChecklistUpdated)
       socketIoInstance.off('BE_CHECKLIST_ITEM_UPDATED', handleChecklistItemUpdated)
+      // Remove due date listeners
+      socketIoInstance.off('BE_CARD_DUE_DATE_UPDATED', handleCardDueDateUpdated)
+      socketIoInstance.off('BE_CARD_DUE_DATE_REMOVED', handleCardDueDateRemoved)
       
       if (shakeTimeoutRef.current) {
         clearTimeout(shakeTimeoutRef.current)
@@ -1466,7 +1663,11 @@ function NotificationBell({ boardId, onNotification }) {
                                       ? 'rgba(255, 152, 0, 0.15)' // Orange for checklist delete actions
                                       : notification.type === 'CHECKLIST_ITEM_DELETED'
                                         ? 'rgba(255, 152, 0, 0.15)' // Orange for checklist item delete actions
-                                        : 'rgba(255, 152, 0, 0.1)', // Default orange
+                                        : notification.type === 'CARD_DUE_DATE_UPDATED'
+                                          ? 'rgba(33, 150, 243, 0.15)' // Blue for due date update actions
+                                          : notification.type === 'CARD_DUE_DATE_REMOVED'
+                                            ? 'rgba(255, 152, 0, 0.15)' // Orange for due date removal actions
+                                            : 'rgba(255, 152, 0, 0.1)', // Default orange
                     borderLeft: notification.isRead 
                       ? 'none'
                       : notification.type === 'COLUMN_DELETED'
@@ -1493,7 +1694,11 @@ function NotificationBell({ boardId, onNotification }) {
                                           ? '3px solid #ff9800' // Orange border for checklist delete actions
                                           : notification.type === 'CHECKLIST_ITEM_DELETED'
                                             ? '3px solid #ff9800' // Orange border for checklist item delete actions
-                                            : '3px solid #ff9800' // Default orange border
+                                            : notification.type === 'CARD_DUE_DATE_UPDATED'
+                                              ? '3px solid #2196f3' // Blue border for due date update actions
+                                              : notification.type === 'CARD_DUE_DATE_REMOVED'
+                                                ? '3px solid #ff9800' // Orange border for due date removal actions
+                                                : '3px solid #ff9800' // Default orange border
                   }}>
                     <Box sx={{ width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -1578,6 +1783,22 @@ function NotificationBell({ boardId, onNotification }) {
                           }}>
                             {notification.isCurrentUser ? '✅' : '🗑️'}
                           </Box>
+                        ) : notification.type === 'CARD_DUE_DATE_UPDATED' ? (
+                          // Due date update action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#2196f3',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '🗓️'}
+                          </Box>
+                        ) : notification.type === 'CARD_DUE_DATE_REMOVED' ? (
+                          // Due date removal action icon with appropriate color
+                          <Box sx={{ 
+                            fontSize: '16px',
+                            color: notification.isCurrentUser ? '#4caf50' : '#ff9800',
+                          }}>
+                            {notification.isCurrentUser ? '✅' : '🗑️'}
+                          </Box>
                         ) : (
                           // Default person icon for other actions  
                           <PersonIcon sx={{ 
@@ -1607,7 +1828,11 @@ function NotificationBell({ boardId, onNotification }) {
                                             ? (notification.isCurrentUser ? '#4caf50' : '#ff9800')
                                             : notification.type === 'CHECKLIST_ITEM_DELETED'
                                               ? (notification.isCurrentUser ? '#4caf50' : '#ff9800')
-                                              : (notification.isCurrentUser ? '#4caf50' : '#3498db')
+                                              : notification.type === 'CARD_DUE_DATE_UPDATED'
+                                                ? (notification.isCurrentUser ? '#4caf50' : '#2196f3')
+                                                : notification.type === 'CARD_DUE_DATE_REMOVED'
+                                                  ? (notification.isCurrentUser ? '#4caf50' : '#ff9800')
+                                                  : (notification.isCurrentUser ? '#4caf50' : '#3498db')
                         }}>
                           {notification.isCurrentUser ? 'Bạn' : notification.userName}
                         </Typography>
