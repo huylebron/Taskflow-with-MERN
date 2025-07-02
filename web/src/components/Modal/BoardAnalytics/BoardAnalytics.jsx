@@ -138,6 +138,50 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
   const lineDataMap = Object.fromEntries(lineData.map(item => [item.date, item.count]))
   lineData = recentDays.map(date => ({ date, count: lineDataMap[date] || 0 }))
 
+  // Stacked Bar Chart: Completion progress by column (completed vs incomplete cards)
+  const completionData = board?.columns?.map(col => {
+    const totalCards = col.cards?.length || 0
+    const completedCards = col.cards?.filter(card => card.isCardCompleted === true).length || 0
+    const incompleteCards = totalCards - completedCards
+    
+    return {
+      name: col.title,
+      'Hoàn thành': completedCards,
+      'Chưa hoàn thành': incompleteCards,
+      total: totalCards
+    }
+  }) || []
+
+  // Stacked Bar Chart: Due date tracking by column (cards with due date vs without due date)
+  const dueDateData = board?.columns?.map(col => {
+    const totalCards = col.cards?.length || 0
+    const cardsWithDueDate = col.cards?.filter(card => card.dueDate !== null && card.dueDate !== undefined).length || 0
+    const cardsWithoutDueDate = totalCards - cardsWithDueDate
+    
+    return {
+      name: col.title,
+      'Có due date': cardsWithDueDate,
+      'Không có due date': cardsWithoutDueDate,
+      total: totalCards
+    }
+  }) || []
+
+  // Calculate completed cards total for summary stats
+  const completedCardsTotal = board?.columns?.reduce((sum, col) => 
+    sum + (col.cards?.filter(card => card.isCardCompleted === true).length || 0), 0) || 0
+
+  // Calculate cards with due date total for summary stats
+  const cardsWithDueDateTotal = board?.columns?.reduce((sum, col) => 
+    sum + (col.cards?.filter(card => card.dueDate !== null && card.dueDate !== undefined).length || 0), 0) || 0
+
+  // Calculate team average performance (completion rate)
+  const teamAveragePerformance = totalCards > 0 ? 
+    Math.round((completedCardsTotal / totalCards) * 100) : 0
+
+  // Calculate due date coverage (percentage of cards with due date)
+  const dueDateCoverage = totalCards > 0 ? 
+    Math.round((cardsWithDueDateTotal / totalCards) * 100) : 0
+
   return (
     <Dialog
       open={isOpen}
@@ -168,7 +212,7 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
       <DialogContent sx={{ p: 3 }}>
         {/* Summary Stats */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={2}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="primary">
                 {totalCards}
@@ -178,27 +222,47 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={3}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" color="secondary">
-                {totalLabels}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Số nhãn được sử dụng
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={2}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="success.main">
-                {activeColumns}
+                {completedCardsTotal}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Số cột đang hoạt động
+                Thẻ đã hoàn thành
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={2}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h4" color="info.main">
+                {teamAveragePerformance}%
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Tỷ lệ hoàn thành team
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h4" color="purple">
+                {cardsWithDueDateTotal}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Thẻ có due date
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h4" color="orange">
+                {dueDateCoverage}%
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Tỷ lệ có due date
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={2}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="warning.main">
                 {activeMembers}
@@ -212,6 +276,114 @@ function BoardAnalytics({ isOpen, onClose, boardId }) {
 
         {/* Charts Grid */}
         <Grid container spacing={3}>
+          {/* Stacked Bar Chart - Completion Progress by Column */}
+          <Grid item xs={12}>
+            <Paper
+              sx={{
+                p: 2,
+                height: 350,
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              <Typography variant="h6" component="h3" gutterBottom>
+                ✅ Tiến độ hoàn thành theo cột
+              </Typography>
+              <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={completionData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 12 }}
+                      interval={0}
+                    />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload
+                        return (
+                          <Paper sx={{ p: 2 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                              {label}
+                            </Typography>
+                            <Typography variant="body2" color="success.main">
+                              ✅ Hoàn thành: {data['Hoàn thành']} thẻ
+                            </Typography>
+                            <Typography variant="body2" color="warning.main">
+                              ⏳ Chưa hoàn thành: {data['Chưa hoàn thành']} thẻ
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>
+                              📊 Tổng: {data.total} thẻ ({data.total > 0 ? Math.round((data['Hoàn thành'] / data.total) * 100) : 0}% hoàn thành)
+                            </Typography>
+                          </Paper>
+                        )
+                      }
+                      return null
+                    }} />
+                    <Legend />
+                    <Bar dataKey="Hoàn thành" stackId="a" fill="#4caf50" />
+                    <Bar dataKey="Chưa hoàn thành" stackId="a" fill="#ff9800" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Paper>
+          </Grid>
+
+          {/* Stacked Bar Chart - Due Date Tracking by Column */}
+          <Grid item xs={12}>
+            <Paper
+              sx={{
+                p: 2,
+                height: 350,
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              <Typography variant="h6" component="h3" gutterBottom>
+                📅 Theo dõi due date theo cột
+              </Typography>
+              <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dueDateData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 12 }}
+                      interval={0}
+                    />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload
+                        return (
+                          <Paper sx={{ p: 2 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                              {label}
+                            </Typography>
+                            <Typography variant="body2" color="purple">
+                              📅 Có due date: {data['Có due date']} thẻ
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              ⚪ Không có due date: {data['Không có due date']} thẻ
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>
+                              📊 Tổng: {data.total} thẻ ({data.total > 0 ? Math.round((data['Có due date'] / data.total) * 100) : 0}% có due date)
+                            </Typography>
+                          </Paper>
+                        )
+                      }
+                      return null
+                    }} />
+                    <Legend />
+                    <Bar dataKey="Có due date" stackId="a" fill="#9c27b0" />
+                    <Bar dataKey="Không có due date" stackId="a" fill="#e0e0e0" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Paper>
+          </Grid>
+
           {/* Pie Chart - Cards by Label */}
           <Grid item xs={12} md={6}>
             <Paper
