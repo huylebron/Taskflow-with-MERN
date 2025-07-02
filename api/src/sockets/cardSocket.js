@@ -91,4 +91,26 @@ export const cardSocket = (io, socket) => {
     io.to(data.boardId).emit('BE_CHECKLIST_ITEM_UPDATED', enhancedData) // ALL members
     console.log('🔄 Socket: Broadcasted checklist item update to all board members')
   })
+
+  // Cập nhật due date realtime - Universal Notifications Pattern ✅
+  socket.on('FE_CARD_DUE_DATE_UPDATED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🗓️ Socket FE_CARD_DUE_DATE_UPDATED received:', enhancedData)
+    io.to(data.boardId).emit('BE_CARD_DUE_DATE_UPDATED', enhancedData) // ALL members
+    console.log('🗓️ Socket: Broadcasted due date update to all board members')
+  })
+
+  // Xóa due date realtime - Universal Notifications Pattern ✅
+  socket.on('FE_CARD_DUE_DATE_REMOVED', (data) => {
+    const enhancedData = {
+      ...data,
+      timestamp: new Date().toISOString()
+    }
+    console.log('🗑️ Socket FE_CARD_DUE_DATE_REMOVED received:', enhancedData)
+    io.to(data.boardId).emit('BE_CARD_DUE_DATE_REMOVED', enhancedData) // ALL members
+    console.log('🗑️ Socket: Broadcasted due date removal to all board members')
+  })
 } 
